@@ -77,7 +77,8 @@ All development, updates, and logs are handled via SSH terminal sessions.
     - Captures frames from RTSP
     - Runs person detection (YOLO)
     - Crops each person
-    - Runs costume classification (vision-language model for open-ended captioning)
+    - Sends cropped person images to Baseten API for costume classification
+    - Baseten runs vision-language model and returns description
     - Blurs faces before saving any thumbnails (privacy)
     - Posts {description, confidence, timestamp} to Supabase via REST
     |
@@ -122,35 +123,61 @@ All development, updates, and logs are handled via SSH terminal sessions.
 
 ### 5.4 Costume Classification
 
-Use a vision-language model for open-ended costume description generation.
+Use **CLIP + LLM via Baseten** for open-ended costume description generation.
 
-**Approach options:**
+**Architecture:**
 
-1. **BLIP-2 / LLaVA (Recommended for Pi 5)**
-   - Small vision-language models that can run locally
-   - Generate natural language descriptions of images
-   - Prompt: "Describe this person's Halloween costume in one short phrase"
-   - Example outputs: "witch with purple hat and broom", "skeleton with glowing bones", "homemade cardboard robot"
-   - Models like `Salesforce/blip-image-captioning-base` or quantized LLaVA variants can run on Pi 5
+The Pi sends cropped person images to a Baseten-hosted model endpoint that:
+1. Extracts visual features using CLIP
+2. Passes features + prompt to a vision-capable LLM
+3. Returns natural language costume description
 
-2. **CLIP + LLM (Hybrid approach)**
-   - Use CLIP to extract image embeddings
-   - Pass to a small local LLM (e.g., Phi-3-mini, Llama-3.2-1B) with prompt: "Based on this image, describe the Halloween costume"
-   - More flexible than pure zero-shot classification
+**Baseten Setup:**
 
-3. **Cloud API fallback (if local compute is insufficient)**
-   - OpenAI GPT-4o-mini with vision
-   - Anthropic Claude with vision
-   - Google Gemini Flash
-   - Upside: Better descriptions, less compute on Pi
-   - Downside: Requires uploading cropped/blurred images, API costs, internet dependency
+- Deploy a vision-language model on Baseten (e.g., LLaVA, BLIP-2, or similar)
+- Alternative: Use Baseten's model library if they have pre-deployed vision models
+- Pi sends HTTP POST with:
+  - Base64-encoded cropped image
+  - Prompt: "Describe this person's Halloween costume in one short phrase"
+- Baseten returns JSON response with description
 
-**Process:**
-- Crop person image from YOLO bounding box
-- Run through vision-language model with costume-focused prompt
-- Model returns free-form description (e.g., "pirate with eye patch and parrot")
-- Extract confidence/score if available (or set to model's internal confidence)
-- Description becomes the `label` field in database
+**Example API call from Pi:**
+```python
+import requests
+import base64
+
+# Crop person from frame
+person_crop = crop_from_bbox(frame, bbox)
+
+# Encode image
+_, buffer = cv2.imencode('.jpg', person_crop)
+img_base64 = base64.b64encode(buffer).decode('utf-8')
+
+# Call Baseten endpoint
+response = requests.post(
+    "https://model-<id>.api.baseten.co/production/predict",
+    headers={"Authorization": f"Api-Key {BASETEN_API_KEY}"},
+    json={
+        "image": img_base64,
+        "prompt": "Describe this person's Halloween costume in one short phrase"
+    }
+)
+
+description = response.json()["description"]
+# e.g., "witch with purple hat and broom"
+```
+
+**Benefits of Baseten approach:**
+- **Low latency**: Optimized inference infrastructure
+- **No Pi compute overhead**: All ML runs in cloud
+- **Scalability**: Handles traffic spikes on busy Halloween night
+- **Model flexibility**: Easy to swap/upgrade models without touching Pi
+- **Auto-scaling**: Baseten handles load automatically
+
+**Cost considerations:**
+- Pay per inference (check Baseten pricing)
+- Estimate: ~50-200 trick-or-treaters × $0.01-0.05 per inference = $0.50-$10 for the night
+- Much cheaper than running GPT-4 Vision
 
 **Benefits of open-ended approach:**
 - Captures creative/unique costumes (e.g., "inflatable T-Rex", "Barbie and Ken duo")
@@ -304,21 +331,23 @@ create table sightings (
 ### 9.1 Compute on Pi
 
 **Pi 5 capabilities (8GB RAM):**
-- Sufficient to run:
-  - YOLOv8n for person detection at ~1 frame/sec
-  - Small vision-language model (BLIP-base or quantized LLaVA) for open-ended descriptions
-  - Alternative: Cloud API for costume description if local compute is too slow
+- Runs only YOLOv8n for person detection at ~1 frame/sec
+- Costume classification offloaded to Baseten API
+- Pi just handles: frame capture, person detection, image encoding, HTTP requests
 
 **Performance strategy:**
 - Intentionally run inference at low frame rate (not full video FPS)
 - Keeps CPU load/thermal load manageable with CanaKit fan + heatsink
-- May need to batch or queue requests if using cloud APIs to avoid rate limits
+- Baseten API calls are async - won't block the main loop
+- May queue requests if multiple people detected simultaneously
 
 ### 9.2 Network
 
 **Requirements:**
 - Pi must be on same local network as DoorBird (for RTSP access)
-- Pi must have outbound internet (to talk to Supabase)
+- Pi must have outbound internet for:
+  - Baseten API (costume classification)
+  - Supabase API (logging events)
 - Public website does NOT talk to Pi directly, only Supabase
 
 ### 9.3 Privacy & Signage
@@ -342,8 +371,9 @@ Print a sign near the candy bowl:
 ### Edge Software (Pi)
 Python script that:
 - Pulls RTSP video from DoorBird
-- Runs YOLO person detection
-- Crops each person and generates open-ended costume description using vision-language model
+- Runs YOLO person detection locally
+- Crops each person and sends to Baseten API for costume description
+- Receives open-ended description from Baseten vision-language model
 - Logs `{description, confidence, timestamp}` to Supabase
 
 ### Backend / Data Layer
