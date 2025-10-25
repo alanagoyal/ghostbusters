@@ -6,8 +6,8 @@ Build a small edge computer vision system that:
 
 - Watches live video from the existing DoorBird doorbell camera on Halloween night
 - Detects when a person shows up
-- Classifies their costume into a known set of costume types (witch, skeleton, spider-man, etc.)
-- Logs each sighting (costume label, timestamp, confidence) to a Supabase database
+- Classifies their costume with open-ended description (e.g., "witch with purple hat", "skeleton with glowing bones", "homemade cardboard robot")
+- Logs each sighting (costume description, timestamp, confidence) to a Supabase database
 - Shows a live dashboard on a public Next.js site (hosted on Vercel) using Supabase Realtime
 - Operates headless over SSH (no keyboard/mouse/monitor on the Pi)
 
@@ -77,9 +77,9 @@ All development, updates, and logs are handled via SSH terminal sessions.
     - Captures frames from RTSP
     - Runs person detection (YOLO)
     - Crops each person
-    - Runs costume classification (CLIP zero-shot classifier)
+    - Runs costume classification (vision-language model for open-ended captioning)
     - Blurs faces before saving any thumbnails (privacy)
-    - Posts {label, confidence, timestamp} to Supabase via REST
+    - Posts {description, confidence, timestamp} to Supabase via REST
     |
     | (HTTPS)
     v
@@ -122,33 +122,41 @@ All development, updates, and logs are handled via SSH terminal sessions.
 
 ### 5.4 Costume Classification
 
-Run CLIP-style zero-shot classifier on cropped person image.
+Use a vision-language model for open-ended costume description generation.
 
-**Fixed label set:**
-- witch
-- skeleton
-- vampire
-- pirate
-- princess
-- ghost
-- superhero
-- spiderman
-- batman
-- dinosaur
-- cat
-- pumpkin
-- astronaut
-- ninja
-- fairy
-- barbie
-- doctor
-- cowboy
-- angel
-- soccer player
+**Approach options:**
+
+1. **BLIP-2 / LLaVA (Recommended for Pi 5)**
+   - Small vision-language models that can run locally
+   - Generate natural language descriptions of images
+   - Prompt: "Describe this person's Halloween costume in one short phrase"
+   - Example outputs: "witch with purple hat and broom", "skeleton with glowing bones", "homemade cardboard robot"
+   - Models like `Salesforce/blip-image-captioning-base` or quantized LLaVA variants can run on Pi 5
+
+2. **CLIP + LLM (Hybrid approach)**
+   - Use CLIP to extract image embeddings
+   - Pass to a small local LLM (e.g., Phi-3-mini, Llama-3.2-1B) with prompt: "Based on this image, describe the Halloween costume"
+   - More flexible than pure zero-shot classification
+
+3. **Cloud API fallback (if local compute is insufficient)**
+   - OpenAI GPT-4o-mini with vision
+   - Anthropic Claude with vision
+   - Google Gemini Flash
+   - Upside: Better descriptions, less compute on Pi
+   - Downside: Requires uploading cropped/blurred images, API costs, internet dependency
 
 **Process:**
-- CLIP returns similarity scores for each prompt (e.g., "a photo of a witch costume")
-- Pick the top-scoring label and its confidence
+- Crop person image from YOLO bounding box
+- Run through vision-language model with costume-focused prompt
+- Model returns free-form description (e.g., "pirate with eye patch and parrot")
+- Extract confidence/score if available (or set to model's internal confidence)
+- Description becomes the `label` field in database
+
+**Benefits of open-ended approach:**
+- Captures creative/unique costumes (e.g., "inflatable T-Rex", "Barbie and Ken duo")
+- More detailed (e.g., "superhero in red cape" vs just "superhero")
+- No need to maintain or update fixed label list
+- Better handles unexpected costumes
 
 ### 5.5 Privacy Preprocessing
 
@@ -165,8 +173,8 @@ Before saving any "evidence" image locally:
 ### 5.6 Posting Results to Supabase
 
 Pi sends HTTP POST to Supabase REST API for each new sighting:
-- `label` (string)
-- `confidence` (float 0–1)
+- `description` (string) - free-form costume description from vision-language model
+- `confidence` (float 0–1) - model confidence if available
 - `timestamp` (UTC ISO string)
 
 **Authentication:**
@@ -185,15 +193,15 @@ Pi sends HTTP POST to Supabase REST API for each new sighting:
 ```sql
 create table sightings (
   id uuid primary key default gen_random_uuid(),
-  label text not null,
+  description text not null,
   confidence numeric,
   timestamp timestamptz default now()
 );
 ```
 
 **Fields:**
-- `label`: Costume type the model guessed (e.g., "witch")
-- `confidence`: Model confidence score (0–1)
+- `description`: Open-ended costume description from vision-language model (e.g., "witch with purple hat and broom", "skeleton with glowing bones")
+- `confidence`: Model confidence score (0–1) if available
 - `timestamp`: When the detection occurred
 
 ### 6.2 Realtime
@@ -229,18 +237,22 @@ create table sightings (
 
 **Components:**
 
-1. **Costume leaderboard**
-   - Sorted list (e.g., "1. witch (23), 2. spider-man (17), ...")
+1. **Live costume feed**
+   - Scrolling list of recent costume descriptions with timestamps
+   - e.g., "witch with purple hat and broom @ 7:42pm", "inflatable T-Rex @ 7:45pm"
 
-2. **Donut / pie chart of costume distribution**
-   - Shows % share by label
+2. **Costume word cloud or tag visualization**
+   - Extract keywords from descriptions (witch, skeleton, superhero, etc.)
+   - Show frequency/popularity visually
+   - Optional: Cluster similar costumes for aggregated stats
 
 3. **Timeline graph**
    - x-axis: time of night
    - y-axis: number of sightings per 5-minute bin
 
 4. **"New arrival" ticker**
-   - Live toast notifications (e.g., "👻 ghost @ 7:42pm")
+   - Live toast notifications showing full costume descriptions
+   - e.g., "pirate with eye patch and parrot @ 7:42pm"
    - Powered by realtime channel
 
 ### 7.3 Data Flow in Browser
@@ -265,13 +277,13 @@ create table sightings (
    - YOLO returns bounding boxes for "person"
 
 4. **Pi classifies the costume**
-   - Crop → CLIP → "witch (0.83 confidence)"
+   - Crop → Vision-Language Model → "witch with purple hat and broom"
 
 5. **Pi sends event to Supabase**
    ```json
    {
-     "label": "witch",
-     "confidence": 0.83,
+     "description": "witch with purple hat and broom",
+     "confidence": 0.89,
      "timestamp": "2025-10-31T02:42:11Z"
    }
    ```
@@ -281,7 +293,8 @@ create table sightings (
    - Realtime event fires
 
 7. **Next.js site updates instantly**
-   - Leaderboard, pie chart, timeline all update live
+   - Live feed, word cloud, timeline all update live
+   - Toast notification shows: "witch with purple hat and broom @ 7:42pm"
 
 8. **Optional: Pi keeps blurred thumbnail locally**
    - For future Halloween "poster" or debugging
@@ -293,11 +306,13 @@ create table sightings (
 **Pi 5 capabilities (8GB RAM):**
 - Sufficient to run:
   - YOLOv8n for person detection at ~1 frame/sec
-  - CLIP ViT-B/32 for zero-shot classification on cropped images
+  - Small vision-language model (BLIP-base or quantized LLaVA) for open-ended descriptions
+  - Alternative: Cloud API for costume description if local compute is too slow
 
 **Performance strategy:**
 - Intentionally run inference at low frame rate (not full video FPS)
 - Keeps CPU load/thermal load manageable with CanaKit fan + heatsink
+- May need to batch or queue requests if using cloud APIs to avoid rate limits
 
 ### 9.2 Network
 
@@ -328,8 +343,8 @@ Print a sign near the candy bowl:
 Python script that:
 - Pulls RTSP video from DoorBird
 - Runs YOLO person detection
-- Crops each person and classifies costume with CLIP
-- Logs `{label, confidence, timestamp}` to Supabase
+- Crops each person and generates open-ended costume description using vision-language model
+- Logs `{description, confidence, timestamp}` to Supabase
 
 ### Backend / Data Layer
 - Supabase Postgres table `sightings`
@@ -339,7 +354,8 @@ Python script that:
 ### Frontend
 Next.js app on Vercel that:
 - Subscribes to Supabase Realtime
-- Shows live charts, leaderboard, timeline of costumes
+- Shows live costume feed, word cloud/tag visualization, and timeline of arrivals
+- Displays full costume descriptions in real-time
 
 ### Interface / Access
 - All control of the Pi is done headlessly over SSH
