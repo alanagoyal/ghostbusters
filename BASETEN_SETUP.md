@@ -72,7 +72,7 @@ Expected output:
 ```
 Costume Classifier Module
 ==================================================
-✅ Initialized with model: llama-3.2-11b-vision
+✅ Initialized with model: meta-llama/Llama-3.2-11B-Vision-Instruct
 Ready to classify costumes!
 ```
 
@@ -118,7 +118,7 @@ This script:
 
 ### Model Information
 
-- **Model**: `llama-3.2-11b-vision`
+- **Model**: `meta-llama/Llama-3.2-11B-Vision-Instruct`
 - **Endpoint**: `https://inference.baseten.co/v1`
 - **API Format**: OpenAI-compatible Chat Completions
 - **Input**: Base64-encoded images or image URLs
@@ -135,7 +135,7 @@ client = OpenAI(
 )
 
 response = client.chat.completions.create(
-    model="llama-3.2-11b-vision",
+    model="meta-llama/Llama-3.2-11B-Vision-Instruct",
     messages=[
         {
             "role": "user",
@@ -221,7 +221,7 @@ If you need different capabilities, Baseten offers other vision models:
 To use a different model, modify the `model` parameter in `CostumeClassifier`:
 
 ```python
-classifier = CostumeClassifier(model="llama-3.2-90b-vision")
+classifier = CostumeClassifier(model="meta-llama/Llama-3.2-90B-Vision-Instruct")
 ```
 
 ## Next Steps

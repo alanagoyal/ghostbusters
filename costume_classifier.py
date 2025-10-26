@@ -16,13 +16,17 @@ from openai import OpenAI
 class CostumeClassifier:
     """Classifies Halloween costumes using Baseten's vision model."""
 
-    def __init__(self, api_key: str | None = None, model: str = "llama-3.2-11b-vision"):
+    def __init__(
+        self,
+        api_key: str | None = None,
+        model: str = "meta-llama/Llama-3.2-11B-Vision-Instruct",
+    ):
         """
         Initialize the costume classifier.
 
         Args:
             api_key: Baseten API key (defaults to BASETEN_API_KEY env var)
-            model: Model to use (default: llama-3.2-11b-vision)
+            model: Model to use (default: meta-llama/Llama-3.2-11B-Vision-Instruct)
         """
         self.api_key = api_key or os.getenv("BASETEN_API_KEY")
         if not self.api_key:
