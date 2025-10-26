@@ -77,10 +77,14 @@ Quick version:
 # Install Truss
 uv pip install --upgrade truss
 
-# Clone examples
+# Clone and fix the example
 cd ~/Developer
 git clone https://github.com/basetenlabs/truss-examples.git
 cd truss-examples/qwen/qwen-vl
+
+# IMPORTANT: Fix the model.py to add generation parameters
+# Edit model/model.py and add to the generate() call:
+#   max_new_tokens=512, temperature=0.7, top_p=0.9
 
 # Deploy
 truss push
@@ -103,30 +107,12 @@ uv run python test_baseten_model.py
 uv run python classify_costumes.py
 ```
 
-## 🎨 Prompt Templates
+## 📝 Code Structure
 
-The system includes multiple prompt templates for different use cases:
-
-- **standard** - Basic costume classification (default)
-- **detailed** - Detailed costume analysis
-- **fun** - Fun, encouraging descriptions
-- **multi** - Multi-person detection
-- **category** - Costume category classification
-- **safety** - Safety analysis
-- **group** - Group costume analysis
-- **quality** - Quality assessment
-
-See [`costume_prompts.py`](costume_prompts.py) for all available prompts.
-
-**Example:**
-```python
-from baseten_client import BasetenClient
-from costume_prompts import get_prompt
-
-client = BasetenClient()
-prompt = get_prompt("fun")  # Use fun, encouraging prompt
-result = client.classify_costume("costume.jpg", prompt=prompt)
-```
+**Simple and minimal:**
+- `classify_costumes.py` - Main costume classifier (direct API calls)
+- `test_baseten_model.py` - Simple API test script
+- No wrapper classes, no boilerplate - just direct `requests` calls
 
 ## 🥧 Raspberry Pi Management
 

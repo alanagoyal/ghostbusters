@@ -1,74 +1,112 @@
 #!/usr/bin/env python3
 """
-Real-time Halloween costume classification system.
+Real-time Halloween costume classifier.
 Combines YOLOv8 person detection with Qwen-VL costume classification via Baseten.
 """
 
+import base64
 import os
 import sys
 import time
 from datetime import datetime
+from io import BytesIO
 
 import cv2
-from baseten_client import BasetenClient
+import requests
 from dotenv import load_dotenv
+from PIL import Image
 from ultralytics import YOLO
 
-# Load environment variables
 load_dotenv()
 
-# DoorBird connection details
+# Configuration
+DOORBIRD_IP = os.getenv("DOORBIRD_IP")
 DOORBIRD_USER = os.getenv("DOORBIRD_USERNAME")
 DOORBIRD_PASSWORD = os.getenv("DOORBIRD_PASSWORD")
-DOORBIRD_IP = os.getenv("DOORBIRD_IP")
+BASETEN_API_KEY = os.getenv("BASETEN_API_KEY")
+BASETEN_MODEL_URL = os.getenv("BASETEN_MODEL_URL")
 
-# Check required environment variables
-if not all([DOORBIRD_USER, DOORBIRD_PASSWORD, DOORBIRD_IP]):
-    print("❌ ERROR: Missing DoorBird environment variables")
-    print("Please check your .env file")
+# Check credentials
+if not all([DOORBIRD_IP, DOORBIRD_USER, DOORBIRD_PASSWORD]):
+    print("❌ Missing DoorBird credentials in .env")
     sys.exit(1)
 
-# Configuration
-PERSON_CONFIDENCE_THRESHOLD = 0.5  # Minimum confidence for person detection
-DETECTION_COOLDOWN = 5  # Seconds between classifications
-FRAME_SKIP = 30  # Process every Nth frame (~1 per second at 30fps)
-SAVE_DETECTIONS = True  # Save images with costume classifications
+if not all([BASETEN_API_KEY, BASETEN_MODEL_URL]):
+    print("❌ Missing Baseten credentials in .env")
+    sys.exit(1)
 
-# Construct RTSP URL
-rtsp_url = f"rtsp://{DOORBIRD_USER}:{DOORBIRD_PASSWORD}@{DOORBIRD_IP}/mpeg/media.amp"
+# Settings
+PERSON_CONFIDENCE = 0.5
+COOLDOWN_SECONDS = 5
+FRAME_SKIP = 30  # Process every 30th frame
 
-print("🎃 Halloween Costume Classifier Starting...")
+
+def classify_costume(frame):
+    """Classify costume in frame using Baseten API."""
+    # Convert frame to base64
+    pil_img = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+    buffered = BytesIO()
+    pil_img.save(buffered, format="PNG")
+    image_b64 = f"data:image/png;base64,{base64.b64encode(buffered.getvalue()).decode('utf-8')}"
+
+    # Call Baseten API
+    payload = {
+        "image": image_b64,
+        "prompt": (
+            "What Halloween costume is this person wearing? "
+            "Just give the costume name (e.g., 'Witch', 'Vampire', 'Spider-Man', etc.). "
+            "Be specific but brief."
+        ),
+        "max_new_tokens": 100,
+        "temperature": 0.7,
+    }
+
+    try:
+        response = requests.post(
+            BASETEN_MODEL_URL,
+            headers={"Authorization": f"Api-Key {BASETEN_API_KEY}"},
+            json=payload,
+            timeout=60
+        )
+
+        if response.status_code != 200:
+            return f"Error: {response.status_code}"
+
+        result = response.json()
+        output = result.get("output", "No response")
+
+        # Clean up output
+        output = output.replace("<|endoftext|>", "").strip()
+        # Remove prompt echo if present
+        if "Halloween costume" in output:
+            parts = output.split("?", 1)
+            if len(parts) > 1:
+                output = parts[1].strip()
+
+        return output
+
+    except Exception as e:
+        return f"Error: {str(e)}"
+
+
+print("🎃 Halloween Costume Classifier")
 print("=" * 60)
 print()
-print(f"📹 Connecting to DoorBird at {DOORBIRD_IP}")
 
-# Initialize Baseten client
-print("🤖 Initializing Baseten Qwen-VL model...")
-try:
-    baseten_client = BasetenClient()
-    print("✅ Baseten client ready!")
-except ValueError as e:
-    print(f"❌ Error: {e}")
-    print()
-    print("Please ensure:")
-    print("  1. You've deployed Qwen-VL to Baseten")
-    print("  2. BASETEN_MODEL_URL is set in .env")
-    print("  3. BASETEN_API_KEY is set in .env")
-    sys.exit(1)
+# Load YOLO
+print("🤖 Loading YOLOv8...")
+yolo = YOLO("yolov8n.pt")
 
-# Load YOLOv8n model for person detection
-print("🎯 Loading YOLOv8n person detector...")
-model = YOLO("yolov8n.pt")
-print("✅ Person detector ready!")
-
-# Open RTSP stream
+# Connect to DoorBird
+rtsp_url = f"rtsp://{DOORBIRD_USER}:{DOORBIRD_PASSWORD}@{DOORBIRD_IP}/mpeg/media.amp"
+print(f"📹 Connecting to DoorBird at {DOORBIRD_IP}...")
 cap = cv2.VideoCapture(rtsp_url)
 
 if not cap.isOpened():
-    print("❌ ERROR: Could not connect to DoorBird RTSP stream")
+    print("❌ Failed to connect to DoorBird")
     sys.exit(1)
 
-print("✅ Connected to RTSP stream!")
+print("✅ Connected!")
 print()
 print("👻 Watching for trick-or-treaters...")
 print("Press Ctrl+C to stop")
@@ -76,132 +114,59 @@ print("=" * 60)
 print()
 
 frame_count = 0
-classification_count = 0
-last_classification_time = 0
+detection_count = 0
+last_detection = 0
 
 try:
     while True:
-        # Read frame from stream
         ret, frame = cap.read()
-
         if not ret:
-            print("⚠️  Failed to read frame, reconnecting...")
             time.sleep(1)
             continue
 
         frame_count += 1
-
-        # Skip frames for performance
         if frame_count % FRAME_SKIP != 0:
             continue
 
-        # Run YOLO person detection
-        results = model(frame, verbose=False)
-
-        # Check for person detections
-        people_detected = False
-        person_boxes = []
+        # Detect people with YOLO
+        results = yolo(frame, verbose=False)
+        person_detected = False
 
         for result in results:
-            boxes = result.boxes
-            for box in boxes:
-                # Class 0 is 'person' in COCO dataset
-                if int(box.cls[0]) == 0:
-                    confidence = float(box.conf[0])
+            for box in result.boxes:
+                if int(box.cls[0]) == 0 and float(box.conf[0]) > PERSON_CONFIDENCE:
+                    person_detected = True
+                    break
 
-                    if confidence > PERSON_CONFIDENCE_THRESHOLD:
-                        people_detected = True
-                        x1, y1, x2, y2 = map(int, box.xyxy[0])
-                        person_boxes.append((x1, y1, x2, y2, confidence))
+        # Classify costume if person detected
+        if person_detected and time.time() - last_detection > COOLDOWN_SECONDS:
+            detection_count += 1
+            print(f"👤 Person detected! Classifying costume...")
 
-        # If person detected, classify their costume
-        if people_detected:
-            current_time = time.time()
+            costume = classify_costume(frame)
 
-            # Cooldown to avoid repeated classifications
-            if current_time - last_classification_time > DETECTION_COOLDOWN:
-                classification_count += 1
-                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            print()
+            print("🎭 COSTUME CLASSIFICATION")
+            print(f"   Time: {datetime.now().strftime('%H:%M:%S')}")
+            print(f"   #{detection_count}")
+            print("   " + "-" * 50)
+            print(f"   {costume}")
+            print("   " + "-" * 50)
+            print()
 
-                print(f"👤 Person detected! Classifying costume...")
+            # Save image
+            filename = f"costume_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
+            cv2.imwrite(filename, frame)
+            print(f"   💾 Saved: {filename}")
+            print()
 
-                # Classify costume using Baseten
-                try:
-                    costume = baseten_client.classify_costume(frame)
-
-                    print()
-                    print("🎭 COSTUME DETECTED")
-                    print(f"   Time: {datetime.now().strftime('%H:%M:%S')}")
-                    print(f"   Classification #{classification_count}")
-                    print("   " + "-" * 50)
-                    print(f"   {costume}")
-                    print("   " + "-" * 50)
-                    print()
-
-                    # Draw bounding boxes and costume label
-                    for x1, y1, x2, y2, conf in person_boxes:
-                        cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-
-                        # Draw person confidence
-                        label = f"Person {conf:.2f}"
-                        cv2.putText(
-                            frame,
-                            label,
-                            (x1, y1 - 10),
-                            cv2.FONT_HERSHEY_SIMPLEX,
-                            0.5,
-                            (0, 255, 0),
-                            2,
-                        )
-
-                    # Add costume classification to image
-                    # Create background for text
-                    costume_text = costume[:60] + "..." if len(costume) > 60 else costume
-                    text_size = cv2.getTextSize(
-                        costume_text, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2
-                    )[0]
-                    cv2.rectangle(
-                        frame,
-                        (10, 10),
-                        (text_size[0] + 20, text_size[1] + 20),
-                        (0, 0, 0),
-                        -1,
-                    )
-                    cv2.putText(
-                        frame,
-                        costume_text,
-                        (15, text_size[1] + 15),
-                        cv2.FONT_HERSHEY_SIMPLEX,
-                        0.7,
-                        (0, 255, 255),
-                        2,
-                    )
-
-                    # Save classified image
-                    if SAVE_DETECTIONS:
-                        filename = f"costume_{timestamp}.jpg"
-                        cv2.imwrite(filename, frame)
-                        print(f"   💾 Saved: {filename}")
-                        print()
-
-                except Exception as e:
-                    print(f"   ⚠️  Classification error: {e}")
-                    print()
-
-                last_classification_time = current_time
+            last_detection = time.time()
 
 except KeyboardInterrupt:
     print()
-    print("🛑 Stopping costume classifier...")
-    print()
-    print("📊 Session Summary")
-    print("=" * 60)
-    print(f"   Total costumes classified: {classification_count}")
-    print(f"   Total frames processed: {frame_count}")
-    print("=" * 60)
+    print("🛑 Stopping...")
+    print(f"📊 Total costumes classified: {detection_count}")
 
 finally:
     cap.release()
-    print()
-    print("✅ Cleanup complete!")
-    print("🎃 Happy Halloween! 👻")
+    print("✅ Done!")
