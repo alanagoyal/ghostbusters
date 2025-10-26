@@ -1,0 +1,59 @@
+# Costume Classification Model Configuration
+# Based on Qwen2-VL-7B-Instruct for Halloween costume detection and description
+#
+# This config deploys a vision-language model optimized for describing
+# Halloween costumes from person crops detected by the Raspberry Pi.
+
+model_metadata:
+  example_model_input:
+    image: "https://github.com/sgl-project/sglang/blob/main/test/lang/example_image.png?raw=true"
+    prompt: "What Halloween costume is this person wearing? Provide a brief, specific description."
+    max_tokens: 256
+    temperature: 0.3
+  tags:
+    - vision-language
+    - costume-classification
+    - qwen2-vl
+
+model_name: Halloween-Costume-Classifier-Qwen2-VL-7B
+
+# Python version
+python_version: py311
+
+# Python requirements for the model
+requirements:
+  - torch==2.4.0
+  - transformers==4.46.0
+  - qwen-vl-utils==0.0.8
+  - pillow==10.4.0
+  - accelerate==0.34.0
+
+# Resource configuration - Single L4 GPU (cheapest option with scale-to-zero)
+resources:
+  accelerator: L4  # Single NVIDIA L4 GPU (24GB VRAM) - cheapest GPU option
+  use_gpu: true
+  cpu: "4"  # 4 CPU cores
+  memory: 16Gi  # 16GB RAM
+
+# Runtime configuration
+runtime:
+  predict_concurrency: 4  # Handle multiple requests in parallel
+
+# Secrets (to be set in Baseten dashboard or via CLI)
+secrets: {}
+
+# Environment variables
+environment_variables: {}
+
+# System packages (if needed)
+system_packages: []
+
+# Model caching - Cache the Qwen2-VL model from HuggingFace
+model_cache:
+  - repo_id: Qwen/Qwen2-VL-7B-Instruct
+    allow_patterns:
+      - "*.json"
+      - "*.safetensors"
+      - "*.py"
+      - "*.tiktoken"
+      - "*.model"

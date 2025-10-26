@@ -124,6 +124,41 @@ sudo apt update && sudo apt upgrade -y
 - [DoorBird Setup Guide](DOORBIRD_SETUP.md) - Camera configuration and RTSP setup
 - [Project Specification](PROJECT_SPEC.md) - Complete system architecture
 - [Blog Notes](BLOG_NOTES.md) - Implementation journey and decisions
+- [Baseten Deployment Guide](docs/BASETEN_DEPLOYMENT.md) - Deploy costume classification model to Baseten
+- [Baseten Checklist](docs/BASETEN_CHECKLIST.md) - Step-by-step deployment checklist
+
+## 🤖 Baseten Model Deployment
+
+The costume classification model is deployed on Baseten using Truss. This offloads heavy vision-language model inference from the Raspberry Pi to cloud GPUs.
+
+### Quick Deploy
+
+```bash
+# Install Truss CLI
+pip install truss
+
+# Authenticate
+truss login
+
+# Deploy model
+cd truss_costume_classifier
+truss push
+```
+
+See [docs/BASETEN_DEPLOYMENT.md](docs/BASETEN_DEPLOYMENT.md) for complete deployment guide.
+
+### Testing the API
+
+```bash
+# Test with an image
+python test_baseten_api.py path/to/costume_image.jpg
+
+# Test from Pi integration script
+python classify_costume_api.py path/to/costume_image.jpg
+
+# Warmup model before event
+python classify_costume_api.py --warmup
+```
 
 ## 🛠️ Development
 
