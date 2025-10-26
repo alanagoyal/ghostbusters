@@ -44,13 +44,24 @@ Raspberry Pi edge computer vision system that watches a DoorBird doorbell camera
    # Edit .env with your actual credentials
    ```
 
-### Running the Test Script
+### Running the System
 
-Test your DoorBird connection:
-
+**Test your DoorBird connection:**
 ```bash
 uv run python test_doorbird_connection.py
 ```
+
+**Person detection only (no costume classification):**
+```bash
+uv run python detect_people.py
+```
+
+**Full system with costume classification:**
+```bash
+uv run python detect_and_classify_costumes.py
+```
+
+**Note**: Costume classification requires a Baseten API key. See [Baseten Setup Guide](BASETEN_SETUP.md) for configuration instructions.
 
 ## 🥧 Raspberry Pi Management
 
@@ -122,6 +133,7 @@ sudo apt update && sudo apt upgrade -y
 ## 📖 Documentation
 
 - [DoorBird Setup Guide](DOORBIRD_SETUP.md) - Camera configuration and RTSP setup
+- [Baseten Setup Guide](BASETEN_SETUP.md) - Costume classification API setup
 - [Project Specification](PROJECT_SPEC.md) - Complete system architecture
 - [Blog Notes](BLOG_NOTES.md) - Implementation journey and decisions
 

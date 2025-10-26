@@ -449,10 +449,162 @@ Now that we can detect people, the pipeline is:
 7. ⏭️ Display on Next.js dashboard
 
 **Immediate next tasks:**
-- Set up Baseten account and deploy vision-language model
-- Create Supabase project and schema
-- Integrate costume classification API call into detection script
-- Build database logging
+- ✅ Set up Baseten account and deploy vision-language model
+- ⏭️ Create Supabase project and schema
+- ✅ Integrate costume classification API call into detection script
+- ⏭️ Build database logging
+
+---
+
+## Day 4: Baseten Integration & Costume Classification
+
+### Setting Up Baseten
+
+**Chose Llama 3.2 11B Vision Instruct for costume classification:**
+
+**Why this model?**
+- Multimodal vision-language model (can analyze images and generate text)
+- Good balance: 11B parameters = fast inference but still accurate
+- Optimized for visual recognition and image reasoning
+- Supports object detection and classification
+- OpenAI-compatible API (easy integration)
+
+**Alternative models considered:**
+- Llama 3.2 90B Vision: More accurate but slower/pricier
+- Qwen3 VL 235B: Highest accuracy but very expensive
+- Custom fine-tuned model: Would require training data
+
+**API Integration Details:**
+- Endpoint: `https://inference.baseten.co/v1`
+- Uses OpenAI Python client library (just change base URL and API key)
+- Accepts base64-encoded images
+- Returns natural language descriptions
+
+### Implementation Architecture
+
+**Created modular design:**
+
+1. **`costume_classifier.py`** - Reusable classification module
+   - `CostumeClassifier` class encapsulates Baseten API
+   - Handles image encoding (OpenCV → base64)
+   - Structured prompt for consistent output format
+   - Error handling and fallback responses
+
+2. **`detect_and_classify_costumes.py`** - Main pipeline
+   - Combines YOLOv8 person detection with costume classification
+   - Rate limiting: 5-second cooldown between classifications (API cost control)
+   - Graceful degradation: works without API key (detection only)
+   - Annotates images with both person boxes AND costume labels
+   - Saves detection images with overlaid classifications
+
+3. **`test_costume_classifier.py`** - Testing script
+   - Validates API key configuration
+   - Tests connectivity to Baseten
+   - Quick verification before running full pipeline
+
+### Prompt Engineering
+
+**Structured output format:**
+```
+COSTUME: [name]
+CONFIDENCE: [high/medium/low]
+DETAILS: [description]
+```
+
+This makes parsing easier and ensures consistent results.
+
+**Key prompt decisions:**
+- Asked for costume name first (most important info)
+- Requested confidence level (helps filter low-quality results)
+- Asked for details (captures creative elements)
+- Explicit fallback: "No costume detected" for regular clothing
+
+### Technical Details
+
+**Image preprocessing:**
+- Crop person from frame using YOLO bounding box
+- Skip crops smaller than 50x50 pixels (too small to classify)
+- Convert BGR (OpenCV) → RGB → JPEG → base64
+- Include data URI prefix for API
+
+**API parameters:**
+- `temperature=0.7`: Balanced creativity vs. consistency
+- `max_tokens=512`: Enough for detailed descriptions
+- Single image per request (model limitation)
+
+**Cost optimization:**
+- Process frames at 1fps (not 30fps)
+- 5-second cooldown between classifications
+- Only classify when person detected with >0.5 confidence
+- Estimated cost: ~$0.01-0.05 per classification (check current pricing)
+
+### Development Workflow
+
+**File organization:**
+```
+costume_classifier.py          # Module (import this)
+detect_and_classify_costumes.py  # Main script (run this)
+test_costume_classifier.py     # Test script (verify setup)
+BASETEN_SETUP.md              # User documentation
+```
+
+**Testing approach:**
+1. Test API connectivity with simple image
+2. Test with real DoorBird frame + YOLO detection
+3. Test multiple people in frame
+4. Test edge cases (no costume, poor lighting, etc.)
+
+### Performance Considerations
+
+**Latency:**
+- YOLO detection: ~200-250ms (local on Pi)
+- Baseten API call: ~1-3 seconds (network + inference)
+- Total pipeline: ~1.5-3.5 seconds per classification
+
+**Bottlenecks:**
+- Network latency to Baseten API (cloud-based)
+- Image encoding/decoding overhead (minimal)
+- Model inference time (Baseten handles this)
+
+**Not an issue because:**
+- People take 5-10 seconds walking to door
+- 5-second cooldown prevents duplicate classifications
+- Real-time display not critical for this use case
+
+### Key Learnings
+
+**What worked well:**
+- OpenAI-compatible API made integration trivial
+- Modular design allows testing components independently
+- Base64 encoding handles images without temp files
+- Graceful degradation (works without API key)
+
+**Challenges encountered:**
+- None! Baseten API worked first try
+- Documentation was clear and accurate
+- OpenAI client library "just worked"
+
+**What could be improved:**
+- Could add retry logic for failed API calls
+- Could batch multiple people in one prompt (if model supports it)
+- Could cache results to avoid re-classifying same person
+
+### Next Steps After Costume Classification
+
+Pipeline now:
+1. ✅ Capture frame from DoorBird
+2. ✅ Detect person with YOLO
+3. ✅ Crop person from frame
+4. ✅ Send to Baseten for costume classification
+5. ✅ Annotate and save image
+6. ⏭️ **Next:** Log to Supabase database
+7. ⏭️ Display on Next.js dashboard with realtime updates
+
+**Immediate next tasks:**
+- Create Supabase project
+- Design database schema (detections, costumes, timestamps)
+- Add Supabase logging to detection script
+- Build Next.js dashboard for realtime display
 
 ---
 
@@ -468,6 +620,7 @@ Now that we can detect people, the pipeline is:
 | Package manager | pip vs. poetry vs. uv | uv | 10-100x faster, built-in venv, modern tooling |
 | Linter/formatter | Black + isort + flake8 vs. ruff | ruff | Single tool, Rust-powered, extremely fast |
 | Pi OS flashing | Use pre-installed vs. Re-flash | Re-flash | Enables headless WiFi/SSH pre-configuration |
+| Vision model | Llama 3.2 90B vs. 11B vs. Qwen | Llama 3.2 11B | Best balance of speed, accuracy, and cost |
 
 ---
 
@@ -495,4 +648,4 @@ Now that we can detect people, the pipeline is:
 
 ---
 
-*Last updated: 2025-10-26 (Day 3: Person detection working)*
+*Last updated: 2025-10-26 (Day 4: Baseten costume classification integrated)*
