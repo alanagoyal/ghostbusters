@@ -44,12 +44,88 @@ Raspberry Pi edge computer vision system that watches a DoorBird doorbell camera
    # Edit .env with your actual credentials
    ```
 
-### Running the Test Script
+### Running the Scripts
 
-Test your DoorBird connection:
-
+**Test your DoorBird connection:**
 ```bash
 uv run python test_doorbird_connection.py
+```
+
+**Test person detection:**
+```bash
+uv run python detect_people.py
+```
+
+**Test Baseten model (after deployment):**
+```bash
+uv run python test_baseten_model.py
+```
+
+**Run costume classifier:**
+```bash
+uv run python classify_costumes.py
+```
+
+## 🎭 Costume Classification Setup
+
+### 1. Deploy Qwen-VL to Baseten
+
+See [BASETEN_DEPLOYMENT.md](BASETEN_DEPLOYMENT.md) for detailed instructions.
+
+Quick version:
+```bash
+# Install Truss
+uv pip install --upgrade truss
+
+# Clone examples
+cd ~/Developer
+git clone https://github.com/basetenlabs/truss-examples.git
+cd truss-examples/qwen/qwen-vl
+
+# Deploy
+truss push
+```
+
+### 2. Configure Baseten URL
+
+After deployment, update your `.env`:
+```bash
+BASETEN_MODEL_URL=https://model-<YOUR_ID>.api.baseten.co/development/predict
+```
+
+### 3. Test and Run
+
+```bash
+# Test the model
+uv run python test_baseten_model.py
+
+# Start classifying costumes
+uv run python classify_costumes.py
+```
+
+## 🎨 Prompt Templates
+
+The system includes multiple prompt templates for different use cases:
+
+- **standard** - Basic costume classification (default)
+- **detailed** - Detailed costume analysis
+- **fun** - Fun, encouraging descriptions
+- **multi** - Multi-person detection
+- **category** - Costume category classification
+- **safety** - Safety analysis
+- **group** - Group costume analysis
+- **quality** - Quality assessment
+
+See [`costume_prompts.py`](costume_prompts.py) for all available prompts.
+
+**Example:**
+```python
+from baseten_client import BasetenClient
+from costume_prompts import get_prompt
+
+client = BasetenClient()
+prompt = get_prompt("fun")  # Use fun, encouraging prompt
+result = client.classify_costume("costume.jpg", prompt=prompt)
 ```
 
 ## 🥧 Raspberry Pi Management
