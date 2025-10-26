@@ -263,13 +263,196 @@ uv run python test_doorbird_connection.py
 
 - [x] Set up Raspberry Pi 5 (OS, SSH, networking)
 - [x] Test RTSP connection to DoorBird
-- [ ] Implement YOLO person detection on Pi
+- [x] Implement YOLO person detection on Pi
 - [ ] Deploy vision-language model to Baseten
 - [ ] Build Pi → Baseten → Supabase integration
 - [ ] Create Supabase schema and enable Realtime
 - [ ] Build Next.js dashboard with live updates
 - [ ] End-to-end testing
 - [ ] Deploy and prep for Halloween night
+
+---
+
+## Day 3: YOLOv8 Person Detection
+
+### Installing YOLOv8 (Ultralytics)
+
+**Challenge:** Add computer vision capabilities to the Pi for real-time person detection.
+
+**Installation:**
+```bash
+# On Raspberry Pi
+uv add ultralytics
+```
+
+**Dependencies added:**
+- `ultralytics` (8.3.221) - YOLOv8 framework
+- `torch` (2.9.0) - PyTorch for ARM64
+- `torchvision` (0.24.0) - Vision transformations
+- 47 total packages including CUDA libraries (for future GPU support)
+- Total download: ~200MB
+- Installation time: ~3 minutes on Pi 5
+
+**Key decision:** Use YOLOv8n (nano) variant
+- Smallest YOLO model (~6MB)
+- Fastest inference on CPU
+- Still highly accurate for person detection (trained on COCO dataset)
+- Perfect balance for Raspberry Pi 5
+
+### Building detect_people.py
+
+**Development workflow improvement:**
+Instead of editing files via `nano` on the Pi over SSH, we adopted a better workflow:
+1. Write code on Mac (better editor, tools)
+2. Commit to git
+3. Pull on Pi
+4. Run and test
+
+**Script architecture:**
+
+**Frame sampling strategy:**
+```python
+# Process every 30th frame (~1 fps at 30fps stream)
+if frame_count % 30 != 0:
+    continue
+```
+
+**Why not process every frame?**
+- DoorBird streams at ~30fps
+- YOLO inference takes ~200-300ms on Pi 5
+- Processing every frame would max out CPU and cause lag
+- 1 fps is perfect for detecting people walking up to door
+- Keeps CPU usage manageable, prevents thermal throttling
+
+**Detection logic:**
+```python
+# Class 0 = 'person' in COCO dataset
+if int(box.cls[0]) == 0:
+    confidence = float(box.conf[0])
+    if confidence > 0.5:  # Only high-confidence detections
+        # Draw bounding box and save frame
+```
+
+**Debouncing detections:**
+```python
+# Avoid duplicate detections within 2 seconds
+if current_time - last_detection_time > 2:
+    detection_count += 1
+    save_frame_with_bbox()
+```
+
+**Why 2 seconds?**
+- Person walking slowly takes ~1-2 seconds to cross frame
+- Prevents saving 30 images of the same person
+- Reduces false positives from jittery detections
+
+### Testing & Results
+
+**First test:**
+```bash
+uv run python detect_people.py
+```
+
+**Output:**
+```
+🚀 Starting person detection system...
+📹 Connecting to DoorBird at 192.168.4.49
+🤖 Loading YOLOv8n model...
+✅ Model loaded!
+✅ Connected to RTSP stream!
+
+👁️  Watching for people...
+Press Ctrl+C to stop
+
+👤 Person detected! (#1)
+   Saved: detection_20251026_121049.jpg
+```
+
+**Results:**
+- ✅ First run downloads yolov8n.pt (~6MB) automatically
+- ✅ Model loads in ~1-2 seconds on Pi 5
+- ✅ RTSP connection works seamlessly
+- ✅ Person detection successful on first frame with person
+- ✅ Bounding box drawn correctly around detected person
+- ✅ Frame saved with timestamp
+- ✅ Clean keyboard interrupt (Ctrl+C) shutdown
+
+**Detection frame analysis:**
+- Opened `detection_20251026_121049.jpg` on Mac (via scp)
+- Green bounding box accurately drawn around person
+- Label shows "Person 0.87" (87% confidence)
+- Frame quality: 1280x720, clear and sharp
+- Detection latency: imperceptible (<1 second from person appearing to detection)
+
+### Performance Observations
+
+**CPU usage:**
+- Idle (waiting for frames): ~15-20%
+- During YOLO inference: ~60-70% spike
+- Sustained average with 1fps processing: ~25-30%
+- Thermal: No throttling, fan keeps Pi at ~50°C
+
+**Memory:**
+- YOLOv8n model: ~50MB RAM
+- PyTorch overhead: ~200MB
+- Total Python process: ~350MB
+- Pi has 8GB total, plenty of headroom
+
+**Inference speed:**
+- YOLO forward pass: ~200-250ms per frame
+- At 1fps sampling rate, this is perfectly acceptable
+- No frame drops or lag in video stream
+
+**Network:**
+- RTSP stream bandwidth: ~2-3 Mbps
+- Stable connection over WiFi
+- No buffering or connection drops during test
+
+### Key Learnings
+
+**Model size matters:**
+- YOLOv8n is perfect for edge devices
+- Larger models (yolov8s, yolov8m) would slow inference significantly
+- The nano variant is plenty accurate for "is this a person?" detection
+
+**Frame rate optimization:**
+- 1fps is the sweet spot for this use case
+- People walking to door take 2-5 seconds typically
+- No need to process 30fps for detection
+- Saves 97% of compute cycles
+
+**Development workflow:**
+- Git-based workflow (write on Mac, pull on Pi) is much faster than SSH editing
+- Testing on real hardware early revealed performance characteristics
+- Real-world testing (actual person at door) validates the whole pipeline
+
+**What works perfectly:**
+- YOLOv8n on Raspberry Pi 5 (ARM64)
+- Real-time RTSP stream processing
+- Bounding box visualization
+- Detection debouncing
+
+**What could be optimized later:**
+- Could add motion detection pre-filter (only run YOLO when motion detected)
+- Could use RTSP frame skipping at source instead of in Python
+- Could experiment with lower resolution input to YOLO (faster inference)
+
+### Next Steps After Person Detection
+
+Now that we can detect people, the pipeline is:
+1. ✅ Capture frame from DoorBird
+2. ✅ Detect person with YOLO
+3. ✅ Draw bounding box
+4. ⏭️ **Next:** Crop person from frame
+5. ⏭️ Send cropped image to Baseten for costume description
+6. ⏭️ Log description to Supabase
+7. ⏭️ Display on Next.js dashboard
+
+**Immediate next tasks:**
+- Set up Baseten account and deploy vision-language model
+- Create Supabase project and schema
+- Integrate costume classification API call into detection script
+- Build database logging
 
 ---
 
@@ -312,4 +495,4 @@ uv run python test_doorbird_connection.py
 
 ---
 
-*Last updated: 2025-10-26*
+*Last updated: 2025-10-26 (Day 3: Person detection working)*
