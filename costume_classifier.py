@@ -19,14 +19,22 @@ class CostumeClassifier:
     def __init__(
         self,
         api_key: str | None = None,
-        model: str = "meta-llama/Llama-3.2-11B-Vision-Instruct",
+        model_id: str | None = None,
+        use_model_api: bool = False,
     ):
         """
         Initialize the costume classifier.
 
+        Baseten has two deployment types:
+        1. Model Library (default): Deploy a model and get a unique model_id
+        2. Model APIs: Use pre-hosted models with OpenAI-compatible API
+
         Args:
             api_key: Baseten API key (defaults to BASETEN_API_KEY env var)
-            model: Model to use (default: meta-llama/Llama-3.2-11B-Vision-Instruct)
+            model_id: Your deployed model ID (defaults to BASETEN_MODEL_ID env var)
+                     Only needed if use_model_api=False
+            use_model_api: If True, use Model APIs instead of deployed model
+                          (currently no vision models in Model APIs)
         """
         self.api_key = api_key or os.getenv("BASETEN_API_KEY")
         if not self.api_key:
@@ -34,10 +42,30 @@ class CostumeClassifier:
                 "BASETEN_API_KEY environment variable not set or no api_key provided"
             )
 
-        self.model = model
-        self.client = OpenAI(
-            api_key=self.api_key, base_url="https://inference.baseten.co/v1"
-        )
+        self.use_model_api = use_model_api
+
+        if use_model_api:
+            # Using Model APIs (OpenAI-compatible)
+            self.model = "meta-llama/Llama-3.2-11B-Vision-Instruct"
+            self.client = OpenAI(
+                api_key=self.api_key, base_url="https://inference.baseten.co/v1"
+            )
+            self.model_id = None
+        else:
+            # Using deployed model from Model Library
+            self.model_id = model_id or os.getenv("BASETEN_MODEL_ID")
+            if not self.model_id:
+                raise ValueError(
+                    "BASETEN_MODEL_ID environment variable not set.\n"
+                    "Please deploy the model at: "
+                    "https://app.baseten.co/deploy/llama-3-2-11b-vision-instruct-vllm\n"
+                    "Then add your model ID to .env"
+                )
+            self.model = None
+            self.client = None
+            self.endpoint = (
+                f"https://model-{self.model_id}.api.baseten.co/production/predict"
+            )
 
     def _encode_image_to_base64(self, image: np.ndarray) -> str:
         """
@@ -98,23 +126,45 @@ If it's not clearly a Halloween costume, say "No costume detected" and explain w
 
         # Make API call
         try:
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=[
-                    {
-                        "role": "user",
-                        "content": [
-                            {"type": "image_url", "image_url": {"url": image_b64}},
-                            {"type": "text", "text": prompt},
-                        ],
-                    }
-                ],
-                temperature=temperature,
-                max_tokens=max_tokens,
-            )
+            if self.use_model_api:
+                # Using Model APIs (OpenAI-compatible) - NOT YET AVAILABLE FOR VISION
+                response = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": [
+                                {
+                                    "type": "image_url",
+                                    "image_url": {"url": image_b64},
+                                },
+                                {"type": "text", "text": prompt},
+                            ],
+                        }
+                    ],
+                    temperature=temperature,
+                    max_tokens=max_tokens,
+                )
+                full_response = response.choices[0].message.content
+            else:
+                # Using deployed model from Model Library
+                import requests
 
-            # Extract response text
-            full_response = response.choices[0].message.content
+                payload = {
+                    "messages": [{"role": "user", "content": prompt}],
+                    "image": image_b64,
+                    "max_new_tokens": max_tokens,
+                    "temperature": temperature,
+                }
+
+                response = requests.post(
+                    self.endpoint,
+                    headers={"Authorization": f"Api-Key {self.api_key}"},
+                    json=payload,
+                    timeout=30,
+                )
+                response.raise_for_status()
+                full_response = response.json().get("output", "")
 
             # Parse the structured response
             result = {
@@ -190,8 +240,14 @@ if __name__ == "__main__":
 
     try:
         classifier = CostumeClassifier()
-        print(f"✅ Initialized with model: {classifier.model}")
+        print(f"✅ Initialized with deployed model")
+        print(f"   Model ID: {classifier.model_id}")
+        print(f"   Endpoint: {classifier.endpoint}")
         print("Ready to classify costumes!")
     except ValueError as e:
         print(f"❌ Error: {e}")
-        print("Please set BASETEN_API_KEY in your .env file")
+        print()
+        print("Setup instructions:")
+        print("1. Sign up at baseten.co")
+        print("2. Deploy the model (see BASETEN_SETUP.md)")
+        print("3. Add both BASETEN_API_KEY and BASETEN_MODEL_ID to .env")

@@ -28,39 +28,63 @@ Baseten is an AI infrastructure platform that provides production-ready APIs for
 1. Log into your Baseten dashboard
 2. Navigate to **Settings** or **API Keys** section
 3. Click "Create API Key" or "Generate New Key"
-4. Copy your API key (it should start with something like `sk-...`)
+4. Copy your API key
 5. **IMPORTANT**: Store this key securely - you won't be able to see it again!
 
-### Step 3: Add API Key to Environment
+### Step 3: Deploy the Llama 3.2 Vision Model
+
+**Important**: Baseten has two types of offerings:
+- **Model APIs**: Pre-hosted models with fixed endpoints (currently no vision models)
+- **Model Library**: Models you deploy yourself (this is what we need)
+
+1. Visit the model deployment page:
+   ```
+   https://app.baseten.co/deploy/llama-3-2-11b-vision-instruct-vllm
+   ```
+
+2. Click the **"Deploy now"** button
+
+3. Configure deployment settings:
+   - Accept default settings (GPU type, scaling, etc.)
+   - Click "Deploy"
+
+4. Wait for deployment to complete (usually 2-5 minutes)
+
+5. Once deployed, copy your **model ID**:
+   - It will look like: `abc123xyz` (an alphanumeric string)
+   - You'll see it in the deployment URL: `https://model-{YOUR_MODEL_ID}.api.baseten.co/...`
+
+### Step 4: Add Credentials to Environment
 
 1. Open your `.env` file in the project root:
    ```bash
    nano .env
    ```
 
-2. Add your Baseten API key:
+2. Add both your API key and model ID:
    ```bash
    BASETEN_API_KEY=your_actual_api_key_here
+   BASETEN_MODEL_ID=your_model_id_here
    ```
 
 3. Save and exit (`Ctrl+X`, then `Y`, then `Enter`)
 
-4. Verify it's set:
+4. Verify they're set:
    ```bash
-   grep BASETEN_API_KEY .env
+   grep BASETEN .env
    ```
 
-### Step 4: Install Dependencies
+### Step 5: Install Dependencies
 
-Install the OpenAI client library (used to connect to Baseten):
+Install required dependencies:
 
 ```bash
 uv sync
 ```
 
-This will install all dependencies including the `openai` package.
+This will install all dependencies including `openai` and `requests`.
 
-### Step 5: Test the Costume Classifier
+### Step 6: Test the Costume Classifier
 
 Run the test script to verify everything works:
 
@@ -72,9 +96,13 @@ Expected output:
 ```
 Costume Classifier Module
 ==================================================
-✅ Initialized with model: meta-llama/Llama-3.2-11B-Vision-Instruct
+✅ Initialized with deployed model
+   Model ID: your_model_id
+   Endpoint: https://model-your_model_id.api.baseten.co/production/predict
 Ready to classify costumes!
 ```
+
+If you see an error about missing `BASETEN_MODEL_ID`, make sure you completed Step 3 (Deploy the model) and Step 4 (Add credentials to .env).
 
 ## Usage
 
@@ -118,36 +146,37 @@ This script:
 
 ### Model Information
 
-- **Model**: `meta-llama/Llama-3.2-11B-Vision-Instruct`
-- **Endpoint**: `https://inference.baseten.co/v1`
-- **API Format**: OpenAI-compatible Chat Completions
-- **Input**: Base64-encoded images or image URLs
-- **Output**: Structured text responses
+- **Model**: Llama 3.2 11B Vision Instruct
+- **Deployment**: Model Library (requires individual deployment)
+- **Endpoint Format**: `https://model-{YOUR_MODEL_ID}.api.baseten.co/production/predict`
+- **API Format**: REST API with JSON payload
+- **Input**: Base64-encoded images + text prompt
+- **Output**: JSON with model response
 
 ### API Call Example
 
 ```python
-from openai import OpenAI
+import requests
+import os
 
-client = OpenAI(
-    api_key="your_baseten_api_key",
-    base_url="https://inference.baseten.co/v1"
+model_id = os.getenv("BASETEN_MODEL_ID")
+api_key = os.getenv("BASETEN_API_KEY")
+
+payload = {
+    "messages": [{"role": "user", "content": "What Halloween costume is this?"}],
+    "image": "data:image/jpeg;base64,...",  # base64-encoded image
+    "max_new_tokens": 512,
+    "temperature": 0.7
+}
+
+response = requests.post(
+    f"https://model-{model_id}.api.baseten.co/production/predict",
+    headers={"Authorization": f"Api-Key {api_key}"},
+    json=payload
 )
 
-response = client.chat.completions.create(
-    model="meta-llama/Llama-3.2-11B-Vision-Instruct",
-    messages=[
-        {
-            "role": "user",
-            "content": [
-                {"type": "image_url", "image_url": {"url": "data:image/jpeg;base64,..."}},
-                {"type": "text", "text": "What Halloween costume is this?"}
-            ]
-        }
-    ],
-    temperature=0.7,
-    max_tokens=512
-)
+result = response.json()
+print(result["output"])
 ```
 
 ### Rate Limits & Pricing
@@ -167,7 +196,17 @@ Check your Baseten dashboard for:
 **Solution**: Make sure your `.env` file exists and contains:
 ```bash
 BASETEN_API_KEY=your_actual_key
+BASETEN_MODEL_ID=your_model_id
 ```
+
+### Error: "BASETEN_MODEL_ID environment variable not set"
+
+**Cause**: You haven't deployed the model yet or haven't added the model ID to your `.env`
+
+**Solution**:
+1. Deploy the model at: https://app.baseten.co/deploy/llama-3-2-11b-vision-instruct-vllm
+2. Copy your model ID from the deployment
+3. Add it to `.env`: `BASETEN_MODEL_ID=your_model_id`
 
 ### Error: "Failed to encode image"
 
@@ -218,11 +257,15 @@ If you need different capabilities, Baseten offers other vision models:
 2. **Qwen3 VL 235B**: Very large, highest accuracy
 3. **Custom Models**: Deploy your own fine-tuned model
 
-To use a different model, modify the `model` parameter in `CostumeClassifier`:
+To use a different model:
+1. Deploy the model from Baseten's Model Library
+2. Get the new model ID
+3. Update your `.env` file with the new `BASETEN_MODEL_ID`
 
-```python
-classifier = CostumeClassifier(model="meta-llama/Llama-3.2-90B-Vision-Instruct")
-```
+For example, to use the larger 90B model:
+1. Deploy: https://app.baseten.co/deploy/llama-3-2-90b-vision-instruct-vllm
+2. Get the model ID
+3. Update `.env`: `BASETEN_MODEL_ID=your_new_model_id`
 
 ## Next Steps
 
