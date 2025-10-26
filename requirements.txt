@@ -1,2 +1,0 @@
-opencv-python>=4.8.0
-python-dotenv>=1.0.0

@@ -9,9 +9,15 @@ __pycache__/
 *$py.class
 *.so
 .Python
+
+# Virtual environments (old)
 venv/
 env/
 ENV/
+
+# uv
+.venv/
+.python-version
 
 # Test outputs
 test_doorbird_frame.jpg
