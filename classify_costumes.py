@@ -75,13 +75,21 @@ def classify_costume(frame):
         result = response.json()
         output = result.get("output", "No response")
 
-        # Clean up output
+        # Clean up output - remove special tokens
         output = output.replace("<|endoftext|>", "").strip()
-        # Remove prompt echo if present
-        if "Halloween costume" in output:
+        output = output.replace("<|im_end|>", "").strip()
+
+        # Remove prompt echo - extract response after prompt
+        prompt_text = "Halloween costume"
+        if prompt_text in output:
             parts = output.split("?", 1)
             if len(parts) > 1:
                 output = parts[1].strip()
+
+        # Remove image references
+        if output.startswith("Picture"):
+            lines = output.split("\n")
+            output = "\n".join(lines[1:]) if len(lines) > 1 else output
 
         return output
 

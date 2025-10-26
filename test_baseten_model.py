@@ -35,10 +35,10 @@ if not os.path.exists(test_image):
 with open(test_image, "rb") as f:
     image_b64 = f"data:image/png;base64,{base64.b64encode(f.read()).decode('utf-8')}"
 
-# Call API
+# Call API - use simpler prompt
 payload = {
     "image": image_b64,
-    "prompt": "What do you see in this image? Describe it briefly.",
+    "prompt": "Describe this image.",
     "max_new_tokens": 512,
     "temperature": 0.7,
 }
@@ -58,17 +58,32 @@ if response.status_code != 200:
     sys.exit(1)
 
 result = response.json()
-output = result.get("output", "")
-
-# Clean up output (remove prompt echo and special tokens)
-output = output.replace("<|endoftext|>", "").strip()
-if "What do you see" in output:
-    output = output.split("What do you see", 1)[-1]
-    output = output.split("?", 1)[-1].strip()
+raw_output = result.get("output", "")
 
 print("✅ Success!")
 print()
-print("Response:")
+print("Raw output:")
+print("-" * 50)
+print(raw_output[:500])
+print("-" * 50)
+print()
+
+# Clean up output (remove prompt echo and special tokens)
+output = raw_output.replace("<|endoftext|>", "").strip()
+output = output.replace("<|im_end|>", "").strip()
+
+# Try to extract just the response after the prompt
+if "Describe this image." in output:
+    parts = output.split("Describe this image.", 1)
+    if len(parts) > 1:
+        output = parts[1].strip()
+
+# Remove image references
+if output.startswith("Picture"):
+    lines = output.split("\n")
+    output = "\n".join(lines[1:]) if len(lines) > 1 else output
+
+print("Cleaned output:")
 print("-" * 50)
 print(output)
 print("-" * 50)
