@@ -49,14 +49,12 @@ def classify_costume(frame):
     pil_img.save(buffered, format="PNG")
     image_b64 = f"data:image/png;base64,{base64.b64encode(buffered.getvalue()).decode('utf-8')}"
 
-    # Call Baseten API
+    # Call Baseten API - use simpler prompt
+    prompt = "What is this person wearing?"
+
     payload = {
         "image": image_b64,
-        "prompt": (
-            "What Halloween costume is this person wearing? "
-            "Just give the costume name (e.g., 'Witch', 'Vampire', 'Spider-Man', etc.). "
-            "Be specific but brief."
-        ),
+        "prompt": prompt,
         "max_new_tokens": 100,
         "temperature": 0.7,
     }
@@ -73,25 +71,24 @@ def classify_costume(frame):
             return f"Error: {response.status_code}"
 
         result = response.json()
-        output = result.get("output", "No response")
+        raw_output = result.get("output", "No response")
 
         # Clean up output - remove special tokens
-        output = output.replace("<|endoftext|>", "").strip()
+        output = raw_output.replace("<|endoftext|>", "").strip()
         output = output.replace("<|im_end|>", "").strip()
-
-        # Remove prompt echo - extract response after prompt
-        prompt_text = "Halloween costume"
-        if prompt_text in output:
-            parts = output.split("?", 1)
-            if len(parts) > 1:
-                output = parts[1].strip()
 
         # Remove image references
         if output.startswith("Picture"):
             lines = output.split("\n")
             output = "\n".join(lines[1:]) if len(lines) > 1 else output
 
-        return output
+        # Extract response after the prompt
+        if prompt in output:
+            parts = output.split(prompt, 1)
+            if len(parts) > 1:
+                output = parts[1].strip()
+
+        return output if output else raw_output
 
     except Exception as e:
         return f"Error: {str(e)}"
