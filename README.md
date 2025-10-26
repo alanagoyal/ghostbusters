@@ -122,6 +122,7 @@ sudo apt update && sudo apt upgrade -y
 ## 📖 Documentation
 
 - [DoorBird Setup Guide](DOORBIRD_SETUP.md) - Camera configuration and RTSP setup
+- [Supabase Setup Guide](SUPABASE_SETUP.md) - Database, Realtime, and RLS configuration
 - [Project Specification](PROJECT_SPEC.md) - Complete system architecture
 - [Blog Notes](BLOG_NOTES.md) - Implementation journey and decisions
 
