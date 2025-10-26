@@ -7,7 +7,7 @@ Raspberry Pi edge computer vision system that watches a DoorBird doorbell camera
 - **Edge Compute:** Raspberry Pi 5 (8GB RAM)
 - **Camera:** DoorBird doorbell (RTSP stream)
 - **Person Detection:** YOLOv8n
-- **Costume Classification:** Baseten API (vision-language model)
+- **Costume Classification:** OpenAI GPT-4o Vision
 - **Database:** Supabase (with Realtime)
 - **Frontend:** Next.js on Vercel
 - **Package Manager:** uv (by Astral)
@@ -44,12 +44,26 @@ Raspberry Pi edge computer vision system that watches a DoorBird doorbell camera
    # Edit .env with your actual credentials
    ```
 
-### Running the Test Script
+### Running the Scripts
 
-Test your DoorBird connection:
-
+**Test DoorBird connection:**
 ```bash
 uv run python test_doorbird_connection.py
+```
+
+**Person detection only:**
+```bash
+uv run python detect_people.py
+```
+
+**Full costume detection and classification:**
+```bash
+uv run python detect_and_classify.py
+```
+
+**Classify a single image:**
+```bash
+uv run python classify_costume.py path/to/image.jpg
 ```
 
 ## 🥧 Raspberry Pi Management

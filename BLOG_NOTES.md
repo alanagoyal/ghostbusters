@@ -456,12 +456,346 @@ Now that we can detect people, the pipeline is:
 
 ---
 
+## Day 4: Costume Classification with OpenAI Vision
+
+### Architecture Change: Baseten → OpenAI Vision
+
+**Original plan:** Use Baseten to host a vision-language model (LLaVA, BLIP-2, etc.)
+
+**Why we pivoted to OpenAI:**
+1. **Development speed:** OpenAI's API is mature and well-documented
+2. **Quality:** GPT-4o (with vision) provides excellent costume descriptions
+3. **Simplicity:** No need to deploy/manage our own model on Baseten
+4. **Cost-effectiveness:** For a one-night event (~50-200 detections), OpenAI pricing is negligible
+5. **Reliability:** Battle-tested infrastructure, no cold starts
+
+**Trade-offs considered:**
+- OpenAI is more expensive per call than self-hosted models
+- But for Halloween night scope (< 200 inferences), total cost is ~$1-5
+- Saves hours of Baseten deployment/testing time
+- Can always swap to Baseten later if needed
+
+### Implementation: classify_costume.py
+
+**Core module design:**
+
+Created a `CostumeClassifier` class that wraps OpenAI's Vision API:
+
+```python
+class CostumeClassifier:
+    def __init__(self, api_key: str | None = None):
+        self.client = OpenAI(api_key=api_key or os.getenv("OPENAI_API_KEY"))
+        self.model = "gpt-4o"  # GPT-4o has vision capabilities
+```
+
+**Key method: `classify(image_array)`**
+
+Takes an OpenCV image array (BGR format) and returns costume description.
+
+**Image encoding:**
+```python
+# Encode to JPEG, then base64
+success, buffer = cv2.imencode('.jpg', image_array)
+img_base64 = base64.b64encode(buffer).decode('utf-8')
+```
+
+**Prompt engineering:**
+
+Crafted a specific prompt to get concise, descriptive costume labels:
+
+```python
+prompt = """Analyze this image and describe the person's Halloween costume in one concise phrase (3-8 words).
+
+Focus on:
+- Main costume theme (e.g., witch, superhero, princess, skeleton)
+- Key visual details (colors, props, accessories)
+- Creative or unique elements
+
+Examples of good descriptions:
+- "witch with purple hat and broom"
+- "skeleton with glowing bones"
+- "homemade cardboard robot"
+- "superhero in red cape"
+- "inflatable T-Rex costume"
+
+Provide ONLY the costume description, nothing else."""
+```
+
+**Why this prompt structure?**
+- **Concise phrase requirement:** Keeps descriptions short and chart-friendly
+- **Focus points:** Guides the model to notice important details
+- **Examples:** Few-shot learning to establish output format
+- **"ONLY the costume description":** Prevents chatty responses
+
+**API call configuration:**
+
+```python
+response = self.client.chat.completions.create(
+    model=self.model,
+    messages=[
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": prompt},
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:image/jpeg;base64,{img_base64}",
+                        "detail": "low",  # Faster/cheaper for this use case
+                    },
+                },
+            ],
+        }
+    ],
+    max_tokens=50,  # Short descriptions only
+    temperature=0.3,  # Lower = more consistent/deterministic
+)
+```
+
+**Key parameter choices:**
+- `detail: "low"`: Uses lower-resolution image analysis (faster, cheaper, sufficient for costumes)
+- `max_tokens: 50`: Enforces brevity
+- `temperature: 0.3`: Reduces randomness, more consistent descriptions
+
+**Confidence estimation challenge:**
+
+OpenAI doesn't provide confidence scores for vision tasks. We implemented a heuristic:
+
+```python
+def _estimate_confidence(self, response) -> float:
+    # Check completion status
+    if response.choices[0].finish_reason != "stop":
+        return 0.5
+
+    # Check response length
+    word_count = len(description.split())
+    if 3 <= word_count <= 10:
+        return 0.9  # Good length
+    elif word_count < 3:
+        return 0.6  # Too short, uncertain
+    else:
+        return 0.75  # Longer, moderate confidence
+```
+
+**Limitations:**
+- This is a proxy metric, not true model confidence
+- Future improvement: Use logprobs API if OpenAI adds it for vision
+- For now, serves as a rough quality indicator
+
+**Standalone testing:**
+
+Added CLI interface for testing:
+
+```bash
+python classify_costume.py detection_20241026_121049.jpg
+```
+
+Output:
+```
+Results:
+  Description: person in red jacket and jeans
+  Confidence: 0.90
+```
+
+### Integration: detect_and_classify.py
+
+**Full pipeline script:**
+
+Created `detect_and_classify.py` that combines:
+1. RTSP stream capture (from DoorBird)
+2. YOLOv8 person detection
+3. Person crop extraction
+4. OpenAI Vision costume classification
+5. Annotated frame saving
+
+**Pipeline flow:**
+
+```
+Frame from DoorBird
+  ↓
+YOLOv8 person detection
+  ↓
+Extract bounding box coords
+  ↓
+Crop person from frame: frame[y1:y2, x1:x2]
+  ↓
+Save crop: person_TIMESTAMP.jpg
+  ↓
+OpenAI Vision classification
+  ↓
+Print costume description
+  ↓
+Annotate full frame with costume label
+  ↓
+Save annotated frame: detection_TIMESTAMP.jpg
+```
+
+**Detection parameters:**
+
+```python
+DETECTION_INTERVAL = 30  # Process every 30th frame (~1 fps)
+PERSON_CONFIDENCE_THRESHOLD = 0.5  # YOLO confidence
+COOLDOWN_SECONDS = 3  # Avoid duplicate detections
+```
+
+**Why 3-second cooldown?**
+- Increased from 2 seconds in `detect_people.py`
+- Gives OpenAI API time to respond (~1-2 seconds)
+- Prevents overwhelming the API with duplicate detections
+- Ensures each person is only classified once
+
+**Example output:**
+
+```
+👤 Person detected! (#1)
+   Confidence: 0.87
+   Saved crop: person_20241026_153045.jpg
+   🎨 Classifying costume...
+   🎭 Costume: witch with purple hat and broom
+   📊 Classification confidence: 0.90
+   Saved annotated frame: detection_20241026_153045.jpg
+```
+
+**File outputs:**
+
+For each detection, saves:
+1. `person_TIMESTAMP.jpg`: Cropped person image (sent to OpenAI)
+2. `detection_TIMESTAMP.jpg`: Full frame with bounding box + costume label
+
+**Future database integration:**
+
+Added TODO comment for Supabase logging:
+
+```python
+# TODO: Log to Supabase
+# Future: Send {description, confidence, timestamp} to Supabase
+```
+
+### Dependencies Added
+
+**Updated pyproject.toml:**
+
+```toml
+dependencies = [
+    "opencv-python>=4.12.0.88",
+    "openai>=1.58.1",  # NEW: OpenAI Python SDK
+    "python-dotenv>=1.1.1",
+    "ultralytics>=8.3.63",
+]
+```
+
+**Updated .env.example:**
+
+```bash
+# OpenAI API for costume classification (using GPT-4 Vision)
+OPENAI_API_KEY=your_openai_api_key
+```
+
+Removed Baseten references since we're using OpenAI instead.
+
+### Testing Strategy
+
+**Local testing plan:**
+1. Test `classify_costume.py` standalone on saved detection images
+2. Test `detect_and_classify.py` with live RTSP stream
+3. Verify OpenAI API responses are descriptive and concise
+4. Check performance impact of API calls
+
+**Performance considerations:**
+
+**Latency:**
+- YOLO inference: ~200-250ms
+- OpenAI Vision API: ~1000-2000ms (network + inference)
+- Total time per detection: ~1.2-2.5 seconds
+- Acceptable for Halloween use case (not real-time video)
+
+**Cost estimation:**
+
+OpenAI GPT-4o pricing (as of Oct 2024):
+- Vision input: $0.00265 per image (low detail)
+- Text output: ~$0.01 per 1K tokens
+
+Per detection cost:
+- Image: $0.00265
+- Description (~10 tokens): ~$0.0001
+- **Total: ~$0.003 per costume**
+
+Halloween night estimate:
+- 100 trick-or-treaters: $0.30
+- 200 trick-or-treaters: $0.60
+- 500 (busy night): $1.50
+
+**Much cheaper than expected!**
+
+### Key Learnings
+
+**OpenAI Vision quality:**
+- GPT-4o is excellent at describing costumes
+- Picks up on details (colors, accessories, props)
+- Handles creative/unusual costumes well
+- Few-shot prompting really helps with output format
+
+**Prompt engineering matters:**
+- Without examples, got verbose descriptions
+- With examples, consistently get 3-8 word phrases
+- "ONLY the costume description" prevents chattiness
+- Temperature 0.3 gives good balance of accuracy and consistency
+
+**Development workflow:**
+- Created modular `CostumeClassifier` class for reusability
+- Standalone CLI testing (`classify_costume.py`) validates API integration
+- Integrated script (`detect_and_classify.py`) proves end-to-end pipeline
+- Git workflow (Mac → commit → Pi pull) continues to work well
+
+**Architecture validation:**
+- Offloading ML to cloud API was the right call
+- Pi only handles person detection + orchestration
+- No thermal issues, CPU stays manageable
+- Network latency is acceptable for this use case
+
+### What's Working Now
+
+- [x] Set up Raspberry Pi 5 (OS, SSH, networking)
+- [x] Test RTSP connection to DoorBird
+- [x] Implement YOLO person detection on Pi
+- [x] Implement OpenAI Vision costume classification
+- [x] Integrate costume classification into detection pipeline
+- [ ] Create Supabase schema and enable Realtime
+- [ ] Add Supabase logging to detection script
+- [ ] Build Next.js dashboard with live updates
+- [ ] End-to-end testing
+- [ ] Deploy and prep for Halloween night
+
+### Next Steps
+
+**Immediate priorities:**
+1. Set up Supabase project
+   - Create `sightings` table schema
+   - Enable Realtime
+   - Configure RLS policies
+2. Add Supabase logging to `detect_and_classify.py`
+   - POST costume descriptions to Supabase
+   - Include timestamp, description, confidence
+3. Test end-to-end: Detection → Classification → Database
+
+**After database integration:**
+4. Build Next.js dashboard
+   - Real-time costume feed
+   - Timeline graph
+   - Word cloud / tag visualization
+5. Deploy to Vercel
+6. Final testing with live data
+7. Prepare for Halloween night 🎃
+
+---
+
 ## Technical Decisions Log
 
 | Decision | Options Considered | Choice | Rationale |
 |----------|-------------------|--------|-----------|
 | Classification approach | Fixed labels vs. Open-ended | Open-ended | Captures creative costumes, more interesting data |
-| ML inference location | Local (Pi) vs. Cloud (Baseten) | Baseten | Reliability, auto-scaling, model flexibility |
+| ML inference location | Local (Pi) vs. Cloud API | Cloud (OpenAI) | Reliability, quality, cost-effective for one-night event |
+| Vision model | Baseten custom model vs. OpenAI Vision | OpenAI GPT-4o | Faster development, excellent quality, negligible cost |
 | Person detection | YOLO vs. Faster R-CNN vs. MobileNet | YOLOv8n | Good balance of speed/accuracy, runs well on Pi |
 | Database | Supabase vs. Firebase vs. self-hosted Postgres | Supabase | Realtime built-in, good DX, easy RLS |
 | Frontend host | Vercel vs. Netlify vs. self-hosted | Vercel | Best Next.js integration, edge functions |
