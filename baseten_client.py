@@ -38,34 +38,39 @@ class BasetenClient:
         self, image: Union[str, np.ndarray, Image.Image]
     ) -> str:
         """
-        Convert image to base64 string.
+        Convert image to base64 string with data URI preamble.
 
         Args:
             image: Can be a file path, numpy array (OpenCV), or PIL Image
 
         Returns:
-            Base64 encoded image string
+            Base64 encoded image string with data:image/png;base64, preamble
         """
+        b64_data = None
+
         if isinstance(image, str):
             # File path
             with open(image, "rb") as f:
-                return base64.b64encode(f.read()).decode("utf-8")
+                b64_data = base64.b64encode(f.read()).decode("utf-8")
         elif isinstance(image, np.ndarray):
             # OpenCV/numpy array
             pil_img = Image.fromarray(image)
             buffered = BytesIO()
             pil_img.save(buffered, format="PNG")
-            return base64.b64encode(buffered.getvalue()).decode("utf-8")
+            b64_data = base64.b64encode(buffered.getvalue()).decode("utf-8")
         elif isinstance(image, Image.Image):
             # PIL Image
             buffered = BytesIO()
             image.save(buffered, format="PNG")
-            return base64.b64encode(buffered.getvalue()).decode("utf-8")
+            b64_data = base64.b64encode(buffered.getvalue()).decode("utf-8")
         else:
             raise ValueError(
                 f"Unsupported image type: {type(image)}. "
                 "Expected str (path), np.ndarray, or PIL.Image"
             )
+
+        # Add data URI preamble required by Qwen-VL
+        return f"data:image/png;base64,{b64_data}"
 
     def classify_costume(
         self, image: Union[str, np.ndarray, Image.Image], prompt: Optional[str] = None
@@ -109,7 +114,15 @@ class BasetenClient:
         except requests.exceptions.Timeout:
             return "Error: Request timed out (model may be cold starting)"
         except requests.exceptions.RequestException as e:
-            return f"Error: API request failed - {str(e)}"
+            # Try to get detailed error message from response
+            error_details = str(e)
+            try:
+                if hasattr(e, 'response') and e.response is not None:
+                    error_body = e.response.text
+                    error_details = f"{str(e)}\nResponse: {error_body}"
+            except:
+                pass
+            return f"Error: API request failed - {error_details}"
 
     def analyze_image(
         self, image: Union[str, np.ndarray, Image.Image], prompt: str

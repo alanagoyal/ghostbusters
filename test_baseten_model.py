@@ -93,6 +93,33 @@ def main():
 
     try:
         result = client.classify_costume(test_image)
+
+        # Check if result is an error message
+        if result.startswith("Error:"):
+            print("   ❌ Classification failed!")
+            print()
+            print("   Error Details:")
+            print("   " + "-" * 40)
+            print(f"   {result}")
+            print("   " + "-" * 40)
+            print()
+
+            # Check for specific errors
+            if "not ready" in result.lower():
+                print("⏳ Model is still deploying!")
+                print()
+                print("   The model needs more time to build and deploy.")
+                print("   This usually takes 5-15 minutes for first deployment.")
+                print()
+                print("   Monitor progress at:")
+                print("   https://app.baseten.co/models/nwxd8o7q/logs")
+                print()
+                print("   Run this script again in a few minutes.")
+                sys.exit(1)
+            else:
+                sys.exit(1)
+
+        # Success - got actual classification result
         print("   ✅ Classification successful!")
         print()
         print("   Result:")
