@@ -49,13 +49,13 @@ def classify_costume(frame):
     pil_img.save(buffered, format="PNG")
     image_b64 = f"data:image/png;base64,{base64.b64encode(buffered.getvalue()).decode('utf-8')}"
 
-    # Call Baseten API - use simpler prompt
-    prompt = "What is this person wearing?"
+    # Call Baseten API - use same format that worked in test
+    prompt = "Describe this image."
 
     payload = {
         "image": image_b64,
         "prompt": prompt,
-        "max_new_tokens": 100,
+        "max_new_tokens": 150,
         "temperature": 0.7,
     }
 
