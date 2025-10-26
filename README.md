@@ -60,17 +60,40 @@ uv run python test_doorbird_connection.py
 
 ## 🛠️ Development
 
-This project uses [uv](https://docs.astral.sh/uv/) for fast, reliable Python dependency management:
+This project uses modern Python tooling from [Astral](https://astral.sh/):
+- **uv** - Fast, reliable package management
+- **ruff** - Lightning-fast linting and formatting
+
+### Package Management
 
 ```bash
+# Install dependencies
+uv sync
+
 # Add a new dependency
 uv add package-name
 
+# Add a dev dependency
+uv add --dev package-name
+
 # Run a script
 uv run python script.py
+```
 
-# Sync dependencies after pulling changes
-uv sync
+### Code Quality
+
+```bash
+# Check code with linter
+uv run ruff check .
+
+# Auto-fix linting issues
+uv run ruff check . --fix
+
+# Format code
+uv run ruff format .
+
+# Run both linting and formatting
+uv run ruff check . --fix && uv run ruff format .
 ```
 
 ## 📝 License

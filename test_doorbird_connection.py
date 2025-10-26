@@ -3,9 +3,10 @@
 Test script to verify DoorBird RTSP connection and capture a test frame.
 """
 
-import cv2
-import sys
 import os
+import sys
+
+import cv2
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -40,7 +41,9 @@ if not cap.isOpened():
     print("❌ ERROR: Could not connect to DoorBird RTSP stream")
     print()
     print("Possible issues:")
-    print("  1. Check that the API user has 'API-Operator' and 'Live Video' permissions")
+    print(
+        "  1. Check that the API user has 'API-Operator' and 'Live Video' permissions"
+    )
     print("  2. Verify the IP address is correct: " + DOORBIRD_IP)
     print("  3. Check network connectivity to the DoorBird")
     print("  4. Verify credentials are correct")
@@ -55,7 +58,7 @@ ret, frame = cap.read()
 
 if ret and frame is not None:
     height, width, channels = frame.shape
-    print(f"✅ Successfully captured frame!")
+    print("✅ Successfully captured frame!")
     print(f"   Frame size: {width}x{height}")
     print(f"   Channels: {channels}")
     print()
