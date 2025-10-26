@@ -110,10 +110,159 @@ Clean separation of concerns:
 
 ---
 
-## Next Steps
+## Day 2: Raspberry Pi Setup & DoorBird Integration
 
-- [ ] Set up Raspberry Pi 5 (OS, SSH, networking)
-- [ ] Test RTSP connection to DoorBird
+### Hardware Assembly
+
+**Components used:**
+- Raspberry Pi 5 (8GB RAM)
+- 128GB microSD card (pre-flashed with Raspberry Pi OS from March 2024)
+- CanaKit case with cooling fan and heatsink
+- CanaKit 45W power supply
+- USB microSD card reader
+
+**Assembly notes:**
+- The microSD slot is on the **bottom/underside** of the Pi board
+- Insert card with metal contacts facing UP (toward the board)
+- MacBook Air M2 required USB-C to USB-A adapter for the USB-A card reader
+
+### OS Flashing & Pre-Configuration
+
+**Tool:** Raspberry Pi Imager on MacBook
+
+**Key decision:** Re-flash the pre-installed OS with fresh Raspberry Pi OS to enable headless setup
+
+**Imager configuration (⚙️ settings):**
+- **Hostname:** `halloween-pi.local`
+- **Username:** `pi`
+- **Password:** Set securely
+- **WiFi:** Pre-configured home network SSID and password
+- **SSH:** Enabled with password authentication
+- **Locale:** US timezone and keyboard
+
+**Why re-flash?**
+- Pre-installed OS from March 2024 was outdated
+- No way to pre-configure WiFi/SSH without keyboard/monitor
+- Fresh OS with pre-baked settings enables true headless operation
+
+**First boot:**
+- Inserted microSD into Pi
+- Connected power supply
+- Green LED flashing = successful boot
+- Waited 2-3 minutes for first-boot expansion and WiFi connection
+
+### Network & SSH Setup
+
+**Connection test:**
+```bash
+ping halloween-pi.local
+# Success: 192.168.4.95 (8ms latency)
+```
+
+**SSH connection:**
+```bash
+ssh pi@halloween-pi.local
+# First connection: Added to known hosts
+# Entered password
+# Success: pi@halloween-pi:~ $
+```
+
+**Result:** Fully headless operation achieved! No keyboard, mouse, or monitor needed.
+
+### Development Environment Setup
+
+**System updates:**
+```bash
+sudo apt update && sudo apt upgrade -y
+# ~5 minutes, all packages updated
+```
+
+**Video processing dependencies:**
+```bash
+sudo apt install -y python3-opencv gstreamer1.0-plugins-good \
+    gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly \
+    gstreamer1.0-libav ffmpeg git
+# Installed OpenCV, GStreamer codecs, FFmpeg
+```
+
+**Modern Python tooling (Astral stack):**
+```bash
+# Install uv (package manager)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+source $HOME/.local/bin/env
+uv --version  # 0.9.5
+
+# Note: ruff already configured in pyproject.toml on main branch
+```
+
+### Code Deployment
+
+**Repository clone:**
+```bash
+mkdir -p ~/projects
+cd ~/projects
+git clone https://github.com/alanagoyal/costume-classifier.git
+cd costume-classifier
+```
+
+**Environment configuration:**
+Created `.env` file with DoorBird credentials:
+```bash
+nano .env
+# Added DOORBIRD_IP, DOORBIRD_USERNAME, DOORBIRD_PASSWORD
+# Left BASETEN_API_KEY and SUPABASE_* for later
+```
+
+**Python dependencies:**
+```bash
+uv sync
+# Created .venv
+# Installed opencv-python (4.12.0.88)
+# Installed python-dotenv (1.1.1)
+# Total time: ~1-2 minutes
+```
+
+### DoorBird Connection Test
+
+**Test script:**
+```bash
+uv run python test_doorbird_connection.py
+```
+
+**Results:**
+- ✅ Successfully connected to RTSP stream at `rtsp://***@192.168.4.49/mpeg/media.amp`
+- ✅ Captured 1280x720 RGB frame (3 channels)
+- ✅ Saved test frame as `test_doorbird_frame.jpg`
+- ✅ Total time: ~2 seconds
+
+**What this proves:**
+1. Pi can reach DoorBird over LAN
+2. RTSP streaming works
+3. OpenCV can process video frames
+4. Environment variables loaded correctly
+5. The entire edge capture pipeline is operational
+
+### Key Learnings
+
+**Hardware:**
+- Raspberry Pi 5's microSD slot location is non-obvious (bottom of board)
+- USB-C MacBooks need adapters for USB-A peripherals
+- Pre-flashed SD cards are outdated—always re-flash for production
+
+**Networking:**
+- `.local` mDNS resolution works reliably on home networks
+- First boot takes 2-3 minutes (filesystem expansion, services starting)
+- WiFi pre-configuration in Raspberry Pi Imager is rock-solid
+
+**Tooling choices validated:**
+- **uv** is blazing fast even on ARM64 (Raspberry Pi)
+- Headless SSH workflow is smooth once configured
+- Modern Python tooling (uv + ruff) works identically on Pi and Mac
+
+### What's Working Now
+
+- [x] Set up Raspberry Pi 5 (OS, SSH, networking)
+- [x] Test RTSP connection to DoorBird
 - [ ] Implement YOLO person detection on Pi
 - [ ] Deploy vision-language model to Baseten
 - [ ] Build Pi → Baseten → Supabase integration
@@ -133,6 +282,9 @@ Clean separation of concerns:
 | Person detection | YOLO vs. Faster R-CNN vs. MobileNet | YOLOv8n | Good balance of speed/accuracy, runs well on Pi |
 | Database | Supabase vs. Firebase vs. self-hosted Postgres | Supabase | Realtime built-in, good DX, easy RLS |
 | Frontend host | Vercel vs. Netlify vs. self-hosted | Vercel | Best Next.js integration, edge functions |
+| Package manager | pip vs. poetry vs. uv | uv | 10-100x faster, built-in venv, modern tooling |
+| Linter/formatter | Black + isort + flake8 vs. ruff | ruff | Single tool, Rust-powered, extremely fast |
+| Pi OS flashing | Use pre-installed vs. Re-flash | Re-flash | Enables headless WiFi/SSH pre-configuration |
 
 ---
 
@@ -160,4 +312,4 @@ Clean separation of concerns:
 
 ---
 
-*Last updated: 2025-10-25*
+*Last updated: 2025-10-26*
