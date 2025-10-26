@@ -52,6 +52,73 @@ Test your DoorBird connection:
 uv run python test_doorbird_connection.py
 ```
 
+## 🥧 Raspberry Pi Management
+
+### Connecting to Your Pi
+
+**SSH into the Pi:**
+```bash
+ssh pi@halloween-pi.local
+```
+
+**When you're done working:**
+```bash
+# Simply exit the SSH session
+exit
+# OR press Ctrl+D
+```
+
+### Power Management
+
+**When to shut down:**
+- Not using the Pi for several hours/days
+- Moving the Pi to a different location
+- Before unplugging power
+
+**How to safely shut down:**
+```bash
+# Shut down (safe to unplug after LED stops blinking)
+sudo shutdown -h now
+
+# OR
+sudo poweroff
+```
+
+**How to reboot:**
+```bash
+sudo reboot
+```
+
+**Leaving the Pi running:**
+- ✅ Safe to leave running 24/7 (designed for it)
+- ✅ Uses ~3-5W of power when idle
+- ✅ SSH sessions can be closed without affecting the Pi
+- ✅ Good practice if you'll use it again within a few hours
+
+**Best practice:**
+- Exit SSH when done (keeps connection clean)
+- Leave Pi powered on if using it regularly
+- Only shut down if not using for extended periods or moving hardware
+
+### Monitoring Pi Health
+
+**Check temperature:**
+```bash
+vcgencmd measure_temp
+# Normal: 40-60°C idle, up to 70°C under load
+# Warning: 80°C+ (check cooling)
+```
+
+**Check disk space:**
+```bash
+df -h
+```
+
+**Update system packages:**
+```bash
+sudo apt update && sudo apt upgrade -y
+```
+
 ## 📖 Documentation
 
 - [DoorBird Setup Guide](DOORBIRD_SETUP.md) - Camera configuration and RTSP setup
