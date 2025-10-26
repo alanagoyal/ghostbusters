@@ -65,7 +65,7 @@ This will install all dependencies including the `openai` package.
 Run the test script to verify everything works:
 
 ```bash
-python costume_classifier.py
+uv run python costume_classifier.py
 ```
 
 Expected output:
@@ -105,7 +105,7 @@ print(f"Details: {result['details']}")
 Run the complete pipeline with:
 
 ```bash
-python detect_and_classify_costumes.py
+uv run python detect_and_classify_costumes.py
 ```
 
 This script:
