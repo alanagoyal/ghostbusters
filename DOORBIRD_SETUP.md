@@ -46,7 +46,12 @@ The devices appear to be connected via **Power over Ethernet (PoE)**, which is w
    - Run it from your Raspberry Pi 5 (which should be on the same network)
    - It will capture a test frame and save it
 
-2. **Install Required Dependencies on Raspberry Pi:**
+2. **Install uv (Python Package Manager):**
+   ```bash
+   curl -LsSf https://astral.sh/uv/install.sh | sh
+   ```
+
+3. **Install System Dependencies on Raspberry Pi:**
    ```bash
    sudo apt update
    sudo apt install -y python3-opencv gstreamer1.0-plugins-good \
@@ -54,7 +59,7 @@ The devices appear to be connected via **Power over Ethernet (PoE)**, which is w
        gstreamer1.0-libav ffmpeg
    ```
 
-3. **Set Up Environment Variables:**
+4. **Set Up Environment Variables:**
    Create a `.env` file on your Raspberry Pi (see `.env.example` for template):
    ```bash
    DOORBIRD_IP=your_doorbird_ip
@@ -67,9 +72,14 @@ The devices appear to be connected via **Power over Ethernet (PoE)**, which is w
    SUPABASE_KEY=your_supabase_key
    ```
 
-4. **Test the Connection:**
+5. **Install Python Dependencies:**
    ```bash
-   python3 test_doorbird_connection.py
+   uv sync
+   ```
+
+6. **Test the Connection:**
+   ```bash
+   uv run python test_doorbird_connection.py
    ```
 
    If successful, you should see:
