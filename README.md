@@ -44,12 +44,17 @@ Raspberry Pi edge computer vision system that watches a DoorBird doorbell camera
    # Edit .env with your actual credentials
    ```
 
-### Running the Test Script
+### Running Test Scripts
 
-Test your DoorBird connection:
-
+**Test DoorBird connection:**
 ```bash
 uv run python test_doorbird_connection.py
+```
+
+**Test costume classification:**
+```bash
+# After deploying Baseten model (see BASETEN_DEPLOYMENT.md)
+uv run python costume_classifier.py path/to/costume_image.jpg
 ```
 
 ## 🥧 Raspberry Pi Management
@@ -121,8 +126,16 @@ sudo apt update && sudo apt upgrade -y
 
 ## 📖 Documentation
 
+### Setup Guides
 - [DoorBird Setup Guide](DOORBIRD_SETUP.md) - Camera configuration and RTSP setup
+- [Baseten Deployment Guide](BASETEN_DEPLOYMENT.md) - Deploy Llama 3.2 Vision model
+
+### Architecture & Design
 - [Project Specification](PROJECT_SPEC.md) - Complete system architecture
+- [Costume Classification Architecture](COSTUME_CLASSIFICATION_ARCHITECTURE.md) - VLM approach decision
+- [Test Plan](TEST_PLAN.md) - Comprehensive testing strategy
+
+### Development Notes
 - [Blog Notes](BLOG_NOTES.md) - Implementation journey and decisions
 
 ## 🛠️ Development
