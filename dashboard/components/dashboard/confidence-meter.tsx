@@ -14,12 +14,6 @@ export function ConfidenceMeter({ detections }: ConfidenceMeterProps) {
     return (sum / detections.length) * 100
   }, [detections])
 
-  const getConfidenceColor = (confidence: number) => {
-    if (confidence >= 90) return 'text-green-600'
-    if (confidence >= 75) return 'text-blue-600'
-    if (confidence >= 60) return 'text-yellow-600'
-    return 'text-red-600'
-  }
 
   const getConfidenceLabel = (confidence: number) => {
     if (confidence >= 90) return 'Excellent'
@@ -36,7 +30,7 @@ export function ConfidenceMeter({ detections }: ConfidenceMeterProps) {
       </CardHeader>
       <CardContent>
         <div className="flex flex-col items-center justify-center py-4">
-          <div className={`text-5xl font-bold ${getConfidenceColor(avgConfidence)}`}>
+          <div className={`text-5xl font-bold`}>
             {avgConfidence.toFixed(1)}%
           </div>
           <div className="text-sm text-muted-foreground mt-2">
