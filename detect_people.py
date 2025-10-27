@@ -2,6 +2,7 @@
 """
 Person detection script using YOLOv8n on DoorBird RTSP stream.
 Detects people in real-time and saves frames with bounding boxes.
+Uploads detections to Supabase for dashboard display.
 """
 
 import os
@@ -11,6 +12,8 @@ from datetime import datetime
 import cv2
 from dotenv import load_dotenv
 from ultralytics import YOLO
+
+from supabase_client import SupabaseClient
 
 # Load environment variables
 load_dotenv()
@@ -36,6 +39,15 @@ print(f"📹 Connecting to DoorBird at {DOORBIRD_IP}")
 print("🤖 Loading YOLOv8n model...")
 model = YOLO("yolov8n.pt")  # Will download on first run (~6MB)
 print("✅ Model loaded!")
+
+# Initialize Supabase client (optional - graceful degradation if not configured)
+supabase_client = None
+try:
+    supabase_client = SupabaseClient()
+    print(f"✅ Connected to Supabase (Device: {supabase_client.device_id})")
+except Exception as e:
+    print(f"⚠️  Supabase not configured: {e}")
+    print("   Detections will only be saved locally")
 
 # Open RTSP stream
 cap = cv2.VideoCapture(rtsp_url)
@@ -103,22 +115,55 @@ try:
                             2,
                         )
 
-        # If person detected, save frame and print info
+        # If person detected, save frame and upload to Supabase
         if people_detected:
             current_time = time.time()
 
             # Avoid duplicate detections within 2 seconds
             if current_time - last_detection_time > 2:
                 detection_count += 1
-                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                filename = f"detection_{timestamp}.jpg"
+                detection_timestamp = datetime.now()
+                timestamp_str = detection_timestamp.strftime("%Y%m%d_%H%M%S")
+                filename = f"detection_{timestamp_str}.jpg"
 
+                # Save frame locally
                 cv2.imwrite(filename, frame)
 
                 print(f"👤 Person detected! (#{detection_count})")
-                print(f"   Saved: {filename}")
-                print()
+                print(f"   Saved locally: {filename}")
 
+                # Get bounding box from first detection for database
+                # (if multiple people, we'll use the first one for now)
+                first_box = None
+                max_confidence = 0.0
+                for result in results:
+                    boxes = result.boxes
+                    for box in boxes:
+                        if int(box.cls[0]) == 0:  # person class
+                            conf = float(box.conf[0])
+                            if conf > 0.5 and conf > max_confidence:
+                                max_confidence = conf
+                                x1, y1, x2, y2 = map(int, box.xyxy[0])
+                                first_box = {
+                                    "x1": x1,
+                                    "y1": y1,
+                                    "x2": x2,
+                                    "y2": y2,
+                                }
+
+                # Upload to Supabase if configured
+                if supabase_client and first_box:
+                    try:
+                        supabase_client.save_detection(
+                            image_path=filename,
+                            timestamp=detection_timestamp,
+                            confidence=max_confidence,
+                            bounding_box=first_box,
+                        )
+                    except Exception as e:
+                        print(f"   ⚠️  Supabase upload failed: {e}")
+
+                print()
                 last_detection_time = current_time
 
 except KeyboardInterrupt:
