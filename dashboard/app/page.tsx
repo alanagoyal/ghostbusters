@@ -121,13 +121,13 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto pt-20 space-y-6">
-        <div className="space-y-4">
-          <h1 className="text-4xl font-bold tracking-tight">
+    <div className="min-h-screen bg-background pt-10 sm:pt-20">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 pb-6 space-y-6">
+        <div className="space-y-3 sm:space-y-4">
+          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">
             Costume Classifier
           </h1>
-          <p className="max-w-2xl text-muted-foreground text-sm">
+          <p className="text-sm sm:text-base text-muted-foreground max-w-2xl">
             I hacked my doorbell to detect trick-or-treaters using computer
             vision, classify their costumes with AI, and track the data in
             real-time. The system processes the video feed on a Raspberry Pi 5
@@ -142,7 +142,7 @@ export default function Dashboard() {
           </div>
         )}
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatsCard
             title="Total Visitors"
             value={detections.length}
@@ -173,12 +173,16 @@ export default function Dashboard() {
           <ConfidenceMeter detections={detections} />
         </div>
 
-        <div className="grid gap-4 md:grid-cols-3">
-          <CostumeDistribution costumes={costumeStats.costumes} />
-          <LiveFeed detections={detections} limit={8} />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="lg:col-span-2">
+            <CostumeDistribution costumes={costumeStats.costumes} />
+          </div>
+          <div className="lg:col-span-1">
+            <LiveFeed detections={detections} limit={8} />
+          </div>
         </div>
 
-        <div className="grid gap-4">
+        <div className="mt-6">
           <ActivityTimeline detections={detections} />
         </div>
       </div>
