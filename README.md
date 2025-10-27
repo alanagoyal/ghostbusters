@@ -8,9 +8,10 @@ Raspberry Pi edge computer vision system that watches a DoorBird doorbell camera
 - **Camera:** DoorBird doorbell (RTSP stream)
 - **Person Detection:** YOLOv8n
 - **Costume Classification:** Baseten API (vision-language model)
-- **Database:** Supabase (with Realtime)
-- **Frontend:** Next.js on Vercel
-- **Package Manager:** uv (by Astral)
+- **Database & Storage:** Supabase (with Realtime via WebSocket)
+- **Frontend:** Next.js 16 + React 19 + TypeScript + Tailwind CSS v4
+- **Hosting:** Vercel (dashboard)
+- **Package Manager:** uv (by Astral) for Python, npm for JavaScript
 
 ## 🚀 Quick Start
 
@@ -137,6 +138,51 @@ sudo apt update && sudo apt upgrade -y
 - [Supabase Setup Guide](SUPABASE_SETUP.md) - Database and storage configuration
 - [Project Specification](PROJECT_SPEC.md) - Complete system architecture
 - [Blog Notes](BLOG_NOTES.md) - Implementation journey and decisions
+
+## 📊 Dashboard
+
+The project includes a real-time Next.js dashboard for monitoring detections live.
+
+### Dashboard Setup
+
+1. **Navigate to dashboard directory:**
+   ```bash
+   cd dashboard
+   ```
+
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+
+3. **Configure environment:**
+   ```bash
+   cp .env.example .env.local
+   # Add your Supabase credentials
+   ```
+
+4. **Run development server:**
+   ```bash
+   npm run dev
+   ```
+
+5. **Open dashboard:**
+   Visit [http://localhost:3000](http://localhost:3000)
+
+### How Realtime Works
+
+The dashboard uses Supabase Realtime to show new detections instantly:
+
+1. **Enable Realtime** for the `person_detections` table (run in Supabase SQL Editor):
+   ```sql
+   alter publication supabase_realtime add table person_detections;
+   ```
+
+2. The dashboard subscribes to changes via WebSocket
+3. New detections appear immediately without page refresh
+4. Sub-second latency from detection to display
+
+See [dashboard/SETUP.md](dashboard/SETUP.md) for detailed instructions.
 
 ## 🛠️ Development
 

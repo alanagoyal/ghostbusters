@@ -825,4 +825,301 @@ Current pipeline (end-to-end):
 
 ---
 
-*Last updated: 2025-10-27 (Day 4: Supabase integration complete)*
+## Day 5: Next.js Dashboard with Supabase Realtime
+
+### Setting Up the Dashboard
+
+**Goal:** Build a live dashboard that shows person detections in real-time as they happen, without requiring page refreshes.
+
+**Why Next.js?**
+- React 19 with modern features
+- Great TypeScript support
+- Easy deployment to Vercel
+- Server and client components for optimal performance
+- Built-in routing and optimization
+
+### Project Initialization
+
+**Created new Next.js project:**
+```bash
+cd costume-classifier
+mkdir dashboard
+cd dashboard
+npm init -y
+npm install next@latest react@latest react-dom@latest
+npm install --save-dev typescript @types/react @types/react-dom @types/node
+```
+
+**Added Tailwind CSS v4:**
+```bash
+npm install tailwindcss@latest postcss autoprefixer
+npm install @tailwindcss/postcss
+```
+
+**Key configuration files:**
+- `postcss.config.js` - Uses new `@tailwindcss/postcss` plugin (v4 requirement)
+- `tailwind.config.js` - Tailwind v4 configuration
+- `tsconfig.json` - TypeScript with React 19 JSX runtime
+- `app/globals.css` - Tailwind directives
+
+**Initial challenge:**
+Hit PostCSS error when first running dev server - Tailwind v4 moved the PostCSS plugin to a separate package. Fixed by:
+1. Installing `@tailwindcss/postcss`
+2. Updating `postcss.config.js` to use `'@tailwindcss/postcss'` instead of `'tailwindcss'`
+
+### Supabase Client Setup
+
+**Installed Supabase JS client:**
+```bash
+npm install @supabase/supabase-js
+```
+
+**Created `lib/supabase.ts`:**
+```typescript
+import { createClient } from '@supabase/supabase-js'
+
+export const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  {
+    realtime: {
+      params: {
+        eventsPerSecond: 10
+      }
+    }
+  }
+)
+```
+
+**Key decisions:**
+- Use `NEXT_PUBLIC_*` env vars (already compatible with Python backend)
+- Configure realtime with `eventsPerSecond` limit
+- Use anon key (public read access via RLS policies)
+
+**Environment variables (`.env.local`):**
+```bash
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+```
+
+### Building the Dashboard Component
+
+**Main page (`app/page.tsx`) architecture:**
+
+1. **Type definitions:**
+```typescript
+interface PersonDetection {
+  id: string
+  timestamp: string
+  confidence: number
+  bounding_box: any
+  image_url: string | null
+  device_id: string
+  costume_classification: string | null
+  costume_confidence: number | null
+}
+```
+
+2. **Initial data fetch:**
+```typescript
+useEffect(() => {
+  async function fetchDetections() {
+    const { data, error } = await supabase
+      .from('person_detections')
+      .select('*')
+      .order('timestamp', { ascending: false })
+      .limit(50)
+
+    if (error) throw error
+    setDetections(data || [])
+  }
+  fetchDetections()
+}, [])
+```
+
+3. **Realtime subscription:**
+```typescript
+useEffect(() => {
+  const channel = supabase
+    .channel('person_detections')
+    .on(
+      'postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'person_detections' },
+      (payload) => {
+        console.log('Received new detection:', payload)
+        const newDetection = payload.new as PersonDetection
+        setDetections((prev) => [newDetection, ...prev])
+      }
+    )
+    .subscribe((status) => {
+      console.log('Subscription status:', status)
+    })
+
+  return () => {
+    supabase.removeChannel(channel)
+  }
+}, [])
+```
+
+**UI features:**
+- Loading state while fetching initial data
+- Error display for connection issues
+- Card-based layout with Tailwind
+- Display detection count, device ID, timestamp
+- Show confidence scores
+- Future: costume classification display
+
+### Enabling Supabase Realtime
+
+**Critical step:** The subscription code alone doesn't work - you must enable Realtime in Supabase!
+
+**Updated migration file (`supabase_migration.sql`):**
+```sql
+-- ============================================================================
+-- 5. Enable Realtime for person_detections table
+-- ============================================================================
+
+-- Enable realtime broadcasts for INSERT/UPDATE/DELETE events
+alter publication supabase_realtime add table person_detections;
+```
+
+**How Supabase Realtime works:**
+1. Postgres has a Write-Ahead Log (WAL) for all changes
+2. Supabase uses logical replication to listen to WAL
+3. When you add a table to `supabase_realtime` publication, changes broadcast to connected clients
+4. Your web app subscribes via WebSocket
+5. New rows trigger the callback instantly
+
+**To enable (run in Supabase SQL Editor):**
+```sql
+alter publication supabase_realtime add table person_detections;
+```
+
+### Debugging Realtime
+
+**Added logging to track subscription status:**
+- `console.log('Subscription status:', status)` - Shows SUBSCRIBED/CHANNEL_ERROR/TIMED_OUT
+- `console.log('Received new detection:', payload)` - Shows incoming data
+
+**Testing approach:**
+1. Open dashboard in browser
+2. Open browser console (F12)
+3. Look for "Subscription status: SUBSCRIBED"
+4. Insert test row in Supabase SQL Editor
+5. Watch for "Received new detection:" in console
+6. New row should appear in UI instantly
+
+**Initial issue:**
+Subscription showed SUBSCRIBED but no events received when adding rows. **Solution:** Enable Realtime publication for the table (see above).
+
+### Key Learnings
+
+**Tailwind CSS v4 breaking changes:**
+- PostCSS plugin moved to separate package `@tailwindcss/postcss`
+- Must explicitly install and configure
+- Error messages are clear about what's wrong
+
+**Supabase Realtime is not automatic:**
+- Just having a subscription in code isn't enough
+- Must explicitly add table to `supabase_realtime` publication
+- "Replication" in Supabase UI = "Realtime broadcasts" (confusing naming)
+- Not actually replicating to another database, just broadcasting changes to WebSocket clients
+
+**React 19 with Next.js:**
+- New JSX runtime requires `"jsx": "react-jsx"` in tsconfig
+- Client components need `'use client'` directive
+- Server components are default (great for data fetching)
+
+**Environment variable naming:**
+- `NEXT_PUBLIC_*` prefix makes vars available to browser
+- Using same var names as backend (Python) reduces confusion
+- `.env.local` is gitignored automatically by Next.js
+
+### Performance & Architecture
+
+**Initial page load:**
+- Fetches latest 50 detections from Supabase
+- ~100-200ms query time
+- Renders immediately with data
+
+**Realtime updates:**
+- WebSocket connection to Supabase Realtime
+- Sub-second latency from INSERT to UI update
+- No polling, no page refreshes needed
+- Graceful fallback if connection drops
+
+**State management:**
+```typescript
+const [detections, setDetections] = useState<PersonDetection[]>([])
+
+// On new detection, prepend to array
+setDetections((prev) => [newDetection, ...prev])
+```
+
+Simple state management with React hooks - no need for Redux/Zustand for this use case.
+
+**Cleanup:**
+```typescript
+return () => {
+  supabase.removeChannel(channel)
+}
+```
+
+Properly unsubscribes when component unmounts to prevent memory leaks.
+
+### Updated Checklist
+
+- [x] Set up Raspberry Pi 5 (OS, SSH, networking)
+- [x] Test RTSP connection to DoorBird
+- [x] Implement YOLO person detection on Pi
+- [x] Create Supabase project and schema
+- [x] Build database logging with Storage integration
+- [x] **Build Next.js dashboard with Realtime updates**
+- [x] **Enable Realtime for person_detections table**
+- [ ] Deploy dashboard to Vercel
+- [ ] Deploy vision-language model to Baseten
+- [ ] Integrate costume classification API call
+- [ ] End-to-end testing
+- [ ] Deploy and prep for Halloween night
+
+### What's Working Now
+
+Complete pipeline (except costume classification):
+1. ✅ DoorBird RTSP stream → Pi
+2. ✅ YOLO person detection
+3. ✅ Upload image to Supabase Storage
+4. ✅ Insert detection record to database
+5. ✅ **Dashboard fetches recent detections**
+6. ✅ **Dashboard receives real-time updates via WebSocket**
+7. ⏭️ Next: Deploy dashboard to Vercel
+8. ⏭️ Next: Add costume classification
+
+### Next Steps
+
+1. **Deploy dashboard to Vercel:**
+   - Connect GitHub repo
+   - Set environment variables
+   - Deploy with one click
+   - Test with public URL
+
+2. **Integrate Baseten for costume classification:**
+   - Set up Baseten account
+   - Deploy vision-language model
+   - Add API call after person detection
+   - Update detection records with costume descriptions
+
+3. **Polish dashboard UI:**
+   - Add image display from Storage URLs
+   - Better styling for detection cards
+   - Add filtering/search
+   - Show costume classifications when available
+
+4. **End-to-end testing:**
+   - Test complete flow: detection → storage → database → dashboard
+   - Multiple simultaneous detections
+   - Network failure scenarios
+   - Recovery from errors
+
+---
+
+*Last updated: 2025-10-27 (Day 5: Next.js dashboard with Realtime complete)*

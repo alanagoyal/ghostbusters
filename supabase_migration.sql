@@ -59,7 +59,14 @@ create policy "Service Update Access"
   using ( auth.role() = 'service_role' );
 
 -- ============================================================================
--- 5. Create storage bucket for detection images
+-- 5. Enable Realtime for person_detections table
+-- ============================================================================
+
+-- Enable realtime broadcasts for INSERT/UPDATE/DELETE events
+alter publication supabase_realtime add table person_detections;
+
+-- ============================================================================
+-- 6. Create storage bucket for detection images
 -- ============================================================================
 
 insert into storage.buckets (id, name, public)
@@ -67,7 +74,7 @@ values ('detection-images', 'detection-images', true)
 on conflict (id) do nothing;
 
 -- ============================================================================
--- 6. Create storage policies
+-- 7. Create storage policies
 -- ============================================================================
 
 -- Allow public read access to detection images
