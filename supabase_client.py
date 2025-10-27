@@ -21,13 +21,15 @@ class SupabaseClient:
 
     def __init__(self):
         """Initialize Supabase client with credentials from environment."""
-        self.url = os.getenv("SUPABASE_URL")
-        self.key = os.getenv("SUPABASE_KEY")
+        # Support both NEXT_PUBLIC_SUPABASE_URL and SUPABASE_URL for flexibility
+        self.url = os.getenv("NEXT_PUBLIC_SUPABASE_URL") or os.getenv("SUPABASE_URL")
+        # Use service role key for backend operations (full access)
+        self.key = os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("SUPABASE_KEY")
         self.device_id = os.getenv("DEVICE_ID", "unknown-device")
 
         if not self.url or not self.key:
             raise ValueError(
-                "Missing SUPABASE_URL or SUPABASE_KEY environment variables"
+                "Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY environment variables"
             )
 
         self.client: Client = create_client(self.url, self.key)

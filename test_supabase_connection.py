@@ -61,7 +61,11 @@ def test_environment_variables():
     print("TEST 1: Environment Variables")
     print("=" * 60)
 
-    required_vars = ["SUPABASE_URL", "SUPABASE_KEY", "DEVICE_ID"]
+    required_vars = [
+        "NEXT_PUBLIC_SUPABASE_URL",
+        "SUPABASE_SERVICE_ROLE_KEY",
+        "DEVICE_ID"
+    ]
     missing_vars = []
 
     for var in required_vars:
@@ -77,12 +81,20 @@ def test_environment_variables():
             print(f"❌ {var}: NOT SET")
             missing_vars.append(var)
 
+    # Also check for optional anon key (for frontend)
+    anon_key = os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
+    if anon_key:
+        display_anon = anon_key[:10] + "..." + anon_key[-4:] if len(anon_key) > 14 else "***"
+        print(f"✅ NEXT_PUBLIC_SUPABASE_ANON_KEY: {display_anon} (for frontend)")
+    else:
+        print(f"⚠️  NEXT_PUBLIC_SUPABASE_ANON_KEY: NOT SET (needed for frontend)")
+
     if missing_vars:
         print(f"\n❌ Missing environment variables: {', '.join(missing_vars)}")
         print("   Please update your .env file")
         return False
 
-    print("\n✅ All environment variables configured")
+    print("\n✅ All required environment variables configured")
     return True
 
 

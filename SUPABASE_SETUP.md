@@ -28,9 +28,9 @@ This guide walks through setting up:
 ### Save Project Credentials
 After project creation, navigate to **Project Settings > API**:
 
-- **Project URL**: `https://xxxxxxxxxxxxx.supabase.co`
-- **anon/public key**: For frontend dashboard (public)
-- **service_role key**: For Raspberry Pi (private, full access)
+- **Project URL**: `https://xxxxxxxxxxxxx.supabase.co` → Use for `NEXT_PUBLIC_SUPABASE_URL`
+- **anon/public key**: For frontend dashboard (public) → Use for `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- **service_role key**: For Raspberry Pi (private, full access) → Use for `SUPABASE_SERVICE_ROLE_KEY`
 
 **IMPORTANT**: Never commit the `service_role` key to Git!
 
@@ -181,24 +181,27 @@ Add these variables to your `.env` file on the Raspberry Pi:
 
 ```bash
 # Supabase Configuration
-SUPABASE_URL=https://xxxxxxxxxxxxx.supabase.co
-SUPABASE_KEY=your_service_role_key_here
+NEXT_PUBLIC_SUPABASE_URL=https://xxxxxxxxxxxxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key_here
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_here
 DEVICE_ID=halloween-pi
 ```
 
 **Security Notes:**
-- Use `service_role` key for Raspberry Pi (not `anon` key)
+- `NEXT_PUBLIC_*` variables are for frontend (Next.js dashboard)
+- `SUPABASE_SERVICE_ROLE_KEY` is for Raspberry Pi backend (full access)
 - Keep `.env` file in `.gitignore`
 - Never commit real credentials to Git
 
 ### .env.example Template
 
-Update `.env.example` with placeholders:
+The `.env.example` file includes placeholders:
 
 ```bash
 # Supabase Configuration
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_KEY=your_supabase_service_role_key
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 DEVICE_ID=halloween-pi
 ```
 
