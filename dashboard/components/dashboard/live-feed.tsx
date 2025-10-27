@@ -23,12 +23,12 @@ export function LiveFeed({ detections, limit = 5 }: LiveFeedProps) {
   const recentDetections = detections.slice(0, limit)
 
   return (
-    <Card className="col-span-1">
-      <CardHeader>
+    <Card className="col-span-1 flex flex-col h-[500px]">
+      <CardHeader className="flex-shrink-0">
         <CardTitle>Live Feed</CardTitle>
         <CardDescription>Most recent trick-or-treaters</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-1 overflow-y-auto">
         <div className="space-y-3">
           {recentDetections.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">

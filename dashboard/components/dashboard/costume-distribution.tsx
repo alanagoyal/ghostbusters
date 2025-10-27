@@ -17,12 +17,12 @@ export function CostumeDistribution({ costumes }: CostumeDistributionProps) {
   const maxCount = Math.max(...costumes.map(c => c.count), 1)
 
   return (
-    <Card className="col-span-2">
-      <CardHeader>
+    <Card className="col-span-2 flex flex-col h-[500px]">
+      <CardHeader className="flex-shrink-0">
         <CardTitle>Popular Costumes</CardTitle>
         <CardDescription>Most spotted trick-or-treater costumes</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-1 overflow-y-auto">
         <div className="space-y-4">
           {costumes.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">
