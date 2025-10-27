@@ -9,12 +9,10 @@ You already have these configured:
 NEXT_PUBLIC_SUPABASE_URL=xxx
 NEXT_PUBLIC_SUPABASE_ANON_KEY=xxx
 SUPABASE_SERVICE_ROLE_KEY=xxx
+HOSTNAME=xxx  # You already have this too!
 ```
 
-Just add one more:
-```bash
-DEVICE_ID=halloween-pi
-```
+**No additional environment variables needed!** The code automatically uses your existing `HOSTNAME` variable to identify the device.
 
 ## Quick Setup Steps
 

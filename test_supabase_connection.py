@@ -64,7 +64,6 @@ def test_environment_variables():
     required_vars = [
         "NEXT_PUBLIC_SUPABASE_URL",
         "SUPABASE_SERVICE_ROLE_KEY",
-        "DEVICE_ID"
     ]
     missing_vars = []
 
@@ -80,6 +79,13 @@ def test_environment_variables():
         else:
             print(f"❌ {var}: NOT SET")
             missing_vars.append(var)
+
+    # Check for device identifier (HOSTNAME or DEVICE_ID)
+    hostname = os.getenv("HOSTNAME") or os.getenv("DEVICE_ID")
+    if hostname:
+        print(f"✅ HOSTNAME: {hostname}")
+    else:
+        print(f"⚠️  HOSTNAME: NOT SET (will use 'unknown-device' as fallback)")
 
     # Also check for optional anon key (for frontend)
     anon_key = os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
