@@ -13,7 +13,14 @@ import cv2
 from dotenv import load_dotenv
 from ultralytics import YOLO
 
-from supabase_client import SupabaseClient
+from ..config import (
+    CONFIDENCE_THRESHOLD,
+    DUPLICATE_DETECTION_TIMEOUT_SECONDS,
+    FRAME_SKIP_INTERVAL,
+    PERSON_CLASS_ID,
+    YOLO_MODEL,
+)
+from ..storage.supabase_client import SupabaseClient
 
 # Load environment variables
 load_dotenv()
@@ -36,8 +43,8 @@ print("🚀 Starting person detection system...")
 print(f"📹 Connecting to DoorBird at {DOORBIRD_IP}")
 
 # Load YOLOv8n model (smallest/fastest)
-print("🤖 Loading YOLOv8n model...")
-model = YOLO("yolov8n.pt")  # Will download on first run (~6MB)
+print(f"🤖 Loading {YOLO_MODEL} model...")
+model = YOLO(YOLO_MODEL)  # Will download on first run (~6MB)
 print("✅ Model loaded!")
 
 # Initialize Supabase client (optional - graceful degradation if not configured)
@@ -78,8 +85,8 @@ try:
 
         frame_count += 1
 
-        # Process every 30 frames (~1 per second at 30fps)
-        if frame_count % 30 != 0:
+        # Process every N frames (configured in config.py)
+        if frame_count % FRAME_SKIP_INTERVAL != 0:
             continue
 
         # Run YOLO detection
@@ -91,12 +98,12 @@ try:
             boxes = result.boxes
             for box in boxes:
                 # Class 0 is 'person' in COCO dataset
-                if int(box.cls[0]) == 0:
+                if int(box.cls[0]) == PERSON_CLASS_ID:
                     people_detected = True
                     confidence = float(box.conf[0])
 
                     # Only show high-confidence detections
-                    if confidence > 0.5:
+                    if confidence > CONFIDENCE_THRESHOLD:
                         # Get bounding box coordinates
                         x1, y1, x2, y2 = map(int, box.xyxy[0])
 
@@ -119,8 +126,8 @@ try:
         if people_detected:
             current_time = time.time()
 
-            # Avoid duplicate detections within 2 seconds
-            if current_time - last_detection_time > 2:
+            # Avoid duplicate detections within configured timeout
+            if current_time - last_detection_time > DUPLICATE_DETECTION_TIMEOUT_SECONDS:
                 detection_count += 1
                 detection_timestamp = datetime.now()
                 timestamp_str = detection_timestamp.strftime("%Y%m%d_%H%M%S")
@@ -139,9 +146,9 @@ try:
                 for result in results:
                     boxes = result.boxes
                     for box in boxes:
-                        if int(box.cls[0]) == 0:  # person class
+                        if int(box.cls[0]) == PERSON_CLASS_ID:  # person class
                             conf = float(box.conf[0])
-                            if conf > 0.5 and conf > max_confidence:
+                            if conf > CONFIDENCE_THRESHOLD and conf > max_confidence:
                                 max_confidence = conf
                                 x1, y1, x2, y2 = map(int, box.xyxy[0])
                                 first_box = {

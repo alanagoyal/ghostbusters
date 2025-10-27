@@ -1,26 +1,37 @@
+# ============================================================================
+# Doorstep Costume Classifier - Root Configuration
+# ============================================================================
+# This is a workspace configuration that points to the backend package.
+# The actual Python dependencies and configuration are in backend/pyproject.toml
+#
+# For development:
+#   cd backend/
+#   uv sync
+#   uv run python -m backend.src.detection.person_detector
+
 [project]
 name = "costume-classifier"
 version = "0.1.0"
 description = "Doorstep costume classifier - Raspberry Pi edge computer vision system for Halloween"
+readme = "README.md"
 requires-python = ">=3.10"
-dependencies = [
-    "opencv-python>=4.12.0.88",
-    "python-dotenv>=1.1.1",
-    "supabase>=2.12.0",
-    "ultralytics>=8.3.63",
+license = {text = "MIT"}
+authors = [
+    {name = "Alana Goyal"}
 ]
 
-[dependency-groups]
-dev = [
-    "ruff>=0.14.2",
-]
+# This root package has no dependencies
+# All Python dependencies are in backend/pyproject.toml
+dependencies = []
+
+[tool.uv.workspace]
+members = ["backend"]
 
 [tool.ruff]
-# Set the maximum line length to 88 (Black-compatible)
+# Global ruff configuration for the entire project
 line-length = 88
 target-version = "py310"
 
-# Enable common linting rules
 lint.select = [
     "E",   # pycodestyle errors
     "W",   # pycodestyle warnings
@@ -33,18 +44,16 @@ lint.select = [
     "SIM", # flake8-simplify
 ]
 
-# Allow autofix for all enabled rules
 lint.fixable = ["ALL"]
 
-# Exclude common directories
 extend-exclude = [
     ".venv",
     "venv",
     "__pycache__",
+    "dashboard/",
+    "docs/",
 ]
 
 [tool.ruff.format]
-# Use double quotes for strings
 quote-style = "double"
-# Use spaces for indentation
 indent-style = "space"

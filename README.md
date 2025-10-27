@@ -20,6 +20,7 @@ Raspberry Pi edge computer vision system that watches a DoorBird doorbell camera
 - Python 3.10+
 - [uv](https://docs.astral.sh/uv/) package manager
 - DoorBird camera on local network
+- Supabase account
 
 ### Installation
 
@@ -34,13 +35,15 @@ Raspberry Pi edge computer vision system that watches a DoorBird doorbell camera
    curl -LsSf https://astral.sh/uv/install.sh | sh
    ```
 
-3. **Install dependencies:**
+3. **Install backend dependencies:**
    ```bash
+   cd backend
    uv sync
    ```
 
 4. **Set up environment variables:**
    ```bash
+   # From project root
    cp .env.example .env
    # Edit .env with your actual credentials
    ```
@@ -50,19 +53,20 @@ Raspberry Pi edge computer vision system that watches a DoorBird doorbell camera
 Test your DoorBird connection:
 
 ```bash
-uv run python test_doorbird_connection.py
+cd backend
+uv run python tests/test_doorbird.py
 ```
 
 Test your Supabase integration:
 
 ```bash
-uv run python test_supabase_connection.py
+uv run python tests/test_supabase.py
 ```
 
-Run person detection with Supabase upload:
+Run person detection:
 
 ```bash
-uv run python detect_people.py
+uv run python -m backend.src.detection.person_detector
 ```
 
 ## 🥧 Raspberry Pi Management
@@ -134,10 +138,18 @@ sudo apt update && sudo apt upgrade -y
 
 ## 📖 Documentation
 
-- [DoorBird Setup Guide](DOORBIRD_SETUP.md) - Camera configuration and RTSP setup
-- [Supabase Setup Guide](SUPABASE_SETUP.md) - Database and storage configuration
-- [Project Specification](PROJECT_SPEC.md) - Complete system architecture
-- [Blog Notes](BLOG_NOTES.md) - Implementation journey and decisions
+- **[Documentation Index](docs/README.md)** - Complete documentation guide
+- **Setup Guides:**
+  - [DoorBird Setup](docs/setup/doorbird.md) - Camera configuration and RTSP setup
+  - [Supabase Setup](docs/setup/supabase.md) - Database and storage configuration
+  - [Backend Setup](docs/setup/backend.md) - Python backend installation
+  - [Dashboard Setup](dashboard/SETUP.md) - Next.js frontend deployment
+- **Architecture:**
+  - [System Architecture](docs/architecture.md) - Complete system specification
+  - [Quick Reference](docs/QUICK_REFERENCE.md) - File organization and tech stack
+  - [Codebase Analysis](docs/CODEBASE_ANALYSIS.md) - Detailed technical analysis
+- **Development:**
+  - [Implementation Notes](docs/blog/implementation-notes.md) - Development journey and decisions
 
 ## 📊 Dashboard
 
@@ -184,6 +196,37 @@ The dashboard uses Supabase Realtime to show new detections instantly:
 
 See [dashboard/SETUP.md](dashboard/SETUP.md) for detailed instructions.
 
+## 📁 Project Structure
+
+```
+costume-classifier/
+├── backend/                    # Python person detection system
+│   ├── src/
+│   │   ├── detection/         # Person detection logic
+│   │   ├── storage/           # Supabase client
+│   │   ├── utils/             # Utilities
+│   │   ├── config.py          # Configuration constants
+│   │   └── main.py            # Entry point
+│   ├── tests/                 # Test scripts
+│   ├── pyproject.toml         # Python dependencies
+│   └── README.md
+│
+├── dashboard/                  # Next.js real-time dashboard
+│   ├── app/                   # Next.js app router
+│   ├── lib/                   # Supabase client
+│   └── README.md
+│
+├── docs/                       # Documentation
+│   ├── setup/                 # Setup guides
+│   ├── blog/                  # Development notes
+│   ├── architecture.md        # System design
+│   └── README.md              # Documentation index
+│
+├── .env.example               # Environment template
+├── supabase_migration.sql     # Database schema
+└── README.md                  # This file
+```
+
 ## 🛠️ Development
 
 This project uses modern Python tooling from [Astral](https://astral.sh/):
@@ -194,6 +237,7 @@ This project uses modern Python tooling from [Astral](https://astral.sh/):
 
 ```bash
 # Install dependencies
+cd backend
 uv sync
 
 # Add a new dependency
@@ -202,13 +246,15 @@ uv add package-name
 # Add a dev dependency
 uv add --dev package-name
 
-# Run a script
-uv run python script.py
+# Run detection system
+uv run python -m backend.src.detection.person_detector
 ```
 
 ### Code Quality
 
 ```bash
+cd backend
+
 # Check code with linter
 uv run ruff check .
 
@@ -217,9 +263,6 @@ uv run ruff check . --fix
 
 # Format code
 uv run ruff format .
-
-# Run both linting and formatting
-uv run ruff check . --fix && uv run ruff format .
 ```
 
 ## 📝 License

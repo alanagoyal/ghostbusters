@@ -12,6 +12,8 @@ from typing import Optional
 from dotenv import load_dotenv
 from supabase import Client, create_client
 
+from ..config import DEFAULT_DEVICE_ID, STORAGE_BUCKET_NAME
+
 # Load environment variables
 load_dotenv()
 
@@ -26,7 +28,7 @@ class SupabaseClient:
         # Use service role key for backend operations (full access)
         self.key = os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("SUPABASE_KEY")
         # Use existing HOSTNAME variable, fall back to DEVICE_ID for compatibility
-        self.device_id = os.getenv("HOSTNAME") or os.getenv("DEVICE_ID", "unknown-device")
+        self.device_id = os.getenv("HOSTNAME") or os.getenv("DEVICE_ID", DEFAULT_DEVICE_ID)
 
         if not self.url or not self.key:
             raise ValueError(
@@ -34,7 +36,7 @@ class SupabaseClient:
             )
 
         self.client: Client = create_client(self.url, self.key)
-        self.bucket_name = "detection-images"
+        self.bucket_name = STORAGE_BUCKET_NAME
 
     def upload_detection_image(
         self, image_path: str, timestamp: datetime
