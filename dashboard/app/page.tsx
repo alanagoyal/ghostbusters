@@ -60,20 +60,13 @@ export default function Dashboard() {
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "person_detections" },
         (payload) => {
-          console.log("Received new detection:", payload);
           const newDetection = payload.new as PersonDetection;
           setDetections((prev) => [newDetection, ...prev.slice(0, 199)]);
         }
       )
-      .subscribe((status) => {
-        console.log("Subscription status:", status);
-        if (status === "SUBSCRIBED") {
-          console.log("Successfully subscribed to person_detections changes");
-        }
-      });
+      .subscribe();
 
     return () => {
-      console.log("Unsubscribing from channel");
       supabase.removeChannel(channel);
     };
   }, []);
