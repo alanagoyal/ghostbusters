@@ -4,38 +4,79 @@
 @plugin "tailwindcss-animate";
 
 @theme {
-  /* Border radius */
-  --radius: 0.625rem;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+}
 
-  /* Colors - Blue/Indigo theme */
-  --color-background: #f8f9ff;
-  --color-foreground: #1e1b4b;
-  --color-card: #ffffff;
-  --color-card-foreground: #1e1b4b;
-  --color-popover: #ffffff;
-  --color-popover-foreground: #1e1b4b;
-  --color-primary: #5b5bd6;
-  --color-primary-foreground: #ffffff;
-  --color-secondary: #e7e7fc;
-  --color-secondary-foreground: #3730a3;
-  --color-muted: #f3f3ff;
-  --color-muted-foreground: #64648c;
-  --color-accent: #eeeeff;
-  --color-accent-foreground: #3730a3;
-  --color-destructive: #dc2626;
-  --color-destructive-foreground: #ffffff;
-  --color-border: #d1d1f0;
-  --color-input: #d1d1f0;
-  --color-ring: #5b5bd6;
-  --color-chart-1: #5b5bd6;
-  --color-chart-2: #7c7ce0;
-  --color-chart-3: #4338ca;
-  --color-chart-4: #8b8bee;
-  --color-chart-5: #6366f1;
+:root {
+  --background: oklch(0.9721 0.0158 110.5501);
+  --foreground: oklch(0.5066 0.2501 271.8903);
+  --card: oklch(0.9721 0.0158 110.5501);
+  --card-foreground: oklch(0.5066 0.2501 271.8903);
+  --popover: oklch(0.9721 0.0158 110.5501);
+  --popover-foreground: oklch(0.5066 0.2501 271.8903);
+  --primary: oklch(0.5066 0.2501 271.8903);
+  --primary-foreground: oklch(1.0000 0 0);
+  --secondary: oklch(1.0000 0 0);
+  --secondary-foreground: oklch(0.5066 0.2501 271.8903);
+  --muted: oklch(0.9189 0.0147 106.6853);
+  --muted-foreground: oklch(0.5066 0.2501 271.8903);
+  --accent: oklch(0.9168 0.0214 109.7161);
+  --accent-foreground: oklch(0.4486 0.2266 271.5512);
+  --destructive: oklch(0.6300 0.1900 23.0300);
+  --destructive-foreground: oklch(1 0 0);
+  --border: oklch(0.5066 0.2501 271.8903);
+  --input: oklch(0.5066 0.2501 271.8903);
+  --ring: oklch(0.4680 0.2721 279.6007);
+  --chart-1: oklch(0.5066 0.2501 271.8903);
+  --chart-2: oklch(0.5500 0.2200 264.5300);
+  --chart-3: oklch(0.7200 0 0);
+  --chart-4: oklch(0.9200 0 0);
+  --chart-5: oklch(0.5600 0 0);
+  --sidebar: oklch(0.9721 0.0158 110.5501);
+  --sidebar-foreground: oklch(0.5066 0.2501 271.8903);
+  --sidebar-primary: oklch(0.5066 0.2501 271.8903);
+  --sidebar-primary-foreground: oklch(1.0000 0 0);
+  --sidebar-accent: oklch(0.9168 0.0214 109.7161);
+  --sidebar-accent-foreground: oklch(0.4486 0.2266 271.5512);
+  --sidebar-border: oklch(0.4486 0.2266 271.5512);
+  --sidebar-ring: oklch(0.4486 0.2266 271.5512);
+  --font-sans: Geist Mono, sans-serif;
+  --radius: 0rem;
+  --shadow-2xs: 4px 4px 0px 0px hsl(238.3146 85.5769% 59.2157% / 0.07);
+  --shadow-xs: 4px 4px 0px 0px hsl(238.3146 85.5769% 59.2157% / 0.07);
+  --shadow-sm: 4px 4px 0px 0px hsl(238.3146 85.5769% 59.2157% / 0.15), 4px 1px 2px -1px hsl(238.3146 85.5769% 59.2157% / 0.15);
+  --shadow: 4px 4px 0px 0px hsl(238.3146 85.5769% 59.2157% / 0.15), 4px 1px 2px -1px hsl(238.3146 85.5769% 59.2157% / 0.15);
+  --shadow-md: 4px 4px 0px 0px hsl(238.3146 85.5769% 59.2157% / 0.15), 4px 2px 4px -1px hsl(238.3146 85.5769% 59.2157% / 0.15);
+  --shadow-lg: 4px 4px 0px 0px hsl(238.3146 85.5769% 59.2157% / 0.15), 4px 4px 6px -1px hsl(238.3146 85.5769% 59.2157% / 0.15);
+  --shadow-xl: 4px 4px 0px 0px hsl(238.3146 85.5769% 59.2157% / 0.15), 4px 8px 10px -1px hsl(238.3146 85.5769% 59.2157% / 0.15);
+  --shadow-2xl: 4px 4px 0px 0px hsl(238.3146 85.5769% 59.2157% / 0.38);
 }
 
 @layer base {
@@ -46,6 +87,7 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    font-family: var(--font-sans);
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }

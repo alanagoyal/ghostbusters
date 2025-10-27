@@ -1,5 +1,6 @@
 import './globals.css'
 import type { Metadata } from 'next'
+import { GeistMono } from 'geist/font/mono'
 
 export const metadata: Metadata = {
   title: 'Halloween Dashboard - Trick-or-Treater Analytics',
@@ -13,7 +14,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body className={GeistMono.className}>{children}</body>
     </html>
   )
 }
