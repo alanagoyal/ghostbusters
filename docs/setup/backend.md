@@ -72,11 +72,21 @@ HOSTNAME=front-door-pi
 
 ## Testing
 
-### Test DoorBird Connection
+### Run All Tests (Recommended)
 
 ```bash
 cd backend
-uv run python tests/test_doorbird.py
+uv run pytest
+```
+
+This will run all tests in the `tests/` directory with proper Python path configuration.
+
+### Run Individual Tests
+
+Test DoorBird connection:
+```bash
+cd backend
+uv run pytest tests/test_doorbird.py -v
 ```
 
 Expected output:
@@ -88,10 +98,10 @@ Expected output:
 🎉 DoorBird connection test PASSED!
 ```
 
-### Test Supabase Connection
-
+Test Supabase connection:
 ```bash
-uv run python tests/test_supabase.py
+cd backend
+uv run pytest tests/test_supabase.py -v
 ```
 
 Expected output:
@@ -109,7 +119,7 @@ Expected output:
 
 ```bash
 cd backend
-uv run python -m backend.src.detection.person_detector
+uv run python -m src.main
 ```
 
 Expected output:
@@ -151,8 +161,8 @@ After=network.target
 [Service]
 Type=simple
 User=pi
-WorkingDirectory=/home/pi/costume-classifier
-ExecStart=/home/pi/.local/bin/uv run python -m backend.src.detection.person_detector
+WorkingDirectory=/home/pi/costume-classifier/backend
+ExecStart=/home/pi/.local/bin/uv run python -m src.main
 Restart=on-failure
 RestartSec=10
 

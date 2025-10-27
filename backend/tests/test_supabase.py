@@ -13,7 +13,7 @@ import cv2
 import numpy as np
 from dotenv import load_dotenv
 
-from backend.src.storage.supabase_client import SupabaseClient
+from storage.supabase_client import SupabaseClient
 
 # Load environment variables
 load_dotenv()

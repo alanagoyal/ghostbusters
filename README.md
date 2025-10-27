@@ -50,23 +50,26 @@ Raspberry Pi edge computer vision system that watches a DoorBird doorbell camera
 
 ### Testing
 
-Test your DoorBird connection:
+Run all tests:
 
 ```bash
 cd backend
-uv run python tests/test_doorbird.py
+uv run pytest
 ```
 
-Test your Supabase integration:
+Or run individual tests:
 
 ```bash
-uv run python tests/test_supabase.py
+cd backend
+uv run pytest tests/test_doorbird.py
+uv run pytest tests/test_supabase.py
 ```
 
 Run person detection:
 
 ```bash
-uv run python -m backend.src.detection.person_detector
+cd backend
+uv run python -m src.main
 ```
 
 ## 🥧 Raspberry Pi Management

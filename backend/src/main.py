@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """
 Main entry point for the person detection system.
-This module can be run directly or imported.
+Run with: python -m src.main
 """
 
 if __name__ == "__main__":
-    # Import and run the person detector
-    from backend.src.detection.person_detector import *
+    # Import the detection module - this will execute the main code
+    # person_detector.py has its main loop at module level
+    from detection import person_detector

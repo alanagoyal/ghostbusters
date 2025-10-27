@@ -5,17 +5,18 @@ Python backend for real-time person detection using YOLOv8 on DoorBird RTSP stre
 ## Quick Start
 
 ```bash
-# Install dependencies
+# Install dependencies (including dev dependencies like pytest)
 uv sync
 
-# Test DoorBird connection
-uv run python tests/test_doorbird.py
+# Run all tests with pytest (recommended)
+uv run pytest
 
-# Test Supabase connection
-uv run python tests/test_supabase.py
+# Or run individual test files
+uv run pytest tests/test_doorbird.py
+uv run pytest tests/test_supabase.py
 
 # Run person detection
-uv run python -m backend.src.detection.person_detector
+uv run python -m src.main
 ```
 
 ## Project Structure

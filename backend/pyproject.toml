@@ -13,6 +13,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     "ruff>=0.14.2",
+    "pytest>=8.3.0",
 ]
 
 [tool.ruff]
@@ -48,3 +49,12 @@ extend-exclude = [
 quote-style = "double"
 # Use spaces for indentation
 indent-style = "space"
+
+[tool.pytest.ini_options]
+# Pytest configuration
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+# Add src to Python path so imports work
+pythonpath = ["src"]
