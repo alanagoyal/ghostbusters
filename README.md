@@ -44,12 +44,24 @@ Raspberry Pi edge computer vision system that watches a DoorBird doorbell camera
    # Edit .env with your actual credentials
    ```
 
-### Running the Test Script
+### Testing
 
 Test your DoorBird connection:
 
 ```bash
 uv run python test_doorbird_connection.py
+```
+
+Test your Supabase integration:
+
+```bash
+uv run python test_supabase_connection.py
+```
+
+Run person detection with Supabase upload:
+
+```bash
+uv run python detect_people.py
 ```
 
 ## 🥧 Raspberry Pi Management
@@ -122,6 +134,7 @@ sudo apt update && sudo apt upgrade -y
 ## 📖 Documentation
 
 - [DoorBird Setup Guide](DOORBIRD_SETUP.md) - Camera configuration and RTSP setup
+- [Supabase Setup Guide](SUPABASE_SETUP.md) - Database and storage configuration
 - [Project Specification](PROJECT_SPEC.md) - Complete system architecture
 - [Blog Notes](BLOG_NOTES.md) - Implementation journey and decisions
 
