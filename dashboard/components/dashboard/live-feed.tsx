@@ -48,7 +48,7 @@ export function LiveFeed({ detections, limit = 5 }: LiveFeedProps) {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     {detection.costume_classification && (
-                      <Badge variant="default" className="text-xs max-w-[220px] truncate" title={detection.costume_classification || ''}>
+                      <Badge variant="default" className="text-xs max-w-[180px] sm:max-w-[220px] truncate" title={detection.costume_classification || ''}>
                         {truncateString(detection.costume_classification, 25)}
                       </Badge>
                     )}

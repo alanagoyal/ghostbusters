@@ -86,7 +86,7 @@ export default function Dashboard() {
 
     const sorted = Array.from(costumeCounts.entries())
       .map(([name, count]) => ({
-        name: truncateString(name, 40),
+        name: truncateString(name, 25),
         count,
         percentage: totalWithCostume > 0 ? (count / totalWithCostume) * 100 : 0,
       }))
