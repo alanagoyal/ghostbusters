@@ -3,6 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Clock, Camera } from 'lucide-react'
+import { truncateString } from '@/lib/string-utils'
 
 interface Detection {
   id: string
@@ -47,8 +48,8 @@ export function LiveFeed({ detections, limit = 5 }: LiveFeedProps) {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     {detection.costume_classification && (
-                      <Badge variant="default" className="text-xs">
-                        {detection.costume_classification}
+                      <Badge variant="default" className="text-xs max-w-[220px] truncate" title={detection.costume_classification || ''}>
+                        {truncateString(detection.costume_classification, 25)}
                       </Badge>
                     )}
                     <span className="text-xs text-muted-foreground">

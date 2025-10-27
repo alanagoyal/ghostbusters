@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import { Users, Shirt, Activity, TrendingUp } from "lucide-react";
+import { truncateString } from "@/lib/string-utils";
 import { StatsCard } from "@/components/dashboard/stats-card";
 import { CostumeDistribution } from "@/components/dashboard/costume-distribution";
 import { ActivityTimeline } from "@/components/dashboard/activity-timeline";
@@ -92,7 +93,7 @@ export default function Dashboard() {
 
     const sorted = Array.from(costumeCounts.entries())
       .map(([name, count]) => ({
-        name,
+        name: truncateString(name, 40),
         count,
         percentage: totalWithCostume > 0 ? (count / totalWithCostume) * 100 : 0,
       }))
