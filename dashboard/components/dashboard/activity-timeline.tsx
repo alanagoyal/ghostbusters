@@ -55,23 +55,19 @@ export function ActivityTimeline({ detections }: ActivityTimelineProps) {
           {/* Y-axis grid lines */}
           <div className="absolute top-0 left-0 right-0 bottom-8 -z-10">
             {[0, 1, 2, 3, 4, 5].map((tick) => (
-              <div 
+              <div
                 key={tick}
                 className="absolute w-full border-b border-border/50"
                 style={{
                   bottom: `${(tick / 5) * 100}%`,
                   height: '1px'
                 }}
-              >
-                <div className="absolute -left-6 sm:-left-8 -top-2 text-xs text-muted-foreground">
-                  {tick === 0 ? '' : tick}
-                </div>
-              </div>
+              />
             ))}
           </div>
-          
+
           {/* Bars */}
-          <div className="flex items-end justify-between h-48 gap-0.5 pl-6 sm:pl-8">
+          <div className="flex items-end justify-between h-48 gap-0.5">
             {hourlyData.map(({ hour, count }) => {
               const height = count > 0 
                 ? Math.max(5, (count / maxCount) * 100) 
