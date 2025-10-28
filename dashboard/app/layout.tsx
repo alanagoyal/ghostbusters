@@ -1,9 +1,10 @@
 import './globals.css'
 import type { Metadata } from 'next'
+import { GeistMono } from 'geist/font/mono'
 
 export const metadata: Metadata = {
-  title: 'Person Detection Dashboard',
-  description: 'Real-time person detection monitoring',
+  title: 'Trick-or-Treater Dashboard',
+  description: 'Real-time Halloween trick-or-treater monitoring with costume analytics and visitor insights',
 }
 
 export default function RootLayout({
@@ -13,7 +14,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body className={GeistMono.className}>{children}</body>
     </html>
   )
 }

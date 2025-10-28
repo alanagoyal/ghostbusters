@@ -19,6 +19,19 @@ ENV/
 # uv
 .python-version
 
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Next.js
+.next/
+out/
+dist/
+build/
+
 # Test outputs
 test_doorbird_frame.jpg
 *.jpg
