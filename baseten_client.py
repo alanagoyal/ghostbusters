@@ -11,6 +11,25 @@ from typing import Optional, Tuple
 
 import requests
 
+# Allowed costume categories for classification
+ALLOWED_CATEGORIES = [
+    "witch",
+    "vampire",
+    "zombie",
+    "skeleton",
+    "ghost",
+    "superhero",
+    "princess",
+    "pirate",
+    "ninja",
+    "clown",
+    "monster",
+    "character",  # For recognizable characters (Spiderman, Elsa, etc.)
+    "animal",     # For animal costumes (tiger, cat, etc.)
+    "person",     # No costume visible
+    "other",      # Doesn't fit any category
+]
+
 
 class BasetenClient:
     """Client for Baseten vision model API"""
@@ -72,12 +91,18 @@ class BasetenClient:
             prompt = custom_prompt or (
                 "Analyze this Halloween costume and respond with ONLY a JSON object in this exact format:\n"
                 '{"classification": "costume_type", "confidence": 0.95, "description": "detailed description"}\n\n'
+                "Preferred categories:\n"
+                "- witch, vampire, zombie, skeleton, ghost\n"
+                "- superhero, princess, pirate, ninja, clown, monster\n"
+                "- character (for recognizable characters like Spiderman, Elsa, Mickey Mouse)\n"
+                "- animal (for animal costumes like tiger, cat, dinosaur)\n"
+                "- person (if no costume visible)\n"
+                "- other (if costume doesn't fit above categories)\n\n"
                 "Rules:\n"
-                "- classification: Short costume type (1-3 words, e.g., 'witch', 'Spiderman', 'vampire')\n"
+                "- classification: Try to use one of the preferred categories above, or be specific (e.g., 'Spiderman', 'tiger')\n"
                 "- confidence: Your confidence score between 0.0 and 1.0\n"
                 "- description: A detailed one-sentence description of the costume\n"
-                "- Output ONLY the JSON object, nothing else\n"
-                "- If you cannot identify a costume, use classification='person' and lower confidence."
+                "- Output ONLY the JSON object, nothing else"
             )
 
             # Call Baseten API with Gemma vision model
