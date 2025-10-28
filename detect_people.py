@@ -13,6 +13,7 @@ import cv2
 from dotenv import load_dotenv
 from ultralytics import YOLO
 
+from baseten_client import BasetenClient
 from supabase_client import SupabaseClient
 
 # Load environment variables
@@ -48,6 +49,15 @@ try:
 except Exception as e:
     print(f"⚠️  Supabase not configured: {e}")
     print("   Detections will only be saved locally")
+
+# Initialize Baseten client for costume classification (optional)
+baseten_client = None
+try:
+    baseten_client = BasetenClient()
+    print(f"✅ Connected to Baseten (Model: {baseten_client.model})")
+except Exception as e:
+    print(f"⚠️  Baseten not configured: {e}")
+    print("   Costume classification will be skipped")
 
 # Open RTSP stream
 cap = cv2.VideoCapture(rtsp_url)
@@ -151,6 +161,44 @@ try:
                                     "y2": y2,
                                 }
 
+                # Classify costume using Baseten if configured
+                costume_label = None
+                costume_confidence = None
+                costume_description = None
+
+                if baseten_client and first_box:
+                    try:
+                        print("   🎭 Classifying costume...")
+                        # Extract person crop from frame
+                        x1, y1, x2, y2 = (
+                            first_box["x1"],
+                            first_box["y1"],
+                            first_box["x2"],
+                            first_box["y2"],
+                        )
+                        person_crop = frame[y1:y2, x1:x2]
+
+                        # Encode image to bytes
+                        _, buffer = cv2.imencode(".jpg", person_crop)
+                        image_bytes = buffer.tobytes()
+
+                        # Classify costume
+                        (
+                            costume_label,
+                            costume_confidence,
+                            costume_description,
+                        ) = baseten_client.classify_costume(image_bytes)
+
+                        if costume_label:
+                            print(
+                                f"   👗 Costume: {costume_label} ({costume_confidence:.2f})"
+                            )
+                            print(f"      {costume_description}")
+                        else:
+                            print("   ⚠️  Could not classify costume")
+                    except Exception as e:
+                        print(f"   ⚠️  Costume classification failed: {e}")
+
                 # Upload to Supabase if configured
                 if supabase_client and first_box:
                     try:
@@ -159,6 +207,8 @@ try:
                             timestamp=detection_timestamp,
                             confidence=max_confidence,
                             bounding_box=first_box,
+                            costume_classification=costume_description,  # Use full description
+                            costume_confidence=costume_confidence,
                         )
                     except Exception as e:
                         print(f"   ⚠️  Supabase upload failed: {e}")
