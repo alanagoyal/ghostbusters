@@ -133,7 +133,7 @@ Uploaded to Supabase: 4
 - ✅ Tests full pipeline without needing camera/Raspberry Pi
 - ✅ Verifies Baseten API integration works correctly
 - ✅ Confirms Supabase uploads with both `classification` and `description` fields
-- ✅ Validates structured outputs are parsed properly
+- ✅ Validates JSON response parsing works properly
 - ✅ Provides visual confirmation (annotated images in `test_detections/`)
 
 ### 5. Run Person Detection with Costume Classification
@@ -176,13 +176,13 @@ print(f"{classification} ({confidence:.2f}): {description}")
 
 **Key Features:**
 - Uses `requests.Session()` for connection pooling and reuse
-- Handles markdown-wrapped JSON responses from Gemma
+- Handles model artifacts like `<end_of_turn>` in responses
 - Automatic base64 encoding of images
-- Structured JSON output parsing
+- Robust JSON parsing from text responses
 
-### Structured Outputs
+### JSON Response Format
 
-The system uses JSON structured outputs to ensure consistent response format:
+The system prompts the model to return JSON and parses it from the response:
 
 **Request to Baseten:**
 ```json
@@ -231,8 +231,8 @@ The costume classification happens automatically during person detection:
 1. **YOLOv8n** detects a person in the frame
 2. **Bounding box** is extracted (x1, y1, x2, y2)
 3. **Person crop** is extracted from the frame
-4. **BasetenClient** sends the crop to Llama 3.2 Vision
-5. **Structured JSON** response is parsed
+4. **BasetenClient** sends the crop to Gemma 3 27B IT Vision
+5. **JSON response** is extracted and parsed from the model output
 6. **Results** are saved to Supabase with the detection
 
 The integration is **optional** and **gracefully degrades** if Baseten is not configured:
@@ -243,16 +243,17 @@ The integration is **optional** and **gracefully degrades** if Baseten is not co
 ## Cost Considerations
 
 ### Pricing
-- **Llama 3.2 90B Vision Instruct** on Baseten: Check current pricing at [https://baseten.co/pricing](https://baseten.co/pricing)
-- Typical range: $0.01-0.05 per inference
+- **Gemma 3 27B IT** on Baseten: Check current pricing at [https://baseten.co/pricing](https://baseten.co/pricing)
+- Gemma models are typically more cost-effective than larger models
+- Typical range: $0.005-0.02 per inference
 
 ### Halloween Night Estimates
 Assuming 50-200 trick-or-treaters:
-- **50 detections** × $0.03 = **$1.50**
-- **100 detections** × $0.03 = **$3.00**
-- **200 detections** × $0.03 = **$6.00**
+- **50 detections** × $0.01 = **$0.50**
+- **100 detections** × $0.01 = **$1.00**
+- **200 detections** × $0.01 = **$2.00**
 
-Much more affordable than GPT-4 Vision while maintaining excellent quality with open-source models.
+Gemma provides excellent quality at a lower cost compared to proprietary vision models.
 
 ### Optimization Tips
 
@@ -262,16 +263,19 @@ Much more affordable than GPT-4 Vision while maintaining excellent quality with 
 
 ## Model Selection
 
-### Why Llama 3.2 90B Vision Instruct?
+### Why Gemma 3 27B IT?
 
 **Pros:**
-- ✅ State-of-the-art vision-language model from Meta
-- ✅ Excellent at open-ended image description
-- ✅ Supports structured JSON outputs
+- ✅ State-of-the-art vision-language model from Google DeepMind
+- ✅ Excellent at image understanding and description tasks
+- ✅ Optimized for instruction-following (IT = Instruction-Tuned)
+- ✅ Supports multimodal inputs (text + images)
 - ✅ Fast inference through Baseten's optimized infrastructure
 - ✅ Open-source model (no vendor lock-in)
+- ✅ Cost-effective compared to larger proprietary models
 
 **Alternatives on Baseten:**
+- **Llama 3.2 Vision**: Larger model with more parameters
 - **Qwen2-VL**: Another excellent vision-language model
 - **Custom models**: Deploy your own vision model using Baseten
 
@@ -417,6 +421,6 @@ No dashboard code changes needed! The components in `dashboard/components/dashbo
 ## Additional Resources
 
 - **Baseten Docs**: [https://docs.baseten.co](https://docs.baseten.co)
-- **Llama 3.2 Vision**: [https://ai.meta.com/blog/llama-3-2-connect-2024-vision-edge-mobile-devices/](https://ai.meta.com/blog/llama-3-2-connect-2024-vision-edge-mobile-devices/)
-- **OpenAI SDK**: [https://platform.openai.com/docs/api-reference](https://platform.openai.com/docs/api-reference)
+- **Gemma 3 27B IT on Baseten**: [https://docs.baseten.co/examples/models/gemma/gemma-3-27b-it](https://docs.baseten.co/examples/models/gemma/gemma-3-27b-it)
+- **Gemma Model Family**: [https://ai.google.dev/gemma](https://ai.google.dev/gemma)
 - **Project Spec**: See `PROJECT_SPEC.md` for full system architecture
