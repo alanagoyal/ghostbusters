@@ -63,7 +63,7 @@ export function ActivityTimeline({ detections }: ActivityTimelineProps) {
                   height: '1px'
                 }}
               >
-                <div className="absolute -left-8 -top-2 text-xs text-muted-foreground">
+                <div className="absolute left-0 sm:-left-8 -top-2 text-xs text-muted-foreground">
                   {tick === 0 ? '' : tick}
                 </div>
               </div>
@@ -71,7 +71,7 @@ export function ActivityTimeline({ detections }: ActivityTimelineProps) {
           </div>
           
           {/* Bars */}
-          <div className="flex items-end justify-between h-48 gap-0.5 pl-8">
+          <div className="flex items-end justify-between h-48 gap-0.5 pl-6 sm:pl-8">
             {hourlyData.map(({ hour, count }) => {
               const height = count > 0 
                 ? Math.max(5, (count / maxCount) * 100) 
