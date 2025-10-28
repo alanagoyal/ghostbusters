@@ -35,7 +35,7 @@ export function LiveFeed({ detections, limit = 5 }: LiveFeedProps) {
               Waiting for visitors...
             </p>
           ) : (
-            recentDetections.map((detection) => (
+            recentDetections.map((detection, index) => (
               <div
                 key={detection.id}
                 className="flex items-start gap-3 p-3 rounded-lg border border-border hover:bg-accent/50 transition-colors"
