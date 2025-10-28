@@ -63,7 +63,7 @@ export function ActivityTimeline({ detections }: ActivityTimelineProps) {
                   height: '1px'
                 }}
               >
-                <div className="absolute left-0 sm:-left-8 -top-2 text-xs text-muted-foreground">
+                <div className="absolute -left-6 sm:-left-8 -top-2 text-xs text-muted-foreground">
                   {tick === 0 ? '' : tick}
                 </div>
               </div>
