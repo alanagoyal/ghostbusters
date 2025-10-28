@@ -53,7 +53,7 @@ export function ActivityTimeline({ detections }: ActivityTimelineProps) {
       <CardContent>
         <div className="relative">
           {/* Y-axis grid lines */}
-          <div className="absolute top-0 left-0 right-0 bottom-8 -z-10">
+          <div className="absolute top-0 left-0 right-0 bottom-8">
             {[0, 1, 2, 3, 4, 5].map((tick) => (
               <div 
                 key={tick}
@@ -63,8 +63,8 @@ export function ActivityTimeline({ detections }: ActivityTimelineProps) {
                   height: '1px'
                 }}
               >
-                <div className="absolute -left-8 -top-2 text-xs text-muted-foreground">
-                  {tick === 0 ? '' : tick}
+                <div className="absolute -left-6 -top-2 pl-2 text-xs text-muted-foreground z-10">
+                  {tick}
                 </div>
               </div>
             ))}
@@ -109,12 +109,7 @@ export function ActivityTimeline({ detections }: ActivityTimelineProps) {
                     )}
                   </div>
                   
-                  {/* Hover count */}
-                  {count > 0 && (
-                    <div className="absolute -top-6 text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity bg-background/90 px-1.5 py-0.5 rounded-md border shadow-sm">
-                      {count} visitor{count !== 1 ? 's' : ''} at {hourLabel}
-                    </div>
-                  )}
+                  {/* Native title attribute is used for tooltip */}
                 </div>
               )
             })}
