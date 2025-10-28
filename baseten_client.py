@@ -70,13 +70,14 @@ class BasetenClient:
 
             # Default prompt optimized for Halloween costume classification
             prompt = custom_prompt or (
-                "Analyze this Halloween costume and provide:\n"
-                "1. A short classification (1-3 words, e.g., 'witch', 'skeleton', 'superhero')\n"
-                "2. A confidence score between 0.0 and 1.0\n"
-                "3. A detailed description (one sentence)\n\n"
-                "Respond ONLY with valid JSON in this exact format:\n"
+                "Analyze this Halloween costume and respond with ONLY a JSON object in this exact format:\n"
                 '{"classification": "costume_type", "confidence": 0.95, "description": "detailed description"}\n\n'
-                "If you cannot identify a costume, use classification='person' and lower confidence."
+                "Rules:\n"
+                "- classification: Short costume type (1-3 words, e.g., 'witch', 'Spiderman', 'vampire')\n"
+                "- confidence: Your confidence score between 0.0 and 1.0\n"
+                "- description: A detailed one-sentence description of the costume\n"
+                "- Output ONLY the JSON object, nothing else\n"
+                "- If you cannot identify a costume, use classification='person' and lower confidence."
             )
 
             # Call Baseten API with Gemma vision model
@@ -106,7 +107,6 @@ class BasetenClient:
             result = response.json()
 
             # Extract content from response
-            # Gemma API returns: {"choices": [{"message": {"content": "..."}}]}
             if "choices" in result and len(result["choices"]) > 0:
                 content = result["choices"][0].get("message", {}).get("content", "")
             else:
@@ -116,15 +116,21 @@ class BasetenClient:
             if not content:
                 return None, None, None
 
-            # Try to parse JSON from content
-            # The model might return markdown-wrapped JSON, so clean it up
+            # Clean up content - remove markdown code blocks and model artifacts
             content = content.strip()
+
+            # Remove markdown code fences
             if content.startswith("```json"):
-                content = content[7:]  # Remove ```json
+                content = content[7:]
             if content.startswith("```"):
-                content = content[3:]  # Remove ```
-            if content.endswith("```"):
-                content = content[:-3]  # Remove trailing ```
+                content = content[3:]
+
+            # Remove trailing artifacts like ```<end_of_turn>, ``` etc.
+            # Split on common delimiters and take the first part
+            for delimiter in ["```", "<end_of_turn>", "\n```", "```\n"]:
+                if delimiter in content:
+                    content = content.split(delimiter)[0]
+
             content = content.strip()
 
             # Parse JSON response
