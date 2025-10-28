@@ -4,7 +4,7 @@ This guide explains how to set up and use the Baseten vision model API for costu
 
 ## Overview
 
-The system uses **Llama 3.2 90B Vision Instruct** through Baseten's OpenAI-compatible API to classify Halloween costumes from person crops detected by YOLOv8n.
+The system uses **Gemma vision model** through Baseten's API to classify Halloween costumes from person crops detected by YOLOv8n.
 
 ## Architecture
 
@@ -13,7 +13,7 @@ Person Detection (YOLOv8n on Pi)
     ↓
 Crop person from frame
     ↓
-Send to Baseten API (Llama 3.2 Vision)
+Send to Baseten API (Gemma Vision)
     ↓
 Receive structured JSON response:
 {
@@ -34,40 +34,39 @@ Display on Next.js dashboard
 
 1. **Baseten Account**: Sign up at [https://baseten.co](https://baseten.co)
 2. **API Key**: Generate an API key from your Baseten account settings
-3. **Model Access**: Ensure you have access to `meta-llama/Llama-3.2-90B-Vision-Instruct`
+3. **Model Deployment**: Deploy a Gemma vision model and get the model endpoint URL
 
 ## Setup Instructions
 
 ### 1. Install Dependencies
 
-```bash
-# Install the OpenAI Python SDK (required for Baseten's OpenAI-compatible API)
-uv add openai
-```
+The required dependencies (requests) are already included in `pyproject.toml`. If you need to install them manually:
 
-Or if using pip:
 ```bash
-pip install openai>=1.59.7
+uv sync
 ```
 
 ### 2. Configure Environment Variables
 
-Add your Baseten API key to the `.env` file:
+Add your Baseten API key and model URL to the `.env` file:
 
 ```bash
 # Copy the example if you haven't already
 cp .env.example .env
 
-# Edit .env and add your Baseten API key
+# Edit .env and add your Baseten credentials
 nano .env
 ```
 
-Add this line to `.env`:
+Add these lines to `.env`:
 ```
 BASETEN_API_KEY=your_baseten_api_key_here
+BASETEN_MODEL_URL=https://model-XXXXXXXX.api.baseten.co/environments/production/predict
 ```
 
-Get your API key from: [https://app.baseten.co/settings/api-keys](https://app.baseten.co/settings/api-keys)
+**Where to find these:**
+- **API Key**: [https://app.baseten.co/settings/api-keys](https://app.baseten.co/settings/api-keys)
+- **Model URL**: From your Gemma model deployment page in Baseten dashboard
 
 ### 3. Test the Connection
 
@@ -81,10 +80,11 @@ Expected output:
 ```
 🧪 Testing Baseten API Connection
 ==================================================
-✅ API key found: sk-base...
+✅ API key found: base_...
+✅ Model URL found: https://model-...
 🔧 Initializing Baseten client...
 ✅ Client initialized successfully
-   Model: meta-llama/Llama-3.2-90B-Vision-Instruct
+   Model: gemma
 🔌 Testing API connection...
 ✅ Connection test passed!
 ```
@@ -162,7 +162,7 @@ Located in `baseten_client.py`, this module provides a clean interface to the Ba
 ```python
 from baseten_client import BasetenClient
 
-# Initialize client (reads BASETEN_API_KEY from environment)
+# Initialize client (reads BASETEN_API_KEY and BASETEN_MODEL_URL from environment)
 client = BasetenClient()
 
 # Classify a costume from image bytes
@@ -174,6 +174,12 @@ print(f"{classification} ({confidence:.2f}): {description}")
 # Output: witch (0.95): witch with purple hat, black dress, and broomstick
 ```
 
+**Key Features:**
+- Uses `requests.Session()` for connection pooling and reuse
+- Handles markdown-wrapped JSON responses from Gemma
+- Automatic base64 encoding of images
+- Structured JSON output parsing
+
 ### Structured Outputs
 
 The system uses JSON structured outputs to ensure consistent response format:
@@ -181,31 +187,39 @@ The system uses JSON structured outputs to ensure consistent response format:
 **Request to Baseten:**
 ```json
 {
-  "model": "meta-llama/Llama-3.2-90B-Vision-Instruct",
+  "model": "gemma",
+  "stream": false,
   "messages": [
     {
       "role": "user",
       "content": [
-        {"type": "image_url", "image_url": {"url": "data:image/jpeg;base64,..."}},
-        {"type": "text", "text": "Analyze this Halloween costume and provide..."}
+        {"type": "text", "text": "Analyze this Halloween costume and provide..."},
+        {"type": "image_url", "image_url": {"url": "data:image/jpeg;base64,..."}}
       ]
     }
   ],
-  "response_format": {"type": "json_object"}
+  "max_tokens": 512,
+  "temperature": 0.5
 }
 ```
 
 **Response from Baseten:**
 ```json
 {
-  "classification": "skeleton",
-  "confidence": 0.92,
-  "description": "skeleton costume with glow-in-the-dark bones"
+  "choices": [
+    {
+      "message": {
+        "content": "{\"classification\": \"skeleton\", \"confidence\": 0.92, \"description\": \"skeleton costume with glow-in-the-dark bones\"}"
+      }
+    }
+  ]
 }
 ```
 
+The client extracts the JSON from the content and parses it.
+
 **Database Schema:**
-The response fields are mapped to the Supabase database:
+The parsed fields are mapped to the Supabase database:
 - `classification` → `costume_classification` (short costume type, e.g., "witch", "skeleton")
 - `confidence` → `costume_confidence` (0.0-1.0 confidence score)
 - `description` → `costume_description` (detailed description)
@@ -303,15 +317,22 @@ echo "BASETEN_API_KEY=your_api_key_here" >> .env
 2. Verify the API key is correct
 3. Check Baseten status: [https://status.baseten.co](https://status.baseten.co)
 
-### Model Access Issues
+### Model URL Issues
 
-**Error**: `Model not found: meta-llama/Llama-3.2-90B-Vision-Instruct`
+**Error**: `BASETEN_MODEL_URL environment variable not set`
 
 **Solution**:
 1. Log into Baseten dashboard
-2. Navigate to Model APIs
-3. Ensure Llama 3.2 Vision is enabled for your account
-4. Some models require accepting license agreements
+2. Find your Gemma vision model deployment
+3. Copy the model endpoint URL (looks like `https://model-XXXXXXXX.api.baseten.co/environments/production/predict`)
+4. Add it to your `.env` file
+
+**Error**: `HTTP 404 Not Found`
+
+**Solution**:
+- Verify your model URL is correct
+- Check that the model is deployed and running in Baseten
+- Ensure you're using the production endpoint URL
 
 ### Classification Failures
 

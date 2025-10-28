@@ -54,7 +54,15 @@ def main():
         print("   Please add your Baseten API key to .env")
         sys.exit(1)
 
+    # Check for model URL
+    model_url = os.getenv("BASETEN_MODEL_URL")
+    if not model_url:
+        print("❌ ERROR: BASETEN_MODEL_URL not set in .env file")
+        print("   Please add your Baseten model URL to .env")
+        sys.exit(1)
+
     print(f"✅ API key found: {api_key[:10]}...")
+    print(f"✅ Model URL found: {model_url[:50]}...")
     print()
 
     # Initialize client
@@ -63,6 +71,7 @@ def main():
         client = BasetenClient()
         print("✅ Client initialized successfully")
         print(f"   Model: {client.model}")
+        print(f"   Endpoint: {client.model_url}")
         print()
     except Exception as e:
         print(f"❌ Failed to initialize client: {e}")
