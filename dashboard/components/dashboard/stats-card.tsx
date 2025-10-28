@@ -20,7 +20,7 @@ export function StatsCard({ title, value, description, icon: Icon, trend }: Stat
         {Icon && <Icon className="h-4 w-4 text-muted-foreground" />}
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold animate-scale-in">{value}</div>
+        <div className="text-2xl font-bold">{value}</div>
         {description && (
           <p className="text-xs text-muted-foreground mt-1">{description}</p>
         )}

@@ -50,7 +50,7 @@ export function CostumeDistribution({ costumes }: CostumeDistributionProps) {
                     className="h-full bg-primary transition-all duration-500 animate-grow-width"
                     style={{
                       width: `${(costume.count / maxCount) * 100}%`,
-                      animationDelay: `${index * 100}ms`
+                      animationDelay: `${(index + 1) * 150}ms`
                     }}
                   />
                 </div>
