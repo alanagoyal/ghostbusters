@@ -34,8 +34,13 @@ build/
 
 # Test outputs
 test_doorbird_frame.jpg
+test_detections/
+detection_*.jpg
+
+# Keep test images but ignore detection outputs
 *.jpg
 *.png
+!test_images/*.png
 
 # OS files
 .DS_Store
