@@ -143,46 +143,54 @@ export default function Dashboard() {
         )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatsCard
-            title="Total Visitors"
-            value={detections.length}
-            description="All-time trick-or-treaters"
-            icon={Users}
-            trend={{
-              value: activityTrend,
-              label: "from last hour",
-            }}
-          />
-          <StatsCard
-            title="Unique Costumes"
-            value={costumeStats.uniqueCostumes}
-            description="Different costume types"
-            icon={Shirt}
-          />
-          <StatsCard
-            title="Active Now"
-            value={
-              detections.filter(
-                (d) =>
-                  Date.now() - new Date(d.timestamp).getTime() < 5 * 60 * 1000
-              ).length
-            }
-            description="Last 5 minutes"
-            icon={Activity}
-          />
-          <ConfidenceMeter detections={detections} />
+          <div style={{ animationDelay: '0ms' }}>
+            <StatsCard
+              title="Total Visitors"
+              value={detections.length}
+              description="All-time trick-or-treaters"
+              icon={Users}
+              trend={{
+                value: activityTrend,
+                label: "from last hour",
+              }}
+            />
+          </div>
+          <div style={{ animationDelay: '100ms' }}>
+            <StatsCard
+              title="Unique Costumes"
+              value={costumeStats.uniqueCostumes}
+              description="Different costume types"
+              icon={Shirt}
+            />
+          </div>
+          <div style={{ animationDelay: '200ms' }}>
+            <StatsCard
+              title="Active Now"
+              value={
+                detections.filter(
+                  (d) =>
+                    Date.now() - new Date(d.timestamp).getTime() < 5 * 60 * 1000
+                ).length
+              }
+              description="Last 5 minutes"
+              icon={Activity}
+            />
+          </div>
+          <div style={{ animationDelay: '300ms' }}>
+            <ConfidenceMeter detections={detections} />
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 animate-fade-in" style={{ animationDelay: '400ms' }}>
             <CostumeDistribution costumes={costumeStats.costumes} />
           </div>
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-1 animate-fade-in" style={{ animationDelay: '500ms' }}>
             <LiveFeed detections={detections} limit={8} />
           </div>
         </div>
 
-        <div className="mt-6">
+        <div className="mt-6 animate-fade-in" style={{ animationDelay: '600ms' }}>
           <ActivityTimeline detections={detections} />
         </div>
       </div>

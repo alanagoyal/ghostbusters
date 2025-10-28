@@ -85,12 +85,13 @@ export function ActivityTimeline({ detections }: ActivityTimelineProps) {
                   {/* Bar */}
                   <div className="flex-1 w-full flex items-end justify-center">
                     <div
-                      className={`w-3/4 rounded-t-sm transition-all duration-300 ${
+                      className={`w-3/4 rounded-t-sm transition-all duration-300 animate-grow-height ${
                         isEveningHour ? 'bg-primary' : 'bg-primary/40'
                       } ${count > 0 ? 'hover:bg-primary/80' : 'bg-muted'}`}
                       style={{
                         height: `${height}%`,
                         minHeight: count > 0 ? '4px' : '0',
+                        animationDelay: `${hour * 30}ms`
                       }}
                       title={`${count} visitor${count !== 1 ? 's' : ''} at ${hourLabel}`}
                     />

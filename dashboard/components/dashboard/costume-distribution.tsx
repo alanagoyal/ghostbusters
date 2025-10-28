@@ -30,7 +30,11 @@ export function CostumeDistribution({ costumes }: CostumeDistributionProps) {
             </p>
           ) : (
             costumes.map((costume, index) => (
-              <div key={costume.name} className="space-y-2">
+              <div
+                key={costume.name}
+                className="space-y-2 animate-slide-in"
+                style={{ animationDelay: `${index * 100}ms` }}
+              >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium">{costume.name}</span>
@@ -44,8 +48,11 @@ export function CostumeDistribution({ costumes }: CostumeDistributionProps) {
                 </div>
                 <div className="h-2 rounded-full bg-secondary overflow-hidden">
                   <div
-                    className="h-full bg-primary transition-all duration-500"
-                    style={{ width: `${(costume.count / maxCount) * 100}%` }}
+                    className="h-full bg-primary transition-all duration-500 animate-grow-width"
+                    style={{
+                      width: `${(costume.count / maxCount) * 100}%`,
+                      animationDelay: `${index * 100 + 200}ms`
+                    }}
                   />
                 </div>
               </div>

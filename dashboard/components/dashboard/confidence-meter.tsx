@@ -23,24 +23,24 @@ export function ConfidenceMeter({ detections }: ConfidenceMeterProps) {
   }
 
   return (
-    <Card>
+    <Card className="animate-slide-in">
       <CardHeader>
         <CardTitle>Detection Quality</CardTitle>
         <CardDescription>Average confidence score</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="flex flex-col items-center justify-center py-4">
-          <div className={`text-5xl font-bold`}>
+          <div className="text-5xl font-bold animate-scale-in">
             {avgConfidence.toFixed(1)}%
           </div>
-          <div className="text-sm text-muted-foreground mt-2">
+          <div className="text-sm text-muted-foreground mt-2 animate-fade-in" style={{ animationDelay: '200ms' }}>
             {getConfidenceLabel(avgConfidence)}
           </div>
           <div className="w-full mt-4">
             <div className="h-2 rounded-full bg-secondary overflow-hidden">
               <div
-                className="h-full bg-primary transition-all duration-500"
-                style={{ width: `${avgConfidence}%` }}
+                className="h-full bg-primary transition-all duration-500 animate-grow-width"
+                style={{ width: `${avgConfidence}%`, animationDelay: '400ms' }}
               />
             </div>
           </div>
