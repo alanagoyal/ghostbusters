@@ -17,12 +17,15 @@ Send to Baseten API (Llama 3.2 Vision)
     ↓
 Receive structured JSON response:
 {
-  "label": "witch",
+  "classification": "witch",
   "confidence": 0.95,
   "description": "witch with purple hat and black dress"
 }
     ↓
-Store in Supabase database
+Store in Supabase database:
+  - costume_classification: "witch"
+  - costume_description: "witch with purple hat and black dress"
+  - costume_confidence: 0.95
     ↓
 Display on Next.js dashboard
 ```
@@ -86,7 +89,54 @@ Expected output:
 ✅ Connection test passed!
 ```
 
-### 4. Run Person Detection with Costume Classification
+### 4. Test with Real Costume Images
+
+Run the comprehensive test with 4 real Halloween costume images:
+
+```bash
+uv run python test_costume_detection.py
+```
+
+This script will:
+1. Load test images from `test_images/` (Tiger, Elsa, Spider-Man, Vampire)
+2. Classify each costume using Baseten API
+3. Upload results to Supabase database
+4. Save annotated images to `test_detections/`
+
+Expected output:
+```
+🎃 Halloween Costume Detection Test
+======================================================================
+Found 4 test images
+
+Processing: image-BVH1NL6gKJp8QQ3kW_9e1.png
+✅ Classification successful!
+   Type:        tiger
+   Confidence:  0.95
+   Description: child in orange and black tiger costume with hood
+
+Processing: image-qORO3FwW7UYsD2iSDwVnA.png
+✅ Classification successful!
+   Type:        princess
+   Confidence:  0.92
+   Description: Elsa from Frozen in blue dress with blonde braid
+
+... (processes all 4 images)
+
+📊 SUMMARY
+Total images processed: 4
+Successful classifications: 4
+Uploaded to Supabase: 4
+```
+
+**Benefits of this test:**
+- ✅ Tests full pipeline without needing camera/Raspberry Pi
+- ✅ Verifies Baseten API integration works correctly
+- ✅ Confirms Supabase uploads with both `classification` and `description` fields
+- ✅ Validates structured outputs are parsed properly
+- ✅ Provides visual confirmation (annotated images in `test_detections/`)
+
+### 5. Run Person Detection with Costume Classification
 
 Start the main detection script:
 
@@ -330,10 +380,18 @@ No dashboard code changes needed! The components in `dashboard/components/dashbo
 
 ## Next Steps
 
-1. **Test with real photos**: Take sample costume photos and test classification accuracy
-2. **Tune the prompt**: Adjust the classification prompt for your needs
-3. **Monitor costs**: Track API usage in Baseten dashboard
-4. **Add face blurring**: Implement privacy protection before production use (see `PROJECT_SPEC.md` section 5.5)
+1. **Run the test script**: Process the 4 test images to verify everything works
+   ```bash
+   uv run python test_costume_detection.py
+   ```
+2. **Check the results**:
+   - View annotated images in `test_detections/`
+   - Check Supabase dashboard for uploaded records
+   - Open Next.js dashboard to see live costume data
+3. **Tune the prompt**: Adjust the classification prompt in `baseten_client.py` for your needs
+4. **Monitor costs**: Track API usage in Baseten dashboard
+5. **Test with live camera**: Once hardware is set up, run `detect_people.py`
+6. **Add face blurring**: Implement privacy protection before production use (see `PROJECT_SPEC.md` section 5.5)
 
 ## Additional Resources
 
