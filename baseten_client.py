@@ -55,8 +55,8 @@ class BasetenClient:
             custom_prompt: Optional custom prompt (uses default if not provided)
 
         Returns:
-            Tuple of (label, confidence, description) where:
-            - label: Short costume label (e.g., "witch", "skeleton")
+            Tuple of (classification, confidence, description) where:
+            - classification: Short costume type (e.g., "witch", "skeleton")
             - confidence: Confidence score (0.0-1.0)
             - description: Detailed description (e.g., "witch with purple hat and broom")
 
@@ -64,8 +64,8 @@ class BasetenClient:
             >>> client = BasetenClient()
             >>> with open("costume.jpg", "rb") as f:
             ...     image_bytes = f.read()
-            >>> label, confidence, desc = client.classify_costume(image_bytes)
-            >>> print(f"{label} ({confidence:.2f}): {desc}")
+            >>> classification, confidence, desc = client.classify_costume(image_bytes)
+            >>> print(f"{classification} ({confidence:.2f}): {desc}")
             witch (0.95): witch with purple hat and broom
         """
         try:
@@ -76,12 +76,12 @@ class BasetenClient:
             # Default prompt optimized for Halloween costume classification
             prompt = custom_prompt or (
                 "Analyze this Halloween costume and provide:\n"
-                "1. A short label (1-3 words, e.g., 'witch', 'skeleton', 'superhero')\n"
+                "1. A short classification (1-3 words, e.g., 'witch', 'skeleton', 'superhero')\n"
                 "2. A confidence score between 0.0 and 1.0\n"
                 "3. A detailed description (one sentence)\n\n"
                 "Respond ONLY with valid JSON in this exact format:\n"
-                '{"label": "costume_type", "confidence": 0.95, "description": "detailed description"}\n\n'
-                "If you cannot identify a costume, use label='person' and lower confidence."
+                '{"classification": "costume_type", "confidence": 0.95, "description": "detailed description"}\n\n'
+                "If you cannot identify a costume, use classification='person' and lower confidence."
             )
 
             # Call Baseten API with vision model
@@ -111,11 +111,11 @@ class BasetenClient:
 
             result = json.loads(result_text)
 
-            label = result.get("label", "unknown")
+            classification = result.get("classification", "unknown")
             confidence = float(result.get("confidence", 0.0))
             description = result.get("description", "")
 
-            return label, confidence, description
+            return classification, confidence, description
 
         except Exception as e:
             print(f"⚠️  Baseten API error: {e}")

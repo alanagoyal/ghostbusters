@@ -162,7 +162,7 @@ try:
                                 }
 
                 # Classify costume using Baseten if configured
-                costume_label = None
+                costume_classification = None
                 costume_confidence = None
                 costume_description = None
 
@@ -184,14 +184,14 @@ try:
 
                         # Classify costume
                         (
-                            costume_label,
+                            costume_classification,
                             costume_confidence,
                             costume_description,
                         ) = baseten_client.classify_costume(image_bytes)
 
-                        if costume_label:
+                        if costume_classification:
                             print(
-                                f"   👗 Costume: {costume_label} ({costume_confidence:.2f})"
+                                f"   👗 Costume: {costume_classification} ({costume_confidence:.2f})"
                             )
                             print(f"      {costume_description}")
                         else:
@@ -207,7 +207,8 @@ try:
                             timestamp=detection_timestamp,
                             confidence=max_confidence,
                             bounding_box=first_box,
-                            costume_classification=costume_description,  # Use full description
+                            costume_classification=costume_classification,
+                            costume_description=costume_description,
                             costume_confidence=costume_confidence,
                         )
                     except Exception as e:

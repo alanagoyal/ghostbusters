@@ -13,6 +13,7 @@ create table if not exists person_detections (
   image_url text,
   device_id text not null,
   costume_classification text,
+  costume_description text,
   costume_confidence float4,
   created_at timestamptz default now()
 );

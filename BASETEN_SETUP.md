@@ -119,8 +119,8 @@ client = BasetenClient()
 with open("person_crop.jpg", "rb") as f:
     image_bytes = f.read()
 
-label, confidence, description = client.classify_costume(image_bytes)
-print(f"{label} ({confidence:.2f}): {description}")
+classification, confidence, description = client.classify_costume(image_bytes)
+print(f"{classification} ({confidence:.2f}): {description}")
 # Output: witch (0.95): witch with purple hat, black dress, and broomstick
 ```
 
@@ -148,11 +148,17 @@ The system uses JSON structured outputs to ensure consistent response format:
 **Response from Baseten:**
 ```json
 {
-  "label": "skeleton",
+  "classification": "skeleton",
   "confidence": 0.92,
   "description": "skeleton costume with glow-in-the-dark bones"
 }
 ```
+
+**Database Schema:**
+The response fields are mapped to the Supabase database:
+- `classification` → `costume_classification` (short costume type, e.g., "witch", "skeleton")
+- `confidence` → `costume_confidence` (0.0-1.0 confidence score)
+- `description` → `costume_description` (detailed description)
 
 ### Integration with detect_people.py
 

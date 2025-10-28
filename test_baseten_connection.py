@@ -88,7 +88,7 @@ def main():
 
     # Classify
     print("   🤖 Sending to Baseten for classification...")
-    label, confidence, description = client.classify_costume(test_image)
+    classification, confidence, description = client.classify_costume(test_image)
 
     # Display results
     print()
@@ -96,10 +96,10 @@ def main():
     print("🎭 CLASSIFICATION RESULTS")
     print("=" * 50)
 
-    if label:
-        print(f"   Label:       {label}")
-        print(f"   Confidence:  {confidence:.2f}")
-        print(f"   Description: {description}")
+    if classification:
+        print(f"   Classification: {classification}")
+        print(f"   Confidence:     {confidence:.2f}")
+        print(f"   Description:    {description}")
         print()
         print("✅ Classification successful!")
         print()
