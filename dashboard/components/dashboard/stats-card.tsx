@@ -25,7 +25,7 @@ export function StatsCard({ title, value, description, icon: Icon, trend }: Stat
           <p className="text-xs text-muted-foreground mt-1">{description}</p>
         )}
         {trend && (
-          <div className="flex items-center gap-1 mt-1 animate-fade-in" style={{ animationDelay: '200ms' }}>
+          <div className="flex items-center gap-1 mt-1">
             <span className={`text-xs font-medium ${trend.value > 0 ? 'text-green-600' : trend.value < 0 ? 'text-red-600' : 'text-muted-foreground'}`}>
               {trend.value > 0 ? '+' : ''}{trend.value.toFixed(1)}%
             </span>
