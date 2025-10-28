@@ -32,8 +32,7 @@ export function CostumeDistribution({ costumes }: CostumeDistributionProps) {
             costumes.map((costume, index) => (
               <div
                 key={costume.name}
-                className="space-y-2 animate-slide-in"
-                style={{ animationDelay: `${index * 100}ms` }}
+                className="space-y-2"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -51,7 +50,7 @@ export function CostumeDistribution({ costumes }: CostumeDistributionProps) {
                     className="h-full bg-primary transition-all duration-500 animate-grow-width"
                     style={{
                       width: `${(costume.count / maxCount) * 100}%`,
-                      animationDelay: `${index * 100 + 200}ms`
+                      animationDelay: `${index * 100}ms`
                     }}
                   />
                 </div>

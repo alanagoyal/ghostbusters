@@ -38,8 +38,7 @@ export function LiveFeed({ detections, limit = 5 }: LiveFeedProps) {
             recentDetections.map((detection, index) => (
               <div
                 key={detection.id}
-                className="flex items-start gap-3 p-3 rounded-lg border border-border hover:bg-accent/50 transition-colors animate-slide-in"
-                style={{ animationDelay: `${index * 80}ms` }}
+                className="flex items-start gap-3 p-3 rounded-lg border border-border hover:bg-accent/50 transition-colors"
               >
                 <div className="flex-shrink-0">
                   <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">

@@ -23,7 +23,7 @@ export function ConfidenceMeter({ detections }: ConfidenceMeterProps) {
   }
 
   return (
-    <Card className="animate-slide-in">
+    <Card>
       <CardHeader>
         <CardTitle>Detection Quality</CardTitle>
         <CardDescription>Average confidence score</CardDescription>
