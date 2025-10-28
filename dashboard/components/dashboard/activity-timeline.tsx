@@ -31,20 +31,20 @@ export function ActivityTimeline({ detections }: ActivityTimelineProps) {
   return (
     <Card className="col-span-2">
       <CardHeader>
-        <div className="flex justify-between items-center">
-          <div>
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
+          <div className="space-y-1">
             <CardTitle>Activity by Hour</CardTitle>
-            <CardDescription className="mt-1">
+            <CardDescription>
               Peak activity at {peakHour.hour % 12 || 12}:00 {peakHour.hour >= 12 ? 'PM' : 'AM'} with {peakHour.count} visitors
             </CardDescription>
           </div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded-full bg-primary/40"></div>
+          <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs text-muted-foreground sm:pt-1">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-primary/40 flex-shrink-0"></div>
               <span>Day</span>
             </div>
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded-full bg-primary"></div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-primary flex-shrink-0"></div>
               <span>Evening (5-9 PM)</span>
             </div>
           </div>
