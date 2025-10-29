@@ -120,7 +120,7 @@ def process_test_image(
     timestamp = datetime.now()
 
     # Save processed image locally
-    output_dir = Path("test_detections")
+    output_dir = Path("backend/tests/test_detections")
     output_dir.mkdir(exist_ok=True)
 
     timestamp_str = timestamp.strftime("%Y%m%d_%H%M%S")
@@ -190,7 +190,7 @@ def main():
     print("1. Load test images from test_images/")
     print("2. Classify costumes using Baseten API")
     print("3. Upload results to Supabase database")
-    print("4. Save annotated images to test_detections/")
+    print("4. Save annotated images to backend/tests/test_detections/")
     print()
 
     # Check for required environment variables
@@ -278,7 +278,7 @@ def main():
 
     print("\n" + "="*70)
     print("✨ Test complete!")
-    print("\n📁 Check test_detections/ for annotated images")
+    print("\n📁 Check backend/tests/test_detections/ for annotated images")
     print("🌐 Check your Supabase dashboard for uploaded detections")
     print("📊 Check your Next.js dashboard for real-time display")
     print("="*70)

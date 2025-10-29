@@ -90,7 +90,7 @@ def process_multi_person_image(
     timestamp_str = timestamp.strftime("%Y%m%d_%H%M%S")
 
     # Save frame locally with all bounding boxes drawn
-    output_dir = Path("test_detections")
+    output_dir = Path("backend/tests/test_detections")
     output_dir.mkdir(exist_ok=True)
 
     frame_filename = f"frame_{timestamp_str}.jpg"
@@ -209,7 +209,7 @@ def main():
     print("2. Detect ALL people using YOLOv8n")
     print("3. Classify each person's costume separately")
     print("4. Upload each detection as a separate database entry")
-    print("5. Save annotated images to test_detections/")
+    print("5. Save annotated images to backend/tests/test_detections/")
     print()
 
     # Check for required environment variables
@@ -306,7 +306,7 @@ def main():
 
     print("\n" + "="*70)
     print("✨ Test complete!")
-    print("\n📁 Check test_detections/ for annotated images")
+    print("\n📁 Check backend/tests/test_detections/ for annotated images")
     if supabase_client:
         print("🌐 Check your Supabase dashboard for uploaded detections")
         print("📊 Check your Next.js dashboard for real-time display")
