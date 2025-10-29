@@ -80,6 +80,28 @@ uv run detect_people.py
 ```
 Watches the RTSP stream, detects all people in each frame, classifies their costumes, and uploads to Supabase. Handles multiple people in the same frame automatically.
 
+**Test face blurring (privacy feature):**
+```bash
+uv run test_face_blur.py
+```
+Verifies that the face blurring module is working correctly. All images saved locally and uploaded to Supabase automatically have faces blurred for privacy.
+
+**Test face blurring on an image:**
+```bash
+uv run face_blur.py test_images/test-1.png output_blurred.jpg
+```
+
+## 🔒 Privacy Features
+
+All detection scripts now include automatic face blurring:
+- **Local storage:** Faces are blurred before saving to filesystem
+- **Cloud uploads:** Only face-blurred images are sent to Supabase Storage
+- **API calls:** Face-blurred crops are sent to Baseten for costume classification
+- **Algorithm:** OpenCV Haar Cascade face detection + Gaussian blur
+- **Transparency:** System logs how many faces were blurred per detection
+
+No identifiable faces are stored or transmitted, ensuring visitor privacy while still capturing costume data.
+
 ## 🥧 Raspberry Pi Management
 
 ### Connecting to Your Pi
