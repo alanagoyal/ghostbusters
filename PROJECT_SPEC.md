@@ -76,17 +76,18 @@ All development, updates, and logs are handled via SSH terminal sessions.
 [Raspberry Pi 5]
     - Captures frames from RTSP
     - Runs person detection (YOLO)
-    - Crops each person
-    - Sends cropped person images to Baseten API for costume classification
+    - Detects ALL people in frame (handles multiple people)
+    - Crops each detected person individually
+    - Sends each cropped person image to Baseten API for costume classification
     - Baseten runs vision-language model and returns description
     - Blurs faces before saving any thumbnails (privacy)
-    - Posts {description, confidence, timestamp} to Supabase via REST
+    - Posts separate {description, confidence, timestamp} entry per person to Supabase
     |
     | (HTTPS)
     v
 [Supabase]
-    - Postgres table `sightings`
-    - Row-level inserts from Pi
+    - Postgres table `person_detections`
+    - Row-level inserts from Pi (one per detected person)
     - Supabase Realtime broadcasts inserts
     |
     | (Realtime websocket)
