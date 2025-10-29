@@ -87,9 +87,7 @@ export function ActivityTimeline({ detections }: ActivityTimelineProps) {
           {/* Bars */}
           <div className="flex items-end justify-between h-48 gap-0.5 pl-8">
             {hourlyData.map(({ hour, count }) => {
-              const height = count > 0
-                ? Math.max(5, (count / yAxisMax) * 100)
-                : 0;
+              const height = (count / yAxisMax) * 100;
               const isEveningHour = hour >= 17 && hour <= 21;
               const hourLabel = hour === 0 ? '12 AM' : hour < 12 ? `${hour} AM` : hour === 12 ? '12 PM' : `${hour - 12} PM`;
               const isMajorTick = hour % 3 === 0;
