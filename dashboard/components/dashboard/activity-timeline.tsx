@@ -1,6 +1,7 @@
 'use client'
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { AnimatedNumber } from '@/components/ui/animated-number'
 import { useMemo } from 'react'
 
 interface TimeSlot {
@@ -35,7 +36,7 @@ export function ActivityTimeline({ detections }: ActivityTimelineProps) {
           <div className="space-y-1">
             <CardTitle>Activity by Hour</CardTitle>
             <CardDescription>
-              Peak activity at {peakHour.hour % 12 || 12}:00 {peakHour.hour >= 12 ? 'PM' : 'AM'} with {peakHour.count} visitors
+              Peak activity at {peakHour.hour % 12 || 12}:00 {peakHour.hour >= 12 ? 'PM' : 'AM'} with <AnimatedNumber value={peakHour.count} decimals={0} /> visitors
             </CardDescription>
           </div>
           <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs text-muted-foreground sm:pt-1">

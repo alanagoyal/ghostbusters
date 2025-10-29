@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { AnimatedNumber } from '@/components/ui/animated-number'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import { toTitleCase } from '@/lib/string-utils'
 
@@ -60,11 +61,11 @@ export function CostumeDistribution({ costumes }: CostumeDistributionProps) {
                     )}
                     <span className="text-sm font-medium">{toTitleCase(costume.name)}</span>
                     <Badge variant="secondary" className="text-xs">
-                      {costume.count}
+                      <AnimatedNumber value={costume.count} decimals={0} />
                     </Badge>
                   </div>
                   <span className="text-sm text-muted-foreground">
-                    {costume.percentage.toFixed(1)}%
+                    <AnimatedNumber value={costume.percentage} decimals={1} suffix="%" />
                   </span>
                 </div>
                 <div className="h-2 rounded-full bg-secondary overflow-hidden">

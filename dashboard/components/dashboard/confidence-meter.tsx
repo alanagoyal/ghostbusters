@@ -1,6 +1,7 @@
 'use client'
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { AnimatedNumber } from '@/components/ui/animated-number'
 import { useMemo } from 'react'
 
 interface ConfidenceMeterProps {
@@ -31,7 +32,7 @@ export function ConfidenceMeter({ detections }: ConfidenceMeterProps) {
       <CardContent>
         <div className="flex flex-col items-center justify-center py-4">
           <div className="text-5xl font-bold">
-            {avgConfidence.toFixed(1)}%
+            <AnimatedNumber value={avgConfidence} decimals={1} suffix="%" />
           </div>
           <div className="text-sm text-muted-foreground mt-2">
             {getConfidenceLabel(avgConfidence)}

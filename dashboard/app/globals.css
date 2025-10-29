@@ -136,6 +136,17 @@
     }
   }
 
+  @keyframes pulseSubtle {
+    0%, 100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.95;
+      transform: scale(1.02);
+    }
+  }
+
   .animate-slide-in {
     animation: slideInFromBottom 0.6s ease-out forwards;
   }
@@ -154,5 +165,9 @@
 
   .animate-scale-in {
     animation: scaleIn 0.5s ease-out forwards;
+  }
+
+  .animate-pulse-subtle {
+    animation: pulseSubtle 0.4s ease-in-out;
   }
 }
