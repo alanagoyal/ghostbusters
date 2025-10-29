@@ -12,7 +12,7 @@ from backend.src.utils.face_blur import FaceBlurrer
 
 def main():
     # Setup paths
-    fixtures_dir = Path(__file__).parent.parent / "tests" / "fixtures"
+    fixtures_dir = Path(__file__).parent.parent / "fixtures"
     output_dir = Path(__file__).parent.parent / "test_blurred_output"
     output_dir.mkdir(exist_ok=True)
 
