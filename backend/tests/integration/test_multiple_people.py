@@ -13,8 +13,8 @@ import cv2
 from dotenv import load_dotenv
 from ultralytics import YOLO
 
-from baseten_client import BasetenClient
-from supabase_client import SupabaseClient
+from backend.src.clients.baseten_client import BasetenClient
+from backend.src.clients.supabase_client import SupabaseClient
 
 # Load environment variables
 load_dotenv()
@@ -198,7 +198,7 @@ def main():
     print("🎃 Multi-Person Detection Test")
     print("="*70)
     print("\nThis script will:")
-    print("1. Load test images from test_images/")
+    print("1. Load test images from backend/tests/fixtures/")
     print("2. Detect ALL people using YOLOv8n")
     print("3. Classify each person's costume separately")
     print("4. Upload each detection as a separate database entry")
@@ -236,7 +236,7 @@ def main():
     print("✅ Model loaded!")
 
     # Find test images (only test-6.png and test-7.png for multi-person detection)
-    test_images_dir = Path("test_images")
+    test_images_dir = Path("backend/tests/fixtures")
     if not test_images_dir.exists():
         print(f"❌ ERROR: {test_images_dir} directory not found")
         sys.exit(1)

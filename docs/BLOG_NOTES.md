@@ -1593,6 +1593,273 @@ Complete pipeline (almost there!):
 
 ---
 
+## Day 7: Project Structure Refactor
+
+### Why Refactor?
+
+After implementing all the core features (YOLO detection, Baseten classification, Supabase storage, Next.js dashboard), the project structure had grown organically but wasn't well-organized:
+
+**Problems:**
+- Python files scattered in root directory
+- Documentation files mixed with code
+- Test files loosely organized
+- `dashboard/` directory name didn't reflect it was the frontend
+- Tests weren't colocated with the code they tested
+
+**Goal:** Reorganize to follow standard full-stack practices while maintaining simplicity.
+
+### Design Principles
+
+1. **Clear separation of concerns**: Backend vs Frontend vs Tests vs Docs
+2. **Standard conventions**: Follow established patterns (pytest, Next.js)
+3. **Not too many subfolders**: Keep nesting minimal for easy navigation
+4. **Self-documenting structure**: Directory names clearly indicate purpose
+5. **Scalability**: Easy to add new features without restructuring
+
+### New Structure
+
+```
+costume-classifier/
+├── backend/                    # Python ML backend
+│   ├── src/
+│   │   └── clients/           # External service clients
+│   │       ├── baseten_client.py
+│   │       └── supabase_client.py
+│   ├── scripts/
+│   │   └── main.py            # Entry point (renamed from detect_people.py)
+│   └── tests/                 # Backend tests colocated with code
+│       ├── fixtures/          # Test images (renamed from images/)
+│       └── integration/       # Integration tests
+├── frontend/                   # Next.js dashboard (renamed from dashboard/)
+│   ├── app/
+│   ├── components/
+│   └── lib/
+├── docs/                       # All documentation
+│   ├── BASETEN_SETUP.md
+│   ├── DOORBIRD_SETUP.md
+│   ├── SUPABASE_SETUP.md
+│   ├── PROJECT_SPEC.md
+│   └── BLOG_NOTES.md
+└── Root configs                # Only config files at root
+    ├── pyproject.toml
+    ├── .env.example
+    └── README.md
+```
+
+### Key Changes
+
+**1. Backend Organization**
+- Created `backend/` directory for all Python code
+- `backend/src/clients/` - API clients (Baseten, Supabase)
+- `backend/scripts/main.py` - Main entry point (was `detect_people.py`)
+- Added proper Python package structure with `__init__.py` files
+
+**2. Tests Moved to Backend**
+- `tests/` → `backend/tests/`
+- Tests now colocated with the code they test
+- `tests/images/` → `backend/tests/fixtures/` (more semantic naming)
+- Follows standard pytest conventions
+- Easy to add frontend tests later in `frontend/__tests__/`
+
+**3. Frontend Renamed**
+- `dashboard/` → `frontend/`
+- More professional and clear
+- Matches standard full-stack terminology
+
+**4. Documentation Centralized**
+- All `.md` files moved to `docs/`
+- Except README.md at root (standard convention)
+- Easy to find all documentation in one place
+
+**5. Import Path Updates**
+- All Python files updated with new module imports:
+  ```python
+  from backend.src.clients.baseten_client import BasetenClient
+  from backend.src.clients.supabase_client import SupabaseClient
+  ```
+- Test files updated to reference `backend/tests/fixtures/`
+
+**6. Main Script Naming**
+- `detect_people.py` → `main.py`
+- Standard convention for primary entry point
+- Clearer that this is the main script to run
+
+### Migration Process
+
+**Used git mv for all moves:**
+- Preserves file history
+- Shows as renames (R) not deletes + adds (D + A)
+- Clean git history
+
+**Updated all references:**
+- ✅ Import statements in Python files
+- ✅ File paths in test scripts
+- ✅ README.md commands and structure diagram
+- ✅ Documentation references
+- ✅ REFACTOR_TEST_CHECKLIST.md
+
+**Created `pyproject.toml` package config:**
+```toml
+[tool.uv]
+package = true
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+```
+
+### Benefits
+
+**For Development:**
+- Clear ownership: backend tests with backend code
+- Easy to find related files
+- Standard structure familiar to contributors
+- Better IDE support with proper Python packages
+
+**For Scaling:**
+- Easy to add frontend tests in `frontend/__tests__/`
+- Can add more backend modules in `backend/src/`
+- Can add more script entry points in `backend/scripts/`
+- Clear place for new fixtures/test data
+
+**For CI/CD:**
+- Backend and frontend can be tested independently
+- Can run `pytest backend/tests/`
+- Can run `npm test` in `frontend/`
+- Easier to set up separate workflows
+
+**For New Contributors:**
+- Self-documenting structure
+- Follows established patterns
+- Easy to understand project layout
+- Standard conventions reduce cognitive load
+
+### Test Command Updates
+
+**Before:**
+```bash
+uv run test_costume_detection.py
+uv run detect_people.py
+```
+
+**After:**
+```bash
+uv run backend/tests/integration/test_costume_detection.py
+uv run backend/scripts/main.py
+```
+
+More explicit, shows project structure at a glance.
+
+### Environment File Note
+
+**Important gotcha:** `.env.local` files aren't tracked by git, so when renaming directories:
+- Frontend needs its own `frontend/.env.local`
+- Copy Supabase credentials from root `.env` if needed
+- Both frontend and backend can share root `.env` or have separate configs
+
+### What Didn't Change
+
+**Functionality:**
+- No code logic changes
+- All imports work correctly
+- All tests still pass
+- Same commands, just with updated paths
+
+**Configuration:**
+- Environment variables unchanged
+- Supabase schema unchanged
+- Baseten configuration unchanged
+
+### Lessons Learned
+
+**1. Organic growth needs periodic cleanup**
+- Started with files in root (fast prototyping)
+- As features grew, needed better organization
+- Refactoring mid-project is normal and healthy
+
+**2. Standard conventions are worth following**
+- Tests colocated with code they test
+- `main.py` for entry points
+- `fixtures/` for test data
+- These exist for good reasons
+
+**3. Git mv preserves history**
+- Always use `git mv` for renames
+- Maintains file history and blame info
+- Shows intent clearly in git log
+
+**4. Update all documentation immediately**
+- README, setup docs, checklists all updated
+- Prevents confusion for future you
+- Makes refactor truly complete
+
+**5. Structure should scale with complexity**
+- Root files OK for prototypes
+- Multi-directory structure for production
+- But don't over-engineer - keep it simple
+
+### Performance Impact
+
+**None.** This is purely organizational:
+- Same Python imports (just different module paths)
+- Same runtime behavior
+- Same dependencies
+- Zero performance change
+
+### Migration Checklist
+
+- [x] Create backend directory structure
+- [x] Move Python files to backend/src/clients/
+- [x] Move main script to backend/scripts/
+- [x] Move tests to backend/tests/
+- [x] Rename dashboard/ to frontend/
+- [x] Move documentation to docs/
+- [x] Update all import statements
+- [x] Update test file paths
+- [x] Update README commands
+- [x] Update REFACTOR_TEST_CHECKLIST
+- [x] Add __init__.py files for Python packages
+- [x] Update pyproject.toml with package config
+- [x] Verify git shows renames not deletes
+- [x] Test that imports still work
+
+### Updated Checklist
+
+- [x] Set up Raspberry Pi 5 (OS, SSH, networking)
+- [x] Test RTSP connection to DoorBird
+- [x] Implement YOLO person detection on Pi
+- [x] Create Supabase project and schema
+- [x] Build database logging with Storage integration
+- [x] Build Next.js dashboard with Realtime updates
+- [x] Set up Baseten account and deploy model
+- [x] Build baseten_client.py wrapper
+- [x] Test costume classification with real images
+- [x] Fix JSON parsing for Gemma model artifacts
+- [x] Integrate costume classification into detect_people.py
+- [x] **Refactor project structure for maintainability**
+- [ ] Deploy dashboard to Vercel
+- [ ] End-to-end testing (full pipeline)
+- [ ] Deploy and prep for Halloween night
+
+### What's Next
+
+1. **Deploy frontend to Vercel:**
+   - Connect GitHub repo
+   - Configure environment variables
+   - Deploy with one click
+
+2. **End-to-end testing:**
+   - Run full pipeline with new structure
+   - Verify all paths work correctly
+   - Test on actual hardware
+
+3. **Final prep for Halloween:**
+   - Monitor system health
+   - Have backup plans ready
+   - Prepare deployment script
+
+---
+
 ## Handling Multiple People Detection
 
 ### The Halloween Group Use Case
@@ -1608,7 +1875,7 @@ Complete pipeline (almost there!):
 
 ### Changes Made to Support Multiple People
 
-**Updated detection pipeline in `detect_people.py` (lines 142-224):**
+**Updated detection pipeline in `backend/scripts/main.py` (lines 142-224):**
 
 **Before (single person):**
 ```python
@@ -1709,7 +1976,7 @@ for person_idx, person in enumerate(detected_people):
 
 ### Testing Infrastructure
 
-**Created `test_multiple_people.py`:**
+**Created `backend/tests/integration/test_multiple_people.py`:**
 - Comprehensive test script for multi-person scenarios
 - Uses YOLOv8n to detect all people in test images
 - Processes each person through the full pipeline
@@ -1765,4 +2032,4 @@ for person_idx, person in enumerate(detected_people):
 
 ---
 
-*Last updated: 2025-10-29 (Day 7: Multiple people detection added)*
+*Last updated: 2025-10-29 (Day 7: Project structure refactored + Multiple people detection added)*
