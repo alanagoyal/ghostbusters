@@ -47,20 +47,28 @@ Raspberry Pi edge computer vision system that watches a DoorBird doorbell camera
 
 ### Testing
 
-Test your DoorBird connection:
+**Test Baseten API connection:**
+```bash
+uv run python test_baseten_connection.py
+```
 
+**Test with real costume images:**
+```bash
+uv run python test_costume_detection.py
+```
+This processes the 4 test images in `test_images/`, classifies costumes with Baseten, and uploads to Supabase.
+
+**Test DoorBird camera connection:**
 ```bash
 uv run python test_doorbird_connection.py
 ```
 
-Test your Supabase integration:
-
+**Test Supabase integration:**
 ```bash
 uv run python test_supabase_connection.py
 ```
 
-Run person detection with Supabase upload:
-
+**Run live person detection:**
 ```bash
 uv run python detect_people.py
 ```
@@ -134,6 +142,7 @@ sudo apt update && sudo apt upgrade -y
 
 ## 📖 Documentation
 
+- [Baseten Setup Guide](BASETEN_SETUP.md) - Vision model API configuration for costume classification
 - [DoorBird Setup Guide](DOORBIRD_SETUP.md) - Camera configuration and RTSP setup
 - [Supabase Setup Guide](SUPABASE_SETUP.md) - Database and storage configuration
 - [Project Specification](PROJECT_SPEC.md) - Complete system architecture

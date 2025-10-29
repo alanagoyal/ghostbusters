@@ -83,6 +83,7 @@ class SupabaseClient:
         bounding_box: dict,
         image_url: Optional[str] = None,
         costume_classification: Optional[str] = None,
+        costume_description: Optional[str] = None,
         costume_confidence: Optional[float] = None,
     ) -> Optional[dict]:
         """
@@ -93,7 +94,8 @@ class SupabaseClient:
             confidence: YOLO confidence score (0.0-1.0)
             bounding_box: Dict with x1, y1, x2, y2 coordinates
             image_url: URL to uploaded image (optional)
-            costume_classification: AI costume description (optional)
+            costume_classification: AI costume type (e.g., "witch", "skeleton") (optional)
+            costume_description: Detailed costume description (optional)
             costume_confidence: AI classification confidence (optional)
 
         Returns:
@@ -112,6 +114,8 @@ class SupabaseClient:
                 data["image_url"] = image_url
             if costume_classification:
                 data["costume_classification"] = costume_classification
+            if costume_description:
+                data["costume_description"] = costume_description
             if costume_confidence is not None:
                 data["costume_confidence"] = costume_confidence
 
@@ -135,6 +139,7 @@ class SupabaseClient:
         confidence: float,
         bounding_box: dict,
         costume_classification: Optional[str] = None,
+        costume_description: Optional[str] = None,
         costume_confidence: Optional[float] = None,
     ) -> bool:
         """
@@ -145,7 +150,8 @@ class SupabaseClient:
             timestamp: When person was detected
             confidence: YOLO confidence score
             bounding_box: Dict with x1, y1, x2, y2 coordinates
-            costume_classification: AI costume description (optional)
+            costume_classification: AI costume type (e.g., "witch", "skeleton") (optional)
+            costume_description: Detailed costume description (optional)
             costume_confidence: AI classification confidence (optional)
 
         Returns:
@@ -164,6 +170,7 @@ class SupabaseClient:
             bounding_box=bounding_box,
             image_url=image_url,
             costume_classification=costume_classification,
+            costume_description=costume_description,
             costume_confidence=costume_confidence,
         )
 
@@ -203,6 +210,7 @@ class SupabaseClient:
         self,
         detection_id: str,
         costume_classification: str,
+        costume_description: str,
         costume_confidence: float,
     ) -> bool:
         """
@@ -210,7 +218,8 @@ class SupabaseClient:
 
         Args:
             detection_id: UUID of detection record
-            costume_classification: AI costume description
+            costume_classification: AI costume type (e.g., "witch", "skeleton")
+            costume_description: Detailed costume description
             costume_confidence: AI classification confidence
 
         Returns:
@@ -222,6 +231,7 @@ class SupabaseClient:
                 .update(
                     {
                         "costume_classification": costume_classification,
+                        "costume_description": costume_description,
                         "costume_confidence": costume_confidence,
                     }
                 )
