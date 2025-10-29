@@ -28,6 +28,20 @@ export function ActivityTimeline({ detections }: ActivityTimelineProps) {
   const maxCount = Math.max(...hourlyData.map(h => h.count), 1)
   const peakHour = hourlyData.reduce((max, h) => h.count > max.count ? h : max, hourlyData[0])
 
+  // Calculate a nice y-axis scale based on the max count
+  const calculateYAxisScale = (max: number): number => {
+    if (max <= 5) return 5
+    if (max <= 10) return 10
+    if (max <= 20) return 20
+    if (max <= 50) return 50
+    if (max <= 100) return 100
+    // For larger values, round up to nearest 50
+    return Math.ceil(max / 50) * 50
+  }
+
+  const yAxisMax = calculateYAxisScale(maxCount)
+  const yAxisTicks = Array.from({ length: 6 }, (_, i) => Math.round((yAxisMax / 5) * i))
+
   return (
     <Card className="col-span-2">
       <CardHeader>
@@ -54,12 +68,12 @@ export function ActivityTimeline({ detections }: ActivityTimelineProps) {
         <div className="relative">
           {/* Y-axis grid lines */}
           <div className="absolute top-0 left-0 right-0 bottom-8">
-            {[0, 1, 2, 3, 4, 5].map((tick) => (
-              <div 
+            {yAxisTicks.map((tick) => (
+              <div
                 key={tick}
                 className="absolute w-full border-b border-border/50"
                 style={{
-                  bottom: `${(tick / 5) * 100}%`,
+                  bottom: `${(tick / yAxisMax) * 100}%`,
                   height: '1px'
                 }}
               >
@@ -73,8 +87,8 @@ export function ActivityTimeline({ detections }: ActivityTimelineProps) {
           {/* Bars */}
           <div className="flex items-end justify-between h-48 gap-0.5 pl-8">
             {hourlyData.map(({ hour, count }) => {
-              const height = count > 0 
-                ? Math.max(5, (count / maxCount) * 100) 
+              const height = count > 0
+                ? Math.max(5, (count / yAxisMax) * 100)
                 : 0;
               const isEveningHour = hour >= 17 && hour <= 21;
               const hourLabel = hour === 0 ? '12 AM' : hour < 12 ? `${hour} AM` : hour === 12 ? '12 PM' : `${hour - 12} PM`;
