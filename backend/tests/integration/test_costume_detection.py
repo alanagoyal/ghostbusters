@@ -14,6 +14,7 @@ from dotenv import load_dotenv
 
 from backend.src.clients.baseten_client import BasetenClient
 from backend.src.clients.supabase_client import SupabaseClient
+from backend.src.utils.face_blur import FaceBlurrer
 
 # Load environment variables
 load_dotenv()
@@ -47,6 +48,7 @@ def process_test_image(
     image_path: str,
     baseten_client: BasetenClient,
     supabase_client: SupabaseClient,
+    face_blurrer: FaceBlurrer,
 ) -> dict:
     """
     Process a single test image through the complete pipeline:
@@ -79,13 +81,18 @@ def process_test_image(
     bbox = extract_person_bbox_from_image(image_path)
     print(f"📦 Bounding box: {bbox}")
 
-    # Extract person crop
-    person_crop = img[bbox["y1"]:bbox["y2"], bbox["x1"]:bbox["x2"]]
+    # Blur faces for privacy protection
+    blurred_img, num_faces = face_blurrer.blur_faces(img)
+    if num_faces > 0:
+        print(f"🔒 Blurred {num_faces} face(s) for privacy")
 
-    # Encode full image to bytes (for Baseten - using full image for better context)
+    # Extract person crop from blurred image
+    person_crop = blurred_img[bbox["y1"]:bbox["y2"], bbox["x1"]:bbox["x2"]]
+
+    # Encode blurred full image to bytes (for Baseten - using full image for better context)
     # In production, we'd send just the person crop, but these test images
     # have good context that helps with classification
-    _, buffer = cv2.imencode('.jpg', img)
+    _, buffer = cv2.imencode('.jpg', blurred_img)
     image_bytes = buffer.tobytes()
 
     print("\n🎭 Classifying costume with Baseten...")
@@ -113,16 +120,16 @@ def process_test_image(
     timestamp = datetime.now()
 
     # Save processed image locally
-    output_dir = Path("test_detections")
+    output_dir = Path("backend/tests/test_detections")
     output_dir.mkdir(exist_ok=True)
 
     timestamp_str = timestamp.strftime("%Y%m%d_%H%M%S")
     output_filename = f"detection_{timestamp_str}_{classification}.jpg"
     output_path = output_dir / output_filename
 
-    # Draw bounding box on image
+    # Draw bounding box on blurred image
     cv2.rectangle(
-        img,
+        blurred_img,
         (bbox["x1"], bbox["y1"]),
         (bbox["x2"], bbox["y2"]),
         (0, 255, 0),
@@ -132,7 +139,7 @@ def process_test_image(
     # Add label
     label_text = f"{classification} ({confidence:.2f})"
     cv2.putText(
-        img,
+        blurred_img,
         label_text,
         (bbox["x1"], bbox["y1"] - 10),
         cv2.FONT_HERSHEY_SIMPLEX,
@@ -141,7 +148,7 @@ def process_test_image(
         2,
     )
 
-    cv2.imwrite(str(output_path), img)
+    cv2.imwrite(str(output_path), blurred_img)
     print(f"\n💾 Saved detection locally: {output_path}")
 
     # Upload to Supabase
@@ -183,7 +190,7 @@ def main():
     print("1. Load test images from test_images/")
     print("2. Classify costumes using Baseten API")
     print("3. Upload results to Supabase database")
-    print("4. Save annotated images to test_detections/")
+    print("4. Save annotated images to backend/tests/test_detections/")
     print()
 
     # Check for required environment variables
@@ -213,6 +220,11 @@ def main():
         print(f"❌ Failed to initialize Supabase client: {e}")
         sys.exit(1)
 
+    # Initialize face blurrer
+    print("🔒 Initializing face blurrer...")
+    face_blurrer = FaceBlurrer(blur_strength=51)
+    print("✅ Face blurrer initialized (privacy protection enabled)")
+
     # Find test images (only test-1.png through test-5.png for single-person detection)
     test_images_dir = Path("backend/tests/fixtures")
     if not test_images_dir.exists():
@@ -240,6 +252,7 @@ def main():
             str(image_path),
             baseten_client,
             supabase_client,
+            face_blurrer,
         )
 
         if result:
@@ -265,7 +278,7 @@ def main():
 
     print("\n" + "="*70)
     print("✨ Test complete!")
-    print("\n📁 Check test_detections/ for annotated images")
+    print("\n📁 Check backend/tests/test_detections/ for annotated images")
     print("🌐 Check your Supabase dashboard for uploaded detections")
     print("📊 Check your Next.js dashboard for real-time display")
     print("="*70)

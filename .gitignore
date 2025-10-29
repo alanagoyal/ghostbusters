@@ -33,9 +33,8 @@ dist/
 build/
 
 # Test outputs
-test_doorbird_frame.jpg
-test_detections/
-detection_*.jpg
+backend/tests/test_detections/
+backend/tests/test_blurred_output/
 
 # Keep test images but ignore detection outputs
 *.jpg

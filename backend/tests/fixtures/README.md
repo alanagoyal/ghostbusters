@@ -38,7 +38,7 @@ This will:
 1. Load each image
 2. Classify the costume using Baseten API
 3. Upload results to Supabase database
-4. Save annotated images to `test_detections/`
+4. Save annotated images to `backend/tests/test_detections/`
 
 ### Multi-Person Detection Test
 
@@ -56,7 +56,7 @@ This will:
 5. Create separate database entries for each person
 6. Upload all detections to Supabase database
 7. Save annotated frames with all bounding boxes drawn
-8. Save individual person crops to `test_detections/`
+8. Save individual person crops to `backend/tests/test_detections/`
 
 ## Expected Results
 

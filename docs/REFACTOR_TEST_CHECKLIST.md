@@ -34,7 +34,7 @@
   - Should process test images from `backend/tests/fixtures/`
   - Should classify costumes using Baseten
   - Should upload to Supabase
-  - Should create annotated images in `test_detections/`
+  - Should create annotated images in `backend/tests/test_detections/`
 
 - [ ] **Test multi-person detection**: `uv run backend/tests/integration/test_multiple_people.py`
   - Should detect multiple people in test-6.png and test-7.png
@@ -105,7 +105,7 @@
 - [ ] `backend/tests/fixtures/README.md` exists
 
 ### Test Output
-- [ ] Running tests creates `test_detections/` directory
+- [ ] Running tests creates `backend/tests/test_detections/` directory
 - [ ] Annotated images saved correctly
 - [ ] No errors accessing test images
 
