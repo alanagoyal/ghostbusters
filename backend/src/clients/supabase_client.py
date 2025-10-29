@@ -58,11 +58,11 @@ class SupabaseClient:
             with open(image_path, "rb") as f:
                 image_data = f.read()
 
-            # Upload to Supabase storage
+            # Upload to Supabase storage (upsert to handle duplicates)
             self.client.storage.from_(self.bucket_name).upload(
                 path=storage_path,
                 file=image_data,
-                file_options={"content-type": "image/jpeg"},
+                file_options={"content-type": "image/jpeg", "upsert": "true"},
             )
 
             # Get public URL

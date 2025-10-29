@@ -263,14 +263,16 @@ def test_costume_classification_update(client: SupabaseClient, detection_id: str
     try:
         success = client.update_costume_classification(
             detection_id=detection_id,
-            costume_classification="Test Superhero Costume",
+            costume_classification="superhero",
+            costume_description="Test Superhero Costume with cape and mask",
             costume_confidence=0.88,
         )
 
         if success:
             print("✅ Costume classification updated successfully")
             print(f"   Detection ID: {detection_id}")
-            print("   Classification: Test Superhero Costume")
+            print("   Classification: superhero")
+            print("   Description: Test Superhero Costume with cape and mask")
             print("   Confidence: 0.88")
             return True
         else:
