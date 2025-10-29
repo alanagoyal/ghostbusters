@@ -42,6 +42,9 @@ detection_*.jpg
 *.png
 !test_images/*.png
 
+# Model files
+*.pt
+
 # OS files
 .DS_Store
 Thumbs.db

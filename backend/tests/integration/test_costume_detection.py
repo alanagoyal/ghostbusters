@@ -12,8 +12,8 @@ from pathlib import Path
 import cv2
 from dotenv import load_dotenv
 
-from baseten_client import BasetenClient
-from supabase_client import SupabaseClient
+from backend.src.clients.baseten_client import BasetenClient
+from backend.src.clients.supabase_client import SupabaseClient
 
 # Load environment variables
 load_dotenv()
@@ -214,7 +214,7 @@ def main():
         sys.exit(1)
 
     # Find test images (only test-1.png through test-5.png for single-person detection)
-    test_images_dir = Path("test_images")
+    test_images_dir = Path("backend/tests/fixtures")
     if not test_images_dir.exists():
         print(f"❌ ERROR: {test_images_dir} directory not found")
         sys.exit(1)

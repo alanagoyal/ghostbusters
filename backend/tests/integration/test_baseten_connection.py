@@ -9,7 +9,7 @@ import sys
 
 from dotenv import load_dotenv
 
-from baseten_client import BasetenClient
+from backend.src.clients.baseten_client import BasetenClient
 
 # Load environment variables
 load_dotenv()
