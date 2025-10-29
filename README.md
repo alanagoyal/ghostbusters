@@ -22,15 +22,15 @@ costume-classifier/
 │   │   └── clients/           # External service clients
 │   │       ├── baseten_client.py    # Baseten API client
 │   │       └── supabase_client.py   # Supabase client
-│   └── scripts/               # Entry point scripts
-│       └── main.py            # Live detection script
+│   ├── scripts/               # Entry point scripts
+│   │   └── main.py            # Live detection script
+│   └── tests/                 # Backend tests
+│       ├── fixtures/          # Test images and data
+│       └── integration/       # Integration tests
 ├── frontend/                   # Next.js dashboard
 │   ├── app/                   # Next.js app directory
 │   ├── components/            # React components
 │   └── lib/                   # Frontend utilities
-├── tests/                      # Test suite
-│   ├── images/                # Test images
-│   └── integration/           # Integration tests
 ├── docs/                       # Documentation
 │   ├── BASETEN_SETUP.md      # Vision model API setup
 │   ├── DOORBIRD_SETUP.md     # Camera configuration
@@ -76,29 +76,29 @@ costume-classifier/
 
 **Test Baseten API connection:**
 ```bash
-uv run tests/integration/test_baseten_connection.py
+uv run backend/tests/integration/test_baseten_connection.py
 ```
 
 **Test with single-person costume images:**
 ```bash
-uv run tests/integration/test_costume_detection.py
+uv run backend/tests/integration/test_costume_detection.py
 ```
-This processes the test images in `tests/images/`, classifies costumes with Baseten, and uploads to Supabase.
+This processes the test images in `backend/tests/fixtures/`, classifies costumes with Baseten, and uploads to Supabase.
 
 **Test multi-person detection:**
 ```bash
-uv run tests/integration/test_multiple_people.py
+uv run backend/tests/integration/test_multiple_people.py
 ```
 This uses YOLOv8n to detect ALL people in each frame (including test-6.png and test-7.png with 3 kids each), processes each person separately, and creates individual database entries. Perfect for testing group scenarios like multiple trick-or-treaters arriving together.
 
 **Test DoorBird camera connection:**
 ```bash
-uv run tests/integration/test_doorbird_connection.py
+uv run backend/tests/integration/test_doorbird_connection.py
 ```
 
 **Test Supabase integration:**
 ```bash
-uv run tests/integration/test_supabase_connection.py
+uv run backend/tests/integration/test_supabase_connection.py
 ```
 
 **Run live person detection:**

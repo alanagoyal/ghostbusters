@@ -198,7 +198,7 @@ def main():
     print("🎃 Multi-Person Detection Test")
     print("="*70)
     print("\nThis script will:")
-    print("1. Load test images from tests/images/")
+    print("1. Load test images from backend/tests/fixtures/")
     print("2. Detect ALL people using YOLOv8n")
     print("3. Classify each person's costume separately")
     print("4. Upload each detection as a separate database entry")
@@ -236,7 +236,7 @@ def main():
     print("✅ Model loaded!")
 
     # Find test images (only test-6.png and test-7.png for multi-person detection)
-    test_images_dir = Path("tests/images")
+    test_images_dir = Path("backend/tests/fixtures")
     if not test_images_dir.exists():
         print(f"❌ ERROR: {test_images_dir} directory not found")
         sys.exit(1)

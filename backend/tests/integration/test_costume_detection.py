@@ -214,7 +214,7 @@ def main():
         sys.exit(1)
 
     # Find test images (only test-1.png through test-5.png for single-person detection)
-    test_images_dir = Path("tests/images")
+    test_images_dir = Path("backend/tests/fixtures")
     if not test_images_dir.exists():
         print(f"❌ ERROR: {test_images_dir} directory not found")
         sys.exit(1)

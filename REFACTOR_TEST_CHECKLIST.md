@@ -16,27 +16,27 @@
 - [ ] Verify `pyproject.toml` has correct package configuration
 
 ### Integration Tests (in order)
-- [ ] **Test Baseten connection**: `uv run tests/integration/test_baseten_connection.py`
+- [ ] **Test Baseten connection**: `uv run backend/tests/integration/test_baseten_connection.py`
   - Should connect to Baseten API
   - Should successfully make a test classification request
 
-- [ ] **Test Supabase connection**: `uv run tests/integration/test_supabase_connection.py`
+- [ ] **Test Supabase connection**: `uv run backend/tests/integration/test_supabase_connection.py`
   - Should connect to Supabase
   - Should upload test image to storage
   - Should create database entry
   - Should retrieve detection from database
 
-- [ ] **Test DoorBird connection**: `uv run tests/integration/test_doorbird_connection.py`
+- [ ] **Test DoorBird connection**: `uv run backend/tests/integration/test_doorbird_connection.py`
   - Should connect to DoorBird camera
   - Should capture frames from RTSP stream
 
-- [ ] **Test single-person costume detection**: `uv run tests/integration/test_costume_detection.py`
-  - Should process test images from `tests/images/`
+- [ ] **Test single-person costume detection**: `uv run backend/tests/integration/test_costume_detection.py`
+  - Should process test images from `backend/tests/fixtures/`
   - Should classify costumes using Baseten
   - Should upload to Supabase
   - Should create annotated images in `test_detections/`
 
-- [ ] **Test multi-person detection**: `uv run tests/integration/test_multiple_people.py`
+- [ ] **Test multi-person detection**: `uv run backend/tests/integration/test_multiple_people.py`
   - Should detect multiple people in test-6.png and test-7.png
   - Should classify each person separately
   - Should create individual database entries for each person
@@ -99,10 +99,10 @@
 
 ## 🧪 Test Assets
 
-### Test Images
-- [ ] All images moved to `tests/images/`
-- [ ] `tests/images/test-1.png` through `test-7.png` exist
-- [ ] `tests/images/README.md` exists
+### Test Fixtures
+- [ ] All images moved to `backend/tests/fixtures/`
+- [ ] `backend/tests/fixtures/test-1.png` through `test-7.png` exist
+- [ ] `backend/tests/fixtures/README.md` exists
 
 ### Test Output
 - [ ] Running tests creates `test_detections/` directory
@@ -124,8 +124,8 @@ tree -L 3 -I 'node_modules|.git|.next|__pycache__|*.pyc'
 - [ ] Verify structure matches expected layout:
   - backend/src/clients/
   - backend/scripts/
+  - backend/tests/fixtures/, integration/
   - frontend/app/, components/, lib/
-  - tests/images/, integration/
   - docs/
 
 ## 🔧 Git Status
@@ -158,7 +158,7 @@ All tests should pass with:
 ## 🐛 Common Issues to Check
 
 - [ ] Module import errors → Check `sys.path` and `__init__.py` files
-- [ ] Test image path errors → Verify `tests/images/` paths in test files
+- [ ] Test image path errors → Verify `backend/tests/fixtures/` paths in test files
 - [ ] Frontend build errors → Check `frontend/` paths in configs
 - [ ] Missing dependencies → Run `uv sync` and `npm install`
 - [ ] Environment variables → Verify `.env` and `.env.local` are configured
