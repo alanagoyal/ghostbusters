@@ -1860,4 +1860,176 @@ More explicit, shows project structure at a glance.
 
 ---
 
-*Last updated: 2025-10-29 (Day 7: Project structure refactored)*
+## Handling Multiple People Detection
+
+### The Halloween Group Use Case
+
+**The realization:** Kids often come to the door in groups on Halloween! Groups of friends, siblings, or neighborhood kids trick-or-treating together.
+
+**The problem with our initial implementation:**
+- YOLO would detect multiple people in the frame
+- But we only processed the **highest confidence detection**
+- Other people in the group were completely discarded
+- Lost data on costumes, visitor count was inaccurate
+- A group of 3 kids would only count as 1 visitor
+
+### Changes Made to Support Multiple People
+
+**Updated detection pipeline in `backend/scripts/main.py` (lines 142-224):**
+
+**Before (single person):**
+```python
+# Find highest confidence detection
+max_confidence = 0.0
+first_box = None
+for result in results:
+    for box in boxes:
+        if conf > max_confidence:
+            max_confidence = conf
+            first_box = box
+
+# Process only one person
+classify_costume(first_box)
+save_to_database(first_box)
+```
+
+**After (multiple people):**
+```python
+# Collect ALL person detections with confidence > 0.5
+detected_people = []
+for result in results:
+    for box in boxes:
+        if int(box.cls[0]) == 0 and conf > 0.5:
+            detected_people.append({
+                "confidence": conf,
+                "bounding_box": {...}
+            })
+
+# Process EACH person separately
+for person_idx, person in enumerate(detected_people):
+    # Extract individual person crop
+    person_crop = frame[y1:y2, x1:x2]
+
+    # Classify THIS person's costume (separate API call)
+    classification, confidence, description = baseten_client.classify_costume(person_crop)
+
+    # Upload THIS person's detection (separate DB entry)
+    supabase_client.save_detection(
+        image_path=filename,
+        timestamp=detection_timestamp,
+        confidence=person["confidence"],
+        bounding_box=person["bounding_box"],
+        costume_classification=classification,
+        costume_description=description,
+        costume_confidence=confidence,
+    )
+```
+
+### Key Changes
+
+1. **Collection instead of selection:**
+   - Changed from finding the "best" detection to collecting ALL detections
+   - No more data loss when multiple people appear
+
+2. **Loop-based processing:**
+   - Each detected person gets their own loop iteration
+   - Independent costume classification for each person
+   - Separate database entries for each person
+
+3. **Per-person cropping:**
+   - Extract individual crops from the full frame
+   - Each person's costume classified independently
+   - More accurate classifications (model sees just one costume at a time)
+
+4. **Separate API calls:**
+   - Each person = one Baseten API call
+   - 3 people in frame = 3 classification requests
+   - Allows different costumes to be identified correctly
+
+5. **Individual database records:**
+   - Each person gets their own row in `person_detections` table
+   - Same `timestamp` for the group (they arrived together)
+   - Different `costume_classification` for each person
+   - Enables accurate visitor counting and costume tracking
+
+### Example Output
+
+**When 3 people are detected:**
+```
+👤 3 person(s) detected! (Detection #1)
+   Saved locally: detection_20251029_123456.jpg
+   Processing person 1/3 (confidence: 0.95)
+   🎭 Classifying costume...
+   👗 Costume: witch (0.89)
+      A child dressed as a witch with a black hat and purple cape
+
+   Processing person 2/3 (confidence: 0.87)
+   🎭 Classifying costume...
+   👗 Costume: vampire (0.92)
+      A young boy wearing a vampire costume with a black cape and fangs
+
+   Processing person 3/3 (confidence: 0.82)
+   🎭 Classifying costume...
+   👗 Costume: zombie (0.85)
+      A child in a tattered zombie costume with green face paint
+```
+
+### Testing Infrastructure
+
+**Created `backend/tests/integration/test_multiple_people.py`:**
+- Comprehensive test script for multi-person scenarios
+- Uses YOLOv8n to detect all people in test images
+- Processes each person through the full pipeline
+- Saves annotated frames showing all bounding boxes
+- Verifies database entries created for each person
+- Perfect for testing without needing real trick-or-treaters
+
+### Performance Impact
+
+**API costs:**
+- Before: 1 API call per frame with people
+- After: N API calls per frame (N = number of people)
+- Group of 3 kids = 3× the cost
+- But: Accurate data is worth it
+- Still very cheap (~$0.01 per person × 100 people = $1.00 total)
+
+**Latency:**
+- Sequential processing: person 1 → classify → upload → person 2 → classify → upload...
+- Total time: ~2-4 seconds per person
+- Group of 3 = ~6-12 seconds total
+- Still acceptable since people spend 5-10 seconds at door
+- Could be parallelized in future if needed
+
+**Database entries:**
+- More rows in database (3× for a group of 3)
+- But: This is the accurate count
+- Dashboard shows true visitor numbers
+- Better analytics on group sizes
+
+### Key Learnings
+
+**Real-world use cases emerge late:**
+- We built the whole pipeline for single-person detection
+- Only late in development realized groups are common
+- Halloween-specific insight that wasn't obvious initially
+
+**Changing from single to multiple was straightforward:**
+- Well-structured code made the change easy
+- Just replaced extraction logic with a loop
+- No changes needed to Baseten or Supabase clients
+- Modular design paid off
+
+**Testing with multi-person images:**
+- Created test images with multiple people
+- Validated full pipeline before Halloween night
+- Caught edge cases (overlapping bounding boxes, varying confidences)
+
+**The trade-off was worth it:**
+- Higher API costs for groups
+- Longer processing time
+- But: Complete and accurate data
+- Essential for a visitor counting system
+
+---
+
+*Last updated: 2025-10-29 (Day 7: Project structure refactored + Multiple people detection added)*
