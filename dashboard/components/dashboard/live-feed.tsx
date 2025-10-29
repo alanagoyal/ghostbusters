@@ -12,6 +12,7 @@ interface Detection {
   device_id: string
   costume_classification: string | null
   costume_confidence: number | null
+  costume_description: string | null
 }
 
 interface LiveFeedProps {
@@ -46,22 +47,29 @@ export function LiveFeed({ detections, limit = 5 }: LiveFeedProps) {
                   </div>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    {detection.costume_classification && (
-                      <Badge variant="default" className="text-xs max-w-[180px] sm:max-w-[220px] truncate" title={detection.costume_classification || ''}>
-                        {truncateString(detection.costume_classification, 25)}
-                      </Badge>
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center gap-2">
+                      {detection.costume_classification && (
+                        <Badge variant="default" className="text-xs max-w-[180px] sm:max-w-[220px] truncate" title={detection.costume_classification || ''}>
+                          {truncateString(detection.costume_classification, 25)}
+                        </Badge>
+                      )}
+                      <span className="text-xs text-muted-foreground">
+                        {(detection.confidence * 100).toFixed(0)}% conf.
+                      </span>
+                    </div>
+                    {detection.costume_description && (
+                      <p className="text-sm text-foreground line-clamp-2">
+                        {detection.costume_description}
+                      </p>
                     )}
-                    <span className="text-xs text-muted-foreground">
-                      {(detection.confidence * 100).toFixed(0)}% conf.
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <Clock className="h-3 w-3" />
-                    {new Date(detection.timestamp).toLocaleTimeString([], {
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <Clock className="h-3 w-3" />
+                      {new Date(detection.timestamp).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </div>
                   </div>
                 </div>
               </div>
