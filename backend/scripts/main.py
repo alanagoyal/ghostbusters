@@ -15,6 +15,7 @@ from ultralytics import YOLO
 
 from backend.src.clients.baseten_client import BasetenClient
 from backend.src.clients.supabase_client import SupabaseClient
+from backend.src.utils.face_blur import FaceBlurrer
 
 # Load environment variables
 load_dotenv()
@@ -58,6 +59,10 @@ try:
 except Exception as e:
     print(f"⚠️  Baseten not configured: {e}")
     print("   Costume classification will be skipped")
+
+# Initialize face blurrer for privacy protection
+face_blurrer = FaceBlurrer(blur_strength=51)
+print("✅ Face blurrer initialized (privacy protection enabled)")
 
 # Open RTSP stream
 cap = cv2.VideoCapture(rtsp_url)
@@ -136,8 +141,11 @@ try:
                 timestamp_str = detection_timestamp.strftime("%Y%m%d_%H%M%S")
                 filename = f"detection_{timestamp_str}.jpg"
 
-                # Save frame locally
-                cv2.imwrite(filename, frame)
+                # Blur faces for privacy protection before saving
+                blurred_frame, num_faces = face_blurrer.blur_faces(frame)
+
+                # Save blurred frame locally
+                cv2.imwrite(filename, blurred_frame)
 
                 # Collect ALL person detections (not just the highest confidence)
                 detected_people = []
@@ -160,6 +168,8 @@ try:
 
                 num_people = len(detected_people)
                 print(f"👤 {num_people} person(s) detected! (Detection #{detection_count})")
+                if num_faces > 0:
+                    print(f"   🔒 {num_faces} face(s) blurred for privacy")
                 print(f"   Saved locally: {filename}")
 
                 # Process each detected person separately
@@ -178,14 +188,14 @@ try:
                     if baseten_client:
                         try:
                             print(f"   🎭 Classifying costume...")
-                            # Extract person crop from frame
+                            # Extract person crop from blurred frame
                             x1, y1, x2, y2 = (
                                 person_box["x1"],
                                 person_box["y1"],
                                 person_box["x2"],
                                 person_box["y2"],
                             )
-                            person_crop = frame[y1:y2, x1:x2]
+                            person_crop = blurred_frame[y1:y2, x1:x2]
 
                             # Encode image to bytes
                             _, buffer = cv2.imencode(".jpg", person_crop)

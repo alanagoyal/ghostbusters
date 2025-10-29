@@ -101,7 +101,7 @@ This script will:
 1. Load test images from `test_images/` (Tiger, Elsa, Spider-Man, Vampire)
 2. Classify each costume using Baseten API
 3. Upload results to Supabase database
-4. Save annotated images to `test_detections/`
+4. Save annotated images to `backend/tests/test_detections/`
 
 Expected output:
 ```
@@ -134,7 +134,7 @@ Uploaded to Supabase: 4
 - ✅ Verifies Baseten API integration works correctly
 - ✅ Confirms Supabase uploads with both `classification` and `description` fields
 - ✅ Validates JSON response parsing works properly
-- ✅ Provides visual confirmation (annotated images in `test_detections/`)
+- ✅ Provides visual confirmation (annotated images in `backend/tests/test_detections/`)
 
 ### 5. Run Person Detection with Costume Classification
 
@@ -410,7 +410,7 @@ No dashboard code changes needed! The components in `dashboard/components/dashbo
    uv run python test_costume_detection.py
    ```
 2. **Check the results**:
-   - View annotated images in `test_detections/`
+   - View annotated images in `backend/tests/test_detections/`
    - Check Supabase dashboard for uploaded records
    - Open Next.js dashboard to see live costume data
 3. **Tune the prompt**: Adjust the classification prompt in `baseten_client.py` for your needs

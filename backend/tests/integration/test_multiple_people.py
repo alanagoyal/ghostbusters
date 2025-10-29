@@ -15,6 +15,7 @@ from ultralytics import YOLO
 
 from backend.src.clients.baseten_client import BasetenClient
 from backend.src.clients.supabase_client import SupabaseClient
+from backend.src.utils.face_blur import FaceBlurrer
 
 # Load environment variables
 load_dotenv()
@@ -25,6 +26,7 @@ def process_multi_person_image(
     model: YOLO,
     baseten_client: BasetenClient,
     supabase_client: SupabaseClient,
+    face_blurrer: FaceBlurrer,
 ) -> list:
     """
     Process a single image that may contain multiple people.
@@ -88,7 +90,7 @@ def process_multi_person_image(
     timestamp_str = timestamp.strftime("%Y%m%d_%H%M%S")
 
     # Save frame locally with all bounding boxes drawn
-    output_dir = Path("test_detections")
+    output_dir = Path("backend/tests/test_detections")
     output_dir.mkdir(exist_ok=True)
 
     frame_filename = f"frame_{timestamp_str}.jpg"
@@ -115,7 +117,12 @@ def process_multi_person_image(
             2,
         )
 
-    cv2.imwrite(str(frame_path), frame_with_boxes)
+    # Blur faces for privacy protection before saving
+    blurred_frame, num_faces = face_blurrer.blur_faces(frame_with_boxes)
+    if num_faces > 0:
+        print(f"🔒 Blurred {num_faces} face(s) for privacy")
+
+    cv2.imwrite(str(frame_path), blurred_frame)
     print(f"💾 Saved frame with all detections: {frame_path}")
 
     # Process each detected person separately
@@ -130,9 +137,9 @@ def process_multi_person_image(
         print(f"  YOLO Confidence: {person_conf:.2f}")
         print(f"  Bounding Box: {person_box}")
 
-        # Extract person crop
+        # Extract person crop from blurred frame
         x1, y1, x2, y2 = person_box["x1"], person_box["y1"], person_box["x2"], person_box["y2"]
-        person_crop = img[y1:y2, x1:x2]
+        person_crop = blurred_frame[y1:y2, x1:x2]
 
         # Encode person crop to bytes
         _, buffer = cv2.imencode('.jpg', person_crop)
@@ -202,7 +209,7 @@ def main():
     print("2. Detect ALL people using YOLOv8n")
     print("3. Classify each person's costume separately")
     print("4. Upload each detection as a separate database entry")
-    print("5. Save annotated images to test_detections/")
+    print("5. Save annotated images to backend/tests/test_detections/")
     print()
 
     # Check for required environment variables
@@ -235,6 +242,11 @@ def main():
     model = YOLO("yolov8n.pt")
     print("✅ Model loaded!")
 
+    # Initialize face blurrer
+    print("🔒 Initializing face blurrer...")
+    face_blurrer = FaceBlurrer(blur_strength=51)
+    print("✅ Face blurrer initialized (privacy protection enabled)")
+
     # Find test images (only test-6.png and test-7.png for multi-person detection)
     test_images_dir = Path("backend/tests/fixtures")
     if not test_images_dir.exists():
@@ -265,6 +277,7 @@ def main():
             model,
             baseten_client,
             supabase_client,
+            face_blurrer,
         )
 
         if results:
@@ -293,7 +306,7 @@ def main():
 
     print("\n" + "="*70)
     print("✨ Test complete!")
-    print("\n📁 Check test_detections/ for annotated images")
+    print("\n📁 Check backend/tests/test_detections/ for annotated images")
     if supabase_client:
         print("🌐 Check your Supabase dashboard for uploaded detections")
         print("📊 Check your Next.js dashboard for real-time display")
