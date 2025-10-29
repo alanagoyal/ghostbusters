@@ -139,80 +139,89 @@ try:
                 # Save frame locally
                 cv2.imwrite(filename, frame)
 
-                print(f"👤 Person detected! (#{detection_count})")
-                print(f"   Saved locally: {filename}")
-
-                # Get bounding box from first detection for database
-                # (if multiple people, we'll use the first one for now)
-                first_box = None
-                max_confidence = 0.0
+                # Collect ALL person detections (not just the highest confidence)
+                detected_people = []
                 for result in results:
                     boxes = result.boxes
                     for box in boxes:
                         if int(box.cls[0]) == 0:  # person class
                             conf = float(box.conf[0])
-                            if conf > 0.5 and conf > max_confidence:
-                                max_confidence = conf
+                            if conf > 0.5:
                                 x1, y1, x2, y2 = map(int, box.xyxy[0])
-                                first_box = {
-                                    "x1": x1,
-                                    "y1": y1,
-                                    "x2": x2,
-                                    "y2": y2,
-                                }
+                                detected_people.append({
+                                    "confidence": conf,
+                                    "bounding_box": {
+                                        "x1": x1,
+                                        "y1": y1,
+                                        "x2": x2,
+                                        "y2": y2,
+                                    }
+                                })
 
-                # Classify costume using Baseten if configured
-                costume_classification = None
-                costume_confidence = None
-                costume_description = None
+                num_people = len(detected_people)
+                print(f"👤 {num_people} person(s) detected! (Detection #{detection_count})")
+                print(f"   Saved locally: {filename}")
 
-                if baseten_client and first_box:
-                    try:
-                        print("   🎭 Classifying costume...")
-                        # Extract person crop from frame
-                        x1, y1, x2, y2 = (
-                            first_box["x1"],
-                            first_box["y1"],
-                            first_box["x2"],
-                            first_box["y2"],
-                        )
-                        person_crop = frame[y1:y2, x1:x2]
+                # Process each detected person separately
+                for person_idx, person in enumerate(detected_people, start=1):
+                    person_conf = person["confidence"]
+                    person_box = person["bounding_box"]
 
-                        # Encode image to bytes
-                        _, buffer = cv2.imencode(".jpg", person_crop)
-                        image_bytes = buffer.tobytes()
+                    if num_people > 1:
+                        print(f"   Processing person {person_idx}/{num_people} (confidence: {person_conf:.2f})")
 
-                        # Classify costume
-                        (
-                            costume_classification,
-                            costume_confidence,
-                            costume_description,
-                        ) = baseten_client.classify_costume(image_bytes)
+                    # Classify costume using Baseten if configured
+                    costume_classification = None
+                    costume_confidence = None
+                    costume_description = None
 
-                        if costume_classification:
-                            print(
-                                f"   👗 Costume: {costume_classification} ({costume_confidence:.2f})"
+                    if baseten_client:
+                        try:
+                            print(f"   🎭 Classifying costume...")
+                            # Extract person crop from frame
+                            x1, y1, x2, y2 = (
+                                person_box["x1"],
+                                person_box["y1"],
+                                person_box["x2"],
+                                person_box["y2"],
                             )
-                            print(f"      {costume_description}")
-                        else:
-                            print("   ⚠️  Could not classify costume")
-                    except Exception as e:
-                        print(f"   ⚠️  Costume classification failed: {e}")
+                            person_crop = frame[y1:y2, x1:x2]
 
-                # Upload to Supabase if configured
-                if supabase_client and first_box:
-                    try:
-                        supabase_client.save_detection(
-                            image_path=filename,
-                            timestamp=detection_timestamp,
-                            confidence=max_confidence,
-                            bounding_box=first_box,
-                            costume_classification=costume_classification,
-                            costume_description=costume_description,
-                            costume_confidence=costume_confidence,
-                        )
-                    except Exception as e:
-                        print(f"   ⚠️  Supabase upload failed: {e}")
+                            # Encode image to bytes
+                            _, buffer = cv2.imencode(".jpg", person_crop)
+                            image_bytes = buffer.tobytes()
+
+                            # Classify costume
+                            (
+                                costume_classification,
+                                costume_confidence,
+                                costume_description,
+                            ) = baseten_client.classify_costume(image_bytes)
+
+                            if costume_classification:
+                                print(
+                                    f"   👗 Costume: {costume_classification} ({costume_confidence:.2f})"
+                                )
+                                print(f"      {costume_description}")
+                            else:
+                                print("   ⚠️  Could not classify costume")
+                        except Exception as e:
+                            print(f"   ⚠️  Costume classification failed: {e}")
+
+                    # Upload to Supabase if configured
+                    if supabase_client:
+                        try:
+                            supabase_client.save_detection(
+                                image_path=filename,
+                                timestamp=detection_timestamp,
+                                confidence=person_conf,
+                                bounding_box=person_box,
+                                costume_classification=costume_classification,
+                                costume_description=costume_description,
+                                costume_confidence=costume_confidence,
+                            )
+                        except Exception as e:
+                            print(f"   ⚠️  Supabase upload failed: {e}")
 
                 print()
                 last_detection_time = current_time
