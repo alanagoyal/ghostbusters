@@ -121,47 +121,65 @@ try:
 
             # Avoid duplicate detections within 2 seconds
             if current_time - last_detection_time > 2:
-                detection_count += 1
                 detection_timestamp = datetime.now()
                 timestamp_str = detection_timestamp.strftime("%Y%m%d_%H%M%S")
-                filename = f"detection_{timestamp_str}.jpg"
 
-                # Save frame locally
-                cv2.imwrite(filename, frame)
+                # Save full frame locally with all people
+                full_frame_filename = f"detection_{timestamp_str}.jpg"
+                cv2.imwrite(full_frame_filename, frame)
 
-                print(f"👤 Person detected! (#{detection_count})")
-                print(f"   Saved locally: {filename}")
-
-                # Get bounding box from first detection for database
-                # (if multiple people, we'll use the first one for now)
-                first_box = None
-                max_confidence = 0.0
+                # Collect all people detected in this frame
+                detected_people = []
                 for result in results:
                     boxes = result.boxes
                     for box in boxes:
                         if int(box.cls[0]) == 0:  # person class
                             conf = float(box.conf[0])
-                            if conf > 0.5 and conf > max_confidence:
-                                max_confidence = conf
+                            if conf > 0.5:
                                 x1, y1, x2, y2 = map(int, box.xyxy[0])
-                                first_box = {
-                                    "x1": x1,
-                                    "y1": y1,
-                                    "x2": x2,
-                                    "y2": y2,
-                                }
+                                detected_people.append({
+                                    "confidence": conf,
+                                    "bounding_box": {
+                                        "x1": x1,
+                                        "y1": y1,
+                                        "x2": x2,
+                                        "y2": y2,
+                                    }
+                                })
 
-                # Upload to Supabase if configured
-                if supabase_client and first_box:
-                    try:
-                        supabase_client.save_detection(
-                            image_path=filename,
-                            timestamp=detection_timestamp,
-                            confidence=max_confidence,
-                            bounding_box=first_box,
-                        )
-                    except Exception as e:
-                        print(f"   ⚠️  Supabase upload failed: {e}")
+                num_people = len(detected_people)
+                detection_count += num_people
+
+                if num_people == 1:
+                    print(f"👤 Person detected! (#{detection_count})")
+                else:
+                    print(f"👥 {num_people} people detected! (Total count: #{detection_count})")
+                print(f"   Saved full frame: {full_frame_filename}")
+
+                # Upload each person as a separate database entry
+                if supabase_client and detected_people:
+                    for idx, person in enumerate(detected_people, 1):
+                        try:
+                            # For multiple people, create person-specific filename
+                            if num_people > 1:
+                                person_filename = f"detection_{timestamp_str}_person{idx}.jpg"
+                                # Crop and save individual person image
+                                bbox = person["bounding_box"]
+                                person_img = frame[bbox["y1"]:bbox["y2"], bbox["x1"]:bbox["x2"]]
+                                cv2.imwrite(person_filename, person_img)
+                                print(f"   Saved person {idx}/{num_people}: {person_filename}")
+                            else:
+                                # For single person, use full frame
+                                person_filename = full_frame_filename
+
+                            supabase_client.save_detection(
+                                image_path=person_filename,
+                                timestamp=detection_timestamp,
+                                confidence=person["confidence"],
+                                bounding_box=person["bounding_box"],
+                            )
+                        except Exception as e:
+                            print(f"   ⚠️  Supabase upload failed for person {idx}: {e}")
 
                 print()
                 last_detection_time = current_time
