@@ -23,7 +23,7 @@ costume-classifier/
 │   │       ├── baseten_client.py    # Baseten API client
 │   │       └── supabase_client.py   # Supabase client
 │   └── scripts/               # Entry point scripts
-│       └── detect_people.py   # Live detection script
+│       └── main.py            # Live detection script
 ├── frontend/                   # Next.js dashboard
 │   ├── app/                   # Next.js app directory
 │   ├── components/            # React components
@@ -103,7 +103,7 @@ uv run tests/integration/test_supabase_connection.py
 
 **Run live person detection:**
 ```bash
-uv run backend/scripts/detect_people.py
+uv run backend/scripts/main.py
 ```
 Watches the RTSP stream, detects all people in each frame, classifies their costumes, and uploads to Supabase. Handles multiple people in the same frame automatically.
 
