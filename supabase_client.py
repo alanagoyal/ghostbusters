@@ -37,7 +37,7 @@ class SupabaseClient:
         self.bucket_name = "detection-images"
 
     def upload_detection_image(
-        self, image_path: str, timestamp: datetime
+        self, image_path: str, timestamp: datetime, upsert: bool = False
     ) -> Optional[str]:
         """
         Upload detection image to Supabase storage.
@@ -45,6 +45,7 @@ class SupabaseClient:
         Args:
             image_path: Local path to image file
             timestamp: Timestamp of detection
+            upsert: If True, overwrite existing file with same name
 
         Returns:
             Public URL of uploaded image, or None if upload fails
@@ -59,10 +60,11 @@ class SupabaseClient:
                 image_data = f.read()
 
             # Upload to Supabase storage
+            upload_options = {"upsert": "true"} if upsert else {}
             self.client.storage.from_(self.bucket_name).upload(
                 path=storage_path,
                 file=image_data,
-                file_options={"content-type": "image/jpeg"},
+                file_options={"content-type": "image/jpeg", **upload_options},
             )
 
             # Get public URL
@@ -141,6 +143,7 @@ class SupabaseClient:
         costume_classification: Optional[str] = None,
         costume_description: Optional[str] = None,
         costume_confidence: Optional[float] = None,
+        upsert: bool = False,
     ) -> bool:
         """
         Complete workflow: upload image and insert detection record.
@@ -153,12 +156,13 @@ class SupabaseClient:
             costume_classification: AI costume type (e.g., "witch", "skeleton") (optional)
             costume_description: Detailed costume description (optional)
             costume_confidence: AI classification confidence (optional)
+            upsert: If True, overwrite existing image with same name (optional)
 
         Returns:
             True if successful, False otherwise
         """
         # Upload image
-        image_url = self.upload_detection_image(image_path, timestamp)
+        image_url = self.upload_detection_image(image_path, timestamp, upsert=upsert)
 
         if not image_url:
             print("⚠️  Image upload failed, saving detection without image URL")

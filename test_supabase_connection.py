@@ -231,6 +231,7 @@ def test_complete_workflow(client: SupabaseClient):
             timestamp=test_timestamp,
             confidence=0.92,
             bounding_box=test_bbox,
+            upsert=True,  # Use upsert to avoid duplicate errors in testing
         )
 
         if success:
@@ -264,6 +265,7 @@ def test_costume_classification_update(client: SupabaseClient, detection_id: str
         success = client.update_costume_classification(
             detection_id=detection_id,
             costume_classification="Test Superhero Costume",
+            costume_description="A detailed superhero costume with cape and mask",
             costume_confidence=0.88,
         )
 
@@ -271,6 +273,7 @@ def test_costume_classification_update(client: SupabaseClient, detection_id: str
             print("✅ Costume classification updated successfully")
             print(f"   Detection ID: {detection_id}")
             print("   Classification: Test Superhero Costume")
+            print("   Description: A detailed superhero costume with cape and mask")
             print("   Confidence: 0.88")
             return True
         else:
