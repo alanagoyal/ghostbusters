@@ -3,8 +3,8 @@
 ## 🔍 Backend Tests
 
 ### Python Import Tests
-- [ ] Test importing baseten_client: `python3 -c "import sys; sys.path.insert(0, '.'); from backend.src.clients.baseten_client import BasetenClient"`
-- [ ] Test importing supabase_client: `python3 -c "import sys; sys.path.insert(0, '.'); from backend.src.clients.supabase_client import SupabaseClient"`
+- [ ] Test importing baseten_client: `uv run python -c "from backend.src.clients.baseten_client import BasetenClient; print('✅ Import successful')"`
+- [ ] Test importing supabase_client: `uv run python -c "from backend.src.clients.supabase_client import SupabaseClient; print('✅ Import successful')"`
 - [ ] Verify all `__init__.py` files exist:
   - [ ] `backend/src/__init__.py`
   - [ ] `backend/src/clients/__init__.py`
