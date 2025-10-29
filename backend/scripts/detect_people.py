@@ -13,8 +13,8 @@ import cv2
 from dotenv import load_dotenv
 from ultralytics import YOLO
 
-from baseten_client import BasetenClient
-from supabase_client import SupabaseClient
+from backend.src.clients.baseten_client import BasetenClient
+from backend.src.clients.supabase_client import SupabaseClient
 
 # Load environment variables
 load_dotenv()

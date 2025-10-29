@@ -13,6 +13,33 @@ Raspberry Pi edge computer vision system that watches a DoorBird doorbell camera
 - **Hosting:** Vercel (dashboard)
 - **Package Manager:** uv (by Astral) for Python, npm for JavaScript
 
+## 📁 Project Structure
+
+```
+costume-classifier/
+├── backend/                    # Python ML backend
+│   ├── src/
+│   │   └── clients/           # External service clients
+│   │       ├── baseten_client.py    # Baseten API client
+│   │       └── supabase_client.py   # Supabase client
+│   └── scripts/               # Entry point scripts
+│       └── detect_people.py   # Live detection script
+├── frontend/                   # Next.js dashboard
+│   ├── app/                   # Next.js app directory
+│   ├── components/            # React components
+│   └── lib/                   # Frontend utilities
+├── tests/                      # Test suite
+│   ├── images/                # Test images
+│   └── integration/           # Integration tests
+├── docs/                       # Documentation
+│   ├── BASETEN_SETUP.md      # Vision model API setup
+│   ├── DOORBIRD_SETUP.md     # Camera configuration
+│   ├── SUPABASE_SETUP.md     # Database setup
+│   ├── PROJECT_SPEC.md       # System architecture
+│   └── BLOG_NOTES.md         # Implementation notes
+└── Configuration files         # Root configs (pyproject.toml, etc.)
+```
+
 ## 🚀 Quick Start
 
 ### Prerequisites
@@ -49,34 +76,34 @@ Raspberry Pi edge computer vision system that watches a DoorBird doorbell camera
 
 **Test Baseten API connection:**
 ```bash
-uv run test_baseten_connection.py
+uv run tests/integration/test_baseten_connection.py
 ```
 
 **Test with single-person costume images:**
 ```bash
-uv run test_costume_detection.py
+uv run tests/integration/test_costume_detection.py
 ```
-This processes the test images in `test_images/`, classifies costumes with Baseten, and uploads to Supabase.
+This processes the test images in `tests/images/`, classifies costumes with Baseten, and uploads to Supabase.
 
 **Test multi-person detection:**
 ```bash
-uv run test_multiple_people.py
+uv run tests/integration/test_multiple_people.py
 ```
 This uses YOLOv8n to detect ALL people in each frame (including test-6.png and test-7.png with 3 kids each), processes each person separately, and creates individual database entries. Perfect for testing group scenarios like multiple trick-or-treaters arriving together.
 
 **Test DoorBird camera connection:**
 ```bash
-uv run test_doorbird_connection.py
+uv run tests/integration/test_doorbird_connection.py
 ```
 
 **Test Supabase integration:**
 ```bash
-uv run test_supabase_connection.py
+uv run tests/integration/test_supabase_connection.py
 ```
 
 **Run live person detection:**
 ```bash
-uv run detect_people.py
+uv run backend/scripts/detect_people.py
 ```
 Watches the RTSP stream, detects all people in each frame, classifies their costumes, and uploads to Supabase. Handles multiple people in the same frame automatically.
 
@@ -149,11 +176,11 @@ sudo apt update && sudo apt upgrade -y
 
 ## 📖 Documentation
 
-- [Baseten Setup Guide](BASETEN_SETUP.md) - Vision model API configuration for costume classification
-- [DoorBird Setup Guide](DOORBIRD_SETUP.md) - Camera configuration and RTSP setup
-- [Supabase Setup Guide](SUPABASE_SETUP.md) - Database and storage configuration
-- [Project Specification](PROJECT_SPEC.md) - Complete system architecture
-- [Blog Notes](BLOG_NOTES.md) - Implementation journey and decisions
+- [Baseten Setup Guide](docs/BASETEN_SETUP.md) - Vision model API configuration for costume classification
+- [DoorBird Setup Guide](docs/DOORBIRD_SETUP.md) - Camera configuration and RTSP setup
+- [Supabase Setup Guide](docs/SUPABASE_SETUP.md) - Database and storage configuration
+- [Project Specification](docs/PROJECT_SPEC.md) - Complete system architecture
+- [Blog Notes](docs/BLOG_NOTES.md) - Implementation journey and decisions
 
 ## 📊 Dashboard
 
@@ -161,9 +188,9 @@ The project includes a real-time Next.js dashboard for monitoring detections liv
 
 ### Dashboard Setup
 
-1. **Navigate to dashboard directory:**
+1. **Navigate to frontend directory:**
    ```bash
-   cd dashboard
+   cd frontend
    ```
 
 2. **Install dependencies:**
@@ -198,7 +225,7 @@ The dashboard uses Supabase Realtime to show new detections instantly:
 3. New detections appear immediately without page refresh
 4. Sub-second latency from detection to display
 
-See [dashboard/SETUP.md](dashboard/SETUP.md) for detailed instructions.
+See [frontend/SETUP.md](frontend/SETUP.md) for detailed instructions.
 
 ## 🛠️ Development
 

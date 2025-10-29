@@ -11,6 +11,13 @@ dependencies = [
     "ultralytics>=8.3.63",
 ]
 
+[tool.uv]
+package = true
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [dependency-groups]
 dev = [
     "ruff>=0.14.2",
