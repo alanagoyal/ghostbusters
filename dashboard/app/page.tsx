@@ -12,6 +12,7 @@ interface PersonDetection {
   device_id: string;
   costume_classification: string | null;
   costume_confidence: number | null;
+  costume_description: string | null;
 }
 
 async function getInitialDetections(): Promise<PersonDetection[]> {

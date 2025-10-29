@@ -1,9 +1,10 @@
 'use client'
 
+import { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Clock, Camera } from 'lucide-react'
-import { truncateString } from '@/lib/string-utils'
+import { truncateString, toTitleCase } from '@/lib/string-utils'
 
 interface Detection {
   id: string
@@ -12,6 +13,7 @@ interface Detection {
   device_id: string
   costume_classification: string | null
   costume_confidence: number | null
+  costume_description: string | null
 }
 
 interface LiveFeedProps {
@@ -21,6 +23,11 @@ interface LiveFeedProps {
 
 export function LiveFeed({ detections, limit = 5 }: LiveFeedProps) {
   const recentDetections = detections.slice(0, limit)
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+
+  const toggleExpanded = (id: string) => {
+    setExpandedId(expandedId === id ? null : id)
+  }
 
   return (
     <Card className="col-span-1 flex flex-col h-[500px]">
@@ -38,7 +45,8 @@ export function LiveFeed({ detections, limit = 5 }: LiveFeedProps) {
             recentDetections.map((detection, index) => (
               <div
                 key={detection.id}
-                className="flex items-start gap-3 p-3 rounded-lg border border-border hover:bg-accent/50 transition-colors"
+                className="flex items-start gap-3 p-3 rounded-lg border border-border hover:bg-accent/50 transition-colors cursor-pointer"
+                onClick={() => detection.costume_description && toggleExpanded(detection.id)}
               >
                 <div className="flex-shrink-0">
                   <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
@@ -46,22 +54,29 @@ export function LiveFeed({ detections, limit = 5 }: LiveFeedProps) {
                   </div>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    {detection.costume_classification && (
-                      <Badge variant="default" className="text-xs max-w-[180px] sm:max-w-[220px] truncate" title={detection.costume_classification || ''}>
-                        {truncateString(detection.costume_classification, 25)}
-                      </Badge>
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center gap-2">
+                      {detection.costume_classification && (
+                        <Badge variant="default" className="text-xs max-w-[180px] sm:max-w-[220px] truncate" title={toTitleCase(detection.costume_classification) || ''}>
+                          {truncateString(toTitleCase(detection.costume_classification), 25)}
+                        </Badge>
+                      )}
+                      <span className="text-xs text-muted-foreground">
+                        {(detection.confidence * 100).toFixed(0)}% conf.
+                      </span>
+                    </div>
+                    {detection.costume_description && (
+                      <p className={`text-sm text-foreground ${expandedId === detection.id ? '' : 'line-clamp-2'}`}>
+                        {detection.costume_description}
+                      </p>
                     )}
-                    <span className="text-xs text-muted-foreground">
-                      {(detection.confidence * 100).toFixed(0)}% conf.
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <Clock className="h-3 w-3" />
-                    {new Date(detection.timestamp).toLocaleTimeString([], {
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <Clock className="h-3 w-3" />
+                      {new Date(detection.timestamp).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </div>
                   </div>
                 </div>
               </div>

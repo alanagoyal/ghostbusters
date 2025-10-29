@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import { Users, Shirt, Activity } from "lucide-react";
-import { truncateString } from "@/lib/string-utils";
+import { truncateString, toTitleCase } from "@/lib/string-utils";
 import { StatsCard } from "@/components/dashboard/stats-card";
 import { CostumeDistribution } from "@/components/dashboard/costume-distribution";
 import { ActivityTimeline } from "@/components/dashboard/activity-timeline";
@@ -19,6 +19,7 @@ interface PersonDetection {
   device_id: string;
   costume_classification: string | null;
   costume_confidence: number | null;
+  costume_description: string | null;
 }
 
 interface DashboardClientProps {
@@ -49,22 +50,34 @@ export function DashboardClient({ initialDetections }: DashboardClientProps) {
 
   // Calculate costume statistics
   const costumeStats = useMemo(() => {
-    const costumeCounts = new Map<string, number>();
+    const costumeCounts = new Map<string, { count: number; descriptions: string[] }>();
     let totalWithCostume = 0;
 
     detections.forEach((d) => {
       if (d.costume_classification) {
-        const count = costumeCounts.get(d.costume_classification) || 0;
-        costumeCounts.set(d.costume_classification, count + 1);
+        const existing = costumeCounts.get(d.costume_classification);
+        if (existing) {
+          existing.count++;
+          if (d.costume_description && !existing.descriptions.includes(d.costume_description)) {
+            existing.descriptions.push(d.costume_description);
+          }
+        } else {
+          costumeCounts.set(d.costume_classification, {
+            count: 1,
+            descriptions: d.costume_description ? [d.costume_description] : []
+          });
+        }
         totalWithCostume++;
       }
     });
 
     const sorted = Array.from(costumeCounts.entries())
-      .map(([name, count]) => ({
-        name: truncateString(name, 25),
-        count,
-        percentage: totalWithCostume > 0 ? (count / totalWithCostume) * 100 : 0,
+      .map(([name, data]) => ({
+        name: truncateString(toTitleCase(name), 25),
+        fullName: name,
+        count: data.count,
+        descriptions: data.descriptions,
+        percentage: totalWithCostume > 0 ? (data.count / totalWithCostume) * 100 : 0,
       }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
