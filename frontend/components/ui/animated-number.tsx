@@ -15,14 +15,22 @@ export function AnimatedNumber({
 }: AnimatedNumberProps) {
   const [displayValue, setDisplayValue] = useState(String(value))
   const [isAnimating, setIsAnimating] = useState(false)
-  const previousValue = useRef(String(value))
+  const previousValue = useRef<string | null>(null)
+  const isMounted = useRef(false)
 
   useEffect(() => {
     const newValue = String(value)
 
-    // Only animate if the value actually changed
-    if (newValue === previousValue.current) {
-      return
+    // On initial mount, animate from nothing
+    if (!isMounted.current) {
+      isMounted.current = true
+      previousValue.current = newValue
+      // Trigger animation on mount
+    } else {
+      // Only animate if the value actually changed
+      if (newValue === previousValue.current) {
+        return
+      }
     }
 
     setIsAnimating(true)
