@@ -49,29 +49,36 @@ Raspberry Pi edge computer vision system that watches a DoorBird doorbell camera
 
 **Test Baseten API connection:**
 ```bash
-uv run python test_baseten_connection.py
+uv run test_baseten_connection.py
 ```
 
-**Test with real costume images:**
+**Test with single-person costume images:**
 ```bash
-uv run python test_costume_detection.py
+uv run test_costume_detection.py
 ```
-This processes the 4 test images in `test_images/`, classifies costumes with Baseten, and uploads to Supabase.
+This processes the test images in `test_images/`, classifies costumes with Baseten, and uploads to Supabase.
+
+**Test multi-person detection:**
+```bash
+uv run test_multiple_people.py
+```
+This uses YOLOv8n to detect ALL people in each frame (including test-6.png and test-7.png with 3 kids each), processes each person separately, and creates individual database entries. Perfect for testing group scenarios like multiple trick-or-treaters arriving together.
 
 **Test DoorBird camera connection:**
 ```bash
-uv run python test_doorbird_connection.py
+uv run test_doorbird_connection.py
 ```
 
 **Test Supabase integration:**
 ```bash
-uv run python test_supabase_connection.py
+uv run test_supabase_connection.py
 ```
 
 **Run live person detection:**
 ```bash
-uv run python detect_people.py
+uv run detect_people.py
 ```
+Watches the RTSP stream, detects all people in each frame, classifies their costumes, and uploads to Supabase. Handles multiple people in the same frame automatically.
 
 ## 🥧 Raspberry Pi Management
 
