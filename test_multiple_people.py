@@ -235,16 +235,22 @@ def main():
     model = YOLO("yolov8n.pt")
     print("✅ Model loaded!")
 
-    # Find test images
+    # Find test images (only test-6.png and test-7.png for multi-person detection)
     test_images_dir = Path("test_images")
     if not test_images_dir.exists():
         print(f"❌ ERROR: {test_images_dir} directory not found")
         sys.exit(1)
 
-    test_images = sorted(test_images_dir.glob("*.png"))
+    test_images = [
+        test_images_dir / "test-6.png",
+        test_images_dir / "test-7.png",
+    ]
+
+    # Filter to only existing files
+    test_images = [img for img in test_images if img.exists()]
 
     if not test_images:
-        print(f"❌ ERROR: No PNG images found in {test_images_dir}")
+        print(f"❌ ERROR: test-6.png and test-7.png not found in {test_images_dir}")
         sys.exit(1)
 
     print(f"\n📸 Found {len(test_images)} test images")
