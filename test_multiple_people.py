@@ -15,6 +15,7 @@ from ultralytics import YOLO
 
 from baseten_client import BasetenClient
 from supabase_client import SupabaseClient
+from face_blur import FaceBlurrer
 
 # Load environment variables
 load_dotenv()
@@ -25,6 +26,7 @@ def process_multi_person_image(
     model: YOLO,
     baseten_client: BasetenClient,
     supabase_client: SupabaseClient,
+    face_blurrer: FaceBlurrer,
 ) -> list:
     """
     Process a single image that may contain multiple people.
@@ -94,8 +96,10 @@ def process_multi_person_image(
     frame_filename = f"frame_{timestamp_str}.jpg"
     frame_path = output_dir / frame_filename
 
-    # Create copy for drawing all boxes
-    frame_with_boxes = img.copy()
+    # Blur faces for privacy before saving
+    frame_with_boxes, num_faces = face_blurrer.blur_faces(img)
+
+    # Draw bounding boxes on blurred frame
     for idx, person in enumerate(detected_people, start=1):
         bbox = person["bounding_box"]
         x1, y1, x2, y2 = bbox["x1"], bbox["y1"], bbox["x2"], bbox["y2"]
@@ -116,6 +120,8 @@ def process_multi_person_image(
         )
 
     cv2.imwrite(str(frame_path), frame_with_boxes)
+    if num_faces > 0:
+        print(f"🔒 Blurred {num_faces} face(s) for privacy")
     print(f"💾 Saved frame with all detections: {frame_path}")
 
     # Process each detected person separately
@@ -134,8 +140,11 @@ def process_multi_person_image(
         x1, y1, x2, y2 = person_box["x1"], person_box["y1"], person_box["x2"], person_box["y2"]
         person_crop = img[y1:y2, x1:x2]
 
-        # Encode person crop to bytes
-        _, buffer = cv2.imencode('.jpg', person_crop)
+        # Blur faces in person crop for privacy
+        person_crop_blurred, _ = face_blurrer.blur_faces(person_crop)
+
+        # Encode blurred person crop to bytes
+        _, buffer = cv2.imencode('.jpg', person_crop_blurred)
         image_bytes = buffer.tobytes()
 
         # Classify costume
@@ -235,6 +244,11 @@ def main():
     model = YOLO("yolov8n.pt")
     print("✅ Model loaded!")
 
+    # Initialize face blurrer for privacy protection
+    print("🎭 Loading face blurrer...")
+    face_blurrer = FaceBlurrer(blur_strength=51)
+    print("✅ Face blurrer ready!")
+
     # Find test images (only test-6.png and test-7.png for multi-person detection)
     test_images_dir = Path("test_images")
     if not test_images_dir.exists():
@@ -265,6 +279,7 @@ def main():
             model,
             baseten_client,
             supabase_client,
+            face_blurrer,
         )
 
         if results:

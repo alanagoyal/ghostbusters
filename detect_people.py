@@ -15,6 +15,7 @@ from ultralytics import YOLO
 
 from baseten_client import BasetenClient
 from supabase_client import SupabaseClient
+from face_blur import FaceBlurrer
 
 # Load environment variables
 load_dotenv()
@@ -40,6 +41,11 @@ print(f"📹 Connecting to DoorBird at {DOORBIRD_IP}")
 print("🤖 Loading YOLOv8n model...")
 model = YOLO("yolov8n.pt")  # Will download on first run (~6MB)
 print("✅ Model loaded!")
+
+# Initialize face blurrer for privacy protection
+print("🎭 Loading face blurrer...")
+face_blurrer = FaceBlurrer(blur_strength=51)
+print("✅ Face blurrer ready!")
 
 # Initialize Supabase client (optional - graceful degradation if not configured)
 supabase_client = None
@@ -136,8 +142,11 @@ try:
                 timestamp_str = detection_timestamp.strftime("%Y%m%d_%H%M%S")
                 filename = f"detection_{timestamp_str}.jpg"
 
-                # Save frame locally
-                cv2.imwrite(filename, frame)
+                # Blur faces for privacy before saving locally
+                blurred_frame, num_faces = face_blurrer.blur_faces(frame)
+
+                # Save blurred frame locally
+                cv2.imwrite(filename, blurred_frame)
 
                 # Collect ALL person detections (not just the highest confidence)
                 detected_people = []
@@ -160,6 +169,8 @@ try:
 
                 num_people = len(detected_people)
                 print(f"👤 {num_people} person(s) detected! (Detection #{detection_count})")
+                if num_faces > 0:
+                    print(f"   🔒 Blurred {num_faces} face(s) for privacy")
                 print(f"   Saved locally: {filename}")
 
                 # Process each detected person separately
@@ -187,8 +198,11 @@ try:
                             )
                             person_crop = frame[y1:y2, x1:x2]
 
-                            # Encode image to bytes
-                            _, buffer = cv2.imencode(".jpg", person_crop)
+                            # Blur faces in the person crop before sending to Baseten
+                            person_crop_blurred, _ = face_blurrer.blur_faces(person_crop)
+
+                            # Encode blurred image to bytes
+                            _, buffer = cv2.imencode(".jpg", person_crop_blurred)
                             image_bytes = buffer.tobytes()
 
                             # Classify costume
