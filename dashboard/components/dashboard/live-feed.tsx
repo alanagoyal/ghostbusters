@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Clock, Camera } from 'lucide-react'
@@ -22,6 +23,11 @@ interface LiveFeedProps {
 
 export function LiveFeed({ detections, limit = 5 }: LiveFeedProps) {
   const recentDetections = detections.slice(0, limit)
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+
+  const toggleExpanded = (id: string) => {
+    setExpandedId(expandedId === id ? null : id)
+  }
 
   return (
     <Card className="col-span-1 flex flex-col h-[500px]">
@@ -39,7 +45,8 @@ export function LiveFeed({ detections, limit = 5 }: LiveFeedProps) {
             recentDetections.map((detection, index) => (
               <div
                 key={detection.id}
-                className="flex items-start gap-3 p-3 rounded-lg border border-border hover:bg-accent/50 transition-colors"
+                className="flex items-start gap-3 p-3 rounded-lg border border-border hover:bg-accent/50 transition-colors cursor-pointer"
+                onClick={() => detection.costume_description && toggleExpanded(detection.id)}
               >
                 <div className="flex-shrink-0">
                   <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
@@ -59,7 +66,7 @@ export function LiveFeed({ detections, limit = 5 }: LiveFeedProps) {
                       </span>
                     </div>
                     {detection.costume_description && (
-                      <p className="text-sm text-foreground line-clamp-2">
+                      <p className={`text-sm text-foreground ${expandedId === detection.id ? '' : 'line-clamp-2'}`}>
                         {detection.costume_description}
                       </p>
                     )}
