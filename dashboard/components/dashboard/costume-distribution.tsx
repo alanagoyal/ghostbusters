@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { ChevronDown, ChevronRight } from 'lucide-react'
+import { toTitleCase } from '@/lib/string-utils'
 
 interface CostumeData {
   name: string
@@ -57,7 +58,7 @@ export function CostumeDistribution({ costumes }: CostumeDistributionProps) {
                     ) : (
                       <div className="w-4" />
                     )}
-                    <span className="text-sm font-medium">{costume.name}</span>
+                    <span className="text-sm font-medium">{toTitleCase(costume.name)}</span>
                     <Badge variant="secondary" className="text-xs">
                       {costume.count}
                     </Badge>

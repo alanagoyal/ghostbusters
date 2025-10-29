@@ -8,3 +8,17 @@ export function truncateString(str: string | null, maxLength = 25): string {
   if (!str) return '';
   return str.length > maxLength ? `${str.substring(0, maxLength)}...` : str;
 }
+
+/**
+ * Converts a string to Title Case
+ * @param str The string to convert
+ * @returns The string in Title Case
+ */
+export function toTitleCase(str: string | null): string {
+  if (!str) return '';
+  return str
+    .toLowerCase()
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}

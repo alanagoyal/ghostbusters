@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import { Users, Shirt, Activity } from "lucide-react";
-import { truncateString } from "@/lib/string-utils";
+import { truncateString, toTitleCase } from "@/lib/string-utils";
 import { StatsCard } from "@/components/dashboard/stats-card";
 import { CostumeDistribution } from "@/components/dashboard/costume-distribution";
 import { ActivityTimeline } from "@/components/dashboard/activity-timeline";
@@ -73,7 +73,7 @@ export function DashboardClient({ initialDetections }: DashboardClientProps) {
 
     const sorted = Array.from(costumeCounts.entries())
       .map(([name, data]) => ({
-        name: truncateString(name, 25),
+        name: truncateString(toTitleCase(name), 25),
         fullName: name,
         count: data.count,
         descriptions: data.descriptions,
