@@ -136,8 +136,24 @@
     }
   }
 
+  @keyframes numberFlip {
+    0% {
+      transform: rotateX(0deg);
+    }
+    50% {
+      transform: rotateX(90deg);
+    }
+    100% {
+      transform: rotateX(0deg);
+    }
+  }
+
   .animate-slide-in {
     animation: slideInFromBottom 0.6s ease-out forwards;
+  }
+
+  .animate-number-flip {
+    animation: numberFlip 0.3s ease-in-out;
   }
 
   .animate-grow-width {
