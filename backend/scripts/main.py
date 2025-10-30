@@ -65,6 +65,11 @@ except Exception as e:
 face_blurrer = FaceBlurrer(blur_strength=51)
 print("✅ Face blurrer initialized (privacy protection enabled)")
 
+# Dwell-time and cooldown configuration
+DWELL_TIME = int(os.getenv("DWELL_TIME", "10"))  # Seconds person must be present before capture
+CAPTURE_COOLDOWN = int(os.getenv("CAPTURE_COOLDOWN", "60"))  # Seconds to wait before next capture
+print(f"⏱️  Dwell time: {DWELL_TIME}s, Cooldown: {CAPTURE_COOLDOWN}s")
+
 # Function to connect/reconnect to RTSP stream
 def connect_to_stream(url):
     """Connect to RTSP stream with optimized settings."""
@@ -90,13 +95,18 @@ print()
 
 frame_count = 0
 detection_count = 0
-last_detection_time = 0
 last_reconnect_time = time.time()
 last_health_check = time.time()
 failed_frame_count = 0
 start_time = time.time()
 RECONNECT_INTERVAL = 3600  # Reconnect every hour to clear memory
 HEALTH_CHECK_INTERVAL = 300  # Print health stats every 5 minutes
+
+# Dwell-time tracking state
+person_present = False
+first_detection_time = None
+last_capture_time = 0
+in_cooldown = False
 
 try:
     while True:
@@ -160,12 +170,34 @@ try:
             if people_detected:
                 break
 
-        # If person detected, save frame and upload to Supabase
-        if people_detected:
-            current_time = time.time()
+        current_time = time.time()
 
-            # Avoid duplicate detections within 2 seconds
-            if current_time - last_detection_time > 2:
+        # State machine for dwell-time tracking
+        if people_detected:
+            # Person is currently in frame
+            if not person_present:
+                # New person detected - start dwell timer
+                person_present = True
+                first_detection_time = current_time
+                print(f"👁️  Person detected - starting {DWELL_TIME}s dwell timer...")
+
+            # Check if we're in cooldown period
+            if in_cooldown:
+                time_until_ready = CAPTURE_COOLDOWN - (current_time - last_capture_time)
+                if time_until_ready > 0:
+                    # Still in cooldown, skip capture
+                    continue
+                else:
+                    # Cooldown expired
+                    in_cooldown = False
+                    print("✅ Cooldown expired - ready to capture again")
+
+            # Check if dwell time has been met
+            dwell_duration = current_time - first_detection_time
+            if dwell_duration >= DWELL_TIME and not in_cooldown:
+                # Person has been present long enough - capture!
+                print(f"📸 Dwell time met ({dwell_duration:.1f}s) - capturing still...")
+
                 detection_count += 1
                 detection_timestamp = datetime.now(ZoneInfo("America/Los_Angeles"))
                 timestamp_str = detection_timestamp.strftime("%Y%m%d_%H%M%S")
@@ -287,7 +319,17 @@ try:
                     print(f"   ⚠️  Failed to cleanup local file: {e}")
 
                 print()
-                last_detection_time = current_time
+
+                # Start cooldown period
+                last_capture_time = current_time
+                in_cooldown = True
+                print(f"⏸️  Starting {CAPTURE_COOLDOWN}s cooldown period...")
+        else:
+            # No person detected - reset state
+            if person_present:
+                print("👋 Person left frame - resetting dwell timer")
+                person_present = False
+                first_detection_time = None
 
 except KeyboardInterrupt:
     print()
