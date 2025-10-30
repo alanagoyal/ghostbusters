@@ -68,9 +68,8 @@ print("✅ Face blurrer initialized (privacy protection enabled)")
 # Dwell-time and cooldown configuration
 DWELL_TIME = int(os.getenv("DWELL_TIME", "10"))  # Seconds person must be present before capture
 CAPTURE_COOLDOWN = int(os.getenv("CAPTURE_COOLDOWN", "60"))  # Seconds to wait before next capture
-DETECTION_GRACE_PERIOD = int(os.getenv("DETECTION_GRACE_PERIOD", "3"))  # Seconds to allow brief detection gaps
 CONFIDENCE_THRESHOLD = float(os.getenv("CONFIDENCE_THRESHOLD", "0.5"))  # Minimum confidence for person detection
-print(f"⏱️  Dwell time: {DWELL_TIME}s, Cooldown: {CAPTURE_COOLDOWN}s, Grace period: {DETECTION_GRACE_PERIOD}s")
+print(f"⏱️  Dwell time: {DWELL_TIME}s, Cooldown: {CAPTURE_COOLDOWN}s")
 print(f"🎯 Confidence threshold: {CONFIDENCE_THRESHOLD}")
 
 # Function to connect/reconnect to RTSP stream
@@ -110,7 +109,6 @@ person_present = False
 first_detection_time = None
 last_capture_time = 0
 in_cooldown = False
-last_seen_time = None  # Track when person was last detected (for grace period)
 
 try:
     while True:
@@ -182,8 +180,6 @@ try:
         # State machine for dwell-time tracking
         if people_detected:
             # Person is currently in frame
-            last_seen_time = current_time  # Update last seen timestamp
-
             if not person_present:
                 # New person detected - start dwell timer
                 person_present = True
@@ -334,18 +330,11 @@ try:
                 in_cooldown = True
                 print(f"⏸️  Starting {CAPTURE_COOLDOWN}s cooldown period...")
         else:
-            # No person detected in this frame
+            # No person detected - reset state
             if person_present:
-                # Person was previously detected - check grace period
-                time_since_last_seen = current_time - last_seen_time if last_seen_time else 0
-
-                if time_since_last_seen > DETECTION_GRACE_PERIOD:
-                    # Grace period expired - person actually left
-                    print(f"👋 Person left frame (no detection for {time_since_last_seen:.1f}s) - resetting dwell timer")
-                    person_present = False
-                    first_detection_time = None
-                    last_seen_time = None
-                # else: within grace period, ignore brief gap in detection
+                print("👋 Person left frame - resetting dwell timer")
+                person_present = False
+                first_detection_time = None
 
 except KeyboardInterrupt:
     print()
