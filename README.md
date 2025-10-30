@@ -277,6 +277,43 @@ tail -f ~/costume-detector.log
 grep "person(s) detected" ~/costume-detector.log
 ```
 
+### Troubleshooting
+
+**Service fails to start (exit code 127):**
+```bash
+sudo systemctl status costume-detector
+# Shows: "Main process exited, code=exited, status=127"
+```
+
+**Problem:** systemd can't find `uv` command
+
+**Solution:** The service file needs the full path to uv:
+1. Find where uv is installed: `which uv` or `ls ~/.local/bin/uv`
+2. Service file should use: `ExecStart=/home/pi/.local/bin/uv run backend/scripts/main.py`
+3. And set PATH: `Environment="PATH=/home/pi/.local/bin:/usr/local/sbin:..."`
+
+**No output in logs:**
+
+**Problem:** Python buffers output when not running in a terminal
+
+**Solution:** Service file needs: `Environment="PYTHONUNBUFFERED=1"`
+
+**Service running but failing:**
+```bash
+# Check error log
+cat ~/costume-detector-error.log
+
+# Check system journal
+sudo journalctl -u costume-detector -n 50
+```
+
+**Stop endless restart loop:**
+```bash
+# If service is crashing and restarting constantly
+sudo systemctl stop costume-detector
+sudo systemctl disable costume-detector  # Prevents auto-start on boot
+```
+
 ## 📖 Documentation
 
 - [Baseten Setup Guide](docs/BASETEN_SETUP.md) - Vision model API configuration for costume classification
