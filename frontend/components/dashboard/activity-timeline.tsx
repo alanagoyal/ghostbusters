@@ -187,7 +187,7 @@ export function ActivityTimeline({ detections }: ActivityTimelineProps) {
           <CardTitle>Activity Timeline</CardTitle>
           <CardDescription>
             {peakSlot ? (
-              <>Peak activity at {peakSlot.label} {peakSlot.time.getHours() >= 12 ? 'PM' : 'AM'} with {peakSlot.count} visitor{peakSlot.count !== 1 ? 's' : ''}</>
+              <>Peak activity around {peakSlot.label} {peakSlot.time.getHours() >= 12 ? 'PM' : 'AM'} with {peakSlot.count} visitor{peakSlot.count !== 1 ? 's' : ''}</>
             ) : (
               <>No activity data available</>
             )}
@@ -272,7 +272,7 @@ export function ActivityTimeline({ detections }: ActivityTimelineProps) {
                           height: `${Math.max(heightPercent, 0)}%`,
                           minHeight: slot.count > 0 ? '4px' : '0',
                         }}
-                        title={`${slot.count} visitor${slot.count !== 1 ? 's' : ''} at ${slot.label} ${ampm}`}
+                        title={`${slot.count} visitor${slot.count !== 1 ? 's' : ''} around ${slot.label} ${ampm}`}
                       />
                     </div>
                   )
