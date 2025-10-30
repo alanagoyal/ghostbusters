@@ -63,12 +63,15 @@ except Exception as e:
 
 # Initialize face blurrer for privacy protection
 face_blurrer = FaceBlurrer(blur_strength=51)
-print("✅ Face blurrer initialized (privacy protection enabled)")
+print("✅ Face blurrer initialized (frontal + profile detection, privacy protection enabled)")
 
 # Detection parameters
 CONFIDENCE_THRESHOLD = 0.7  # Minimum confidence for person detection
 CONSECUTIVE_FRAMES_REQUIRED = 3  # Number of consecutive detections before capture
 CAPTURE_COOLDOWN = 60  # Seconds to wait before next capture
+
+# Debug mode - save original unblurred frames for comparison
+DEBUG_SAVE_ORIGINAL_FRAMES = os.getenv("DEBUG_SAVE_ORIGINAL_FRAMES", "false").lower() == "true"
 
 # Region of Interest (ROI) - only detect people in doorstep area
 # Coordinates are normalized (0.0 to 1.0) relative to frame dimensions
@@ -232,8 +235,20 @@ try:
                 timestamp_str = detection_timestamp.strftime("%Y%m%d_%H%M%S")
                 filename = f"detection_{timestamp_str}.jpg"
 
+                # DEBUG: Optionally save original unblurred frame for comparison
+                if DEBUG_SAVE_ORIGINAL_FRAMES:
+                    debug_filename = f"debug_original_{timestamp_str}.jpg"
+                    cv2.imwrite(debug_filename, frame)
+                    print(f"   🐛 DEBUG: Saved original frame as {debug_filename}")
+
                 # Blur faces for privacy protection FIRST on original frame
                 blurred_frame, num_faces = face_blurrer.blur_faces(frame)
+
+                # DEBUG: Log face detection results
+                if num_faces == 0:
+                    print(f"   ⚠️  WARNING: No faces detected in frame!")
+                    print(f"   💡 This could be due to: viewing angle, distance, lighting, or occlusion")
+                    print(f"   💡 To debug, set DEBUG_SAVE_ORIGINAL_FRAMES=true in .env")
 
                 # Draw bounding boxes on the blurred frame (only for people in ROI)
                 for result in results:
