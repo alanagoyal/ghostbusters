@@ -64,8 +64,18 @@ except Exception as e:
 face_blurrer = FaceBlurrer(blur_strength=51)
 print("✅ Face blurrer initialized (privacy protection enabled)")
 
+# Function to connect/reconnect to RTSP stream
+def connect_to_stream(url):
+    """Connect to RTSP stream with optimized settings."""
+    cap = cv2.VideoCapture(url)
+    # Set RTSP transport protocol to TCP (more reliable than UDP)
+    cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)  # Reduce buffer to minimize delay
+    cap.set(cv2.CAP_PROP_OPEN_TIMEOUT_MSEC, 10000)  # 10 second connection timeout
+    cap.set(cv2.CAP_PROP_READ_TIMEOUT_MSEC, 10000)  # 10 second read timeout
+    return cap
+
 # Open RTSP stream
-cap = cv2.VideoCapture(rtsp_url)
+cap = connect_to_stream(rtsp_url)
 
 if not cap.isOpened():
     print("❌ ERROR: Could not connect to DoorBird RTSP stream")
@@ -80,15 +90,52 @@ print()
 frame_count = 0
 detection_count = 0
 last_detection_time = 0
+last_reconnect_time = time.time()
+last_health_check = time.time()
+failed_frame_count = 0
+start_time = time.time()
+RECONNECT_INTERVAL = 3600  # Reconnect every hour to clear memory
+HEALTH_CHECK_INTERVAL = 300  # Print health stats every 5 minutes
 
 try:
     while True:
+        current_time = time.time()
+
+        # Health check - print stats every 5 minutes
+        if current_time - last_health_check > HEALTH_CHECK_INTERVAL:
+            uptime_minutes = (current_time - start_time) / 60
+            print(f"\n📊 Health Check (Uptime: {uptime_minutes:.1f} min)")
+            print(f"   Frames processed: {frame_count}")
+            print(f"   Detections: {detection_count}")
+            print(f"   Failed frames: {failed_frame_count}")
+            print()
+            last_health_check = current_time
+
+        # Periodic reconnection to prevent memory leaks
+        if current_time - last_reconnect_time > RECONNECT_INTERVAL:
+            print("🔄 Performing periodic reconnection (memory management)...")
+            cap.release()
+            time.sleep(1)
+            cap = connect_to_stream(rtsp_url)
+            last_reconnect_time = current_time
+            if cap.isOpened():
+                print("✅ Reconnected successfully!")
+            else:
+                print("❌ Reconnection failed, will retry...")
+
         # Read frame from stream
         ret, frame = cap.read()
 
         if not ret:
+            failed_frame_count += 1
             print("⚠️  Failed to read frame, reconnecting...")
-            time.sleep(1)
+            cap.release()
+            time.sleep(2)
+            cap = connect_to_stream(rtsp_url)
+            last_reconnect_time = time.time()  # Reset reconnect timer
+            if not cap.isOpened():
+                print("❌ Failed to reconnect, retrying in 5 seconds...")
+                time.sleep(5)
             continue
 
         frame_count += 1
@@ -232,6 +279,14 @@ try:
                             )
                         except Exception as e:
                             print(f"   ⚠️  Supabase upload failed: {e}")
+
+                # Clean up local file after all persons processed and uploaded
+                try:
+                    if supabase_client and os.path.exists(filename):
+                        os.remove(filename)
+                        print(f"   🗑️  Cleaned up local file: {filename}")
+                except Exception as e:
+                    print(f"   ⚠️  Failed to cleanup local file: {e}")
 
                 print()
                 last_detection_time = current_time

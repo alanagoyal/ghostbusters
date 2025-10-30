@@ -1,0 +1,19 @@
+[Unit]
+Description=Halloween Costume Detector
+After=network.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/projects/costume-classifier
+ExecStart=/usr/bin/env uv run backend/scripts/main.py
+Restart=always
+RestartSec=10
+StandardOutput=append:/home/pi/costume-detector.log
+StandardError=append:/home/pi/costume-detector-error.log
+
+# Environment variables (alternatively, load from .env file)
+# EnvironmentFile=/home/pi/projects/costume-classifier/.env
+
+[Install]
+WantedBy=multi-user.target
