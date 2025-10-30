@@ -69,8 +69,34 @@ print("✅ Face blurrer initialized (privacy protection enabled)")
 CONFIDENCE_THRESHOLD = 0.7  # Minimum confidence for person detection
 CONSECUTIVE_FRAMES_REQUIRED = 3  # Number of consecutive detections before capture
 CAPTURE_COOLDOWN = 60  # Seconds to wait before next capture
+
+# Region of Interest (ROI) - only detect people in doorstep area
+# Coordinates are normalized (0.0 to 1.0) relative to frame dimensions
+# Based on the camera view: doorstep is roughly the left half of the frame
+ROI_X_MIN = 0.0   # Left edge (0%)
+ROI_X_MAX = 0.6   # Stop at 60% across (excludes street on right)
+ROI_Y_MIN = 0.3   # Start 30% down (exclude top of frame)
+ROI_Y_MAX = 1.0   # Bottom edge (100%)
+
 print(f"🎯 Detection: {CONSECUTIVE_FRAMES_REQUIRED} consecutive frames at >{CONFIDENCE_THRESHOLD} confidence")
+print(f"📍 ROI: Doorstep area only (x: {ROI_X_MIN}-{ROI_X_MAX}, y: {ROI_Y_MIN}-{ROI_Y_MAX})")
 print(f"⏱️  Cooldown: {CAPTURE_COOLDOWN}s between captures")
+
+# Function to check if a bounding box is within the region of interest
+def is_in_roi(bbox, frame_width, frame_height):
+    """Check if bounding box center is within the doorstep ROI."""
+    x1, y1, x2, y2 = bbox
+    # Calculate center of bounding box
+    center_x = (x1 + x2) / 2
+    center_y = (y1 + y2) / 2
+
+    # Normalize to 0-1 range
+    norm_x = center_x / frame_width
+    norm_y = center_y / frame_height
+
+    # Check if center is within ROI bounds
+    return (ROI_X_MIN <= norm_x <= ROI_X_MAX and
+            ROI_Y_MIN <= norm_y <= ROI_Y_MAX)
 
 # Function to connect/reconnect to RTSP stream
 def connect_to_stream(url):
@@ -159,7 +185,10 @@ try:
         # Run YOLO detection
         results = model(frame, verbose=False)
 
-        # Check for person detections with high confidence (class 0 in COCO dataset)
+        # Get frame dimensions for ROI checking
+        frame_height, frame_width = frame.shape[:2]
+
+        # Check for person detections with high confidence in the ROI (class 0 in COCO dataset)
         people_detected = False
         for result in results:
             boxes = result.boxes
@@ -167,8 +196,11 @@ try:
                 if int(box.cls[0]) == 0:  # person class
                     confidence = float(box.conf[0])
                     if confidence > CONFIDENCE_THRESHOLD:
-                        people_detected = True
-                        break
+                        # Check if person is in the doorstep ROI
+                        bbox = box.xyxy[0].tolist()
+                        if is_in_roi(bbox, frame_width, frame_height):
+                            people_detected = True
+                            break
             if people_detected:
                 break
 
@@ -203,25 +235,27 @@ try:
                 # Blur faces for privacy protection FIRST on original frame
                 blurred_frame, num_faces = face_blurrer.blur_faces(frame)
 
-                # Draw bounding boxes on the blurred frame
+                # Draw bounding boxes on the blurred frame (only for people in ROI)
                 for result in results:
                     boxes = result.boxes
                     for box in boxes:
                         # Class 0 is 'person' in COCO dataset
                         if int(box.cls[0]) == 0:
                             confidence = float(box.conf[0])
-                            # Only show high-confidence detections
+                            # Only show high-confidence detections in ROI
                             if confidence > CONFIDENCE_THRESHOLD:
                                 # Get bounding box coordinates
                                 x1, y1, x2, y2 = map(int, box.xyxy[0])
 
-                                # Draw bounding box on blurred frame
-                                cv2.rectangle(blurred_frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                                # Only draw if person is in doorstep ROI
+                                if is_in_roi([x1, y1, x2, y2], frame_width, frame_height):
+                                    # Draw bounding box on blurred frame
+                                    cv2.rectangle(blurred_frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
 
                 # Save blurred frame locally
                 cv2.imwrite(filename, blurred_frame)
 
-                # Collect ALL person detections (not just the highest confidence)
+                # Collect ALL person detections in ROI (not just the highest confidence)
                 detected_people = []
                 for result in results:
                     boxes = result.boxes
@@ -230,15 +264,17 @@ try:
                             conf = float(box.conf[0])
                             if conf > CONFIDENCE_THRESHOLD:
                                 x1, y1, x2, y2 = map(int, box.xyxy[0])
-                                detected_people.append({
-                                    "confidence": conf,
-                                    "bounding_box": {
-                                        "x1": x1,
-                                        "y1": y1,
-                                        "x2": x2,
-                                        "y2": y2,
-                                    }
-                                })
+                                # Only include people in the doorstep ROI
+                                if is_in_roi([x1, y1, x2, y2], frame_width, frame_height):
+                                    detected_people.append({
+                                        "confidence": conf,
+                                        "bounding_box": {
+                                            "x1": x1,
+                                            "y1": y1,
+                                            "x2": x2,
+                                            "y2": y2,
+                                        }
+                                    })
 
                 num_people = len(detected_people)
                 print(f"👤 {num_people} person(s) detected! (Detection #{detection_count})")
