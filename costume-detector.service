@@ -6,6 +6,8 @@ After=network.target
 Type=simple
 User=pi
 WorkingDirectory=/home/pi/projects/costume-classifier
+Environment="PATH=/home/pi/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+Environment="PYTHONUNBUFFERED=1"
 ExecStart=/home/pi/.local/bin/uv run backend/scripts/main.py
 Restart=always
 RestartSec=10
