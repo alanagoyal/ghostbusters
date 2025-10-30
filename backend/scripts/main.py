@@ -8,6 +8,7 @@ Uploads detections to Supabase for dashboard display.
 import os
 import time
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 import cv2
 from dotenv import load_dotenv
@@ -166,7 +167,7 @@ try:
             # Avoid duplicate detections within 2 seconds
             if current_time - last_detection_time > 2:
                 detection_count += 1
-                detection_timestamp = datetime.now()
+                detection_timestamp = datetime.now(ZoneInfo("America/Los_Angeles"))
                 timestamp_str = detection_timestamp.strftime("%Y%m%d_%H%M%S")
                 filename = f"detection_{timestamp_str}.jpg"
 
