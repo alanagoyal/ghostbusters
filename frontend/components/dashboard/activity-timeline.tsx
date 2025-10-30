@@ -28,6 +28,7 @@ export function ActivityTimeline({ detections }: ActivityTimelineProps) {
   const [containerWidth, setContainerWidth] = useState(0)
   const [currentTime, setCurrentTime] = useState<number | null>(null)
   const [mountTime, setMountTime] = useState<number | null>(null)
+  const [isReady, setIsReady] = useState(false)
 
   // Set current time on client only and update every second
   useEffect(() => {
@@ -44,14 +45,25 @@ export function ActivityTimeline({ detections }: ActivityTimelineProps) {
   useEffect(() => {
     const updateWidth = () => {
       if (scrollContainerRef.current) {
-        setContainerWidth(scrollContainerRef.current.offsetWidth)
+        const width = scrollContainerRef.current.offsetWidth
+        setContainerWidth(width)
+        if (!isReady && width > 0) {
+          setIsReady(true)
+        }
       }
     }
 
-    updateWidth()
+    // Use requestAnimationFrame to ensure measurement after layout
+    const rafId = requestAnimationFrame(() => {
+      updateWidth()
+    })
+
     window.addEventListener('resize', updateWidth)
-    return () => window.removeEventListener('resize', updateWidth)
-  }, [])
+    return () => {
+      cancelAnimationFrame(rafId)
+      window.removeEventListener('resize', updateWidth)
+    }
+  }, [isReady])
 
   const timeSlotData = useMemo(() => {
     const now = Date.now()
@@ -125,12 +137,17 @@ export function ActivityTimeline({ detections }: ActivityTimelineProps) {
     return slots
   }, [detections, containerWidth])
 
-  // Auto-scroll to the end (most recent) on mount or when data changes
+  // Auto-scroll to the end (most recent) when ready
   useEffect(() => {
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollLeft = scrollContainerRef.current.scrollWidth
+    if (isReady && scrollContainerRef.current) {
+      // Use requestAnimationFrame to ensure scroll happens after render
+      requestAnimationFrame(() => {
+        if (scrollContainerRef.current) {
+          scrollContainerRef.current.scrollLeft = scrollContainerRef.current.scrollWidth
+        }
+      })
     }
-  }, [timeSlotData])
+  }, [isReady])
 
   const maxCount = timeSlotData.length > 0 ? Math.max(...timeSlotData.map(h => h.count), 1) : 1
   const peakSlot = timeSlotData.length > 0 ? timeSlotData.reduce((max, h) => h.count > max.count ? h : max, timeSlotData[0]) : null
@@ -181,30 +198,33 @@ export function ActivityTimeline({ detections }: ActivityTimelineProps) {
         <div className="relative h-56 flex">
           {/* Sticky Y-axis labels */}
           <div className="relative" style={{ width: `${Y_AXIS_WIDTH_PX}px`, flexShrink: 0 }}>
-            <div className="absolute top-0 left-0 right-0" style={{ bottom: '2rem' }}>
-              {yAxisTicks.map((tick) => (
-                <div
-                  key={tick}
-                  className="absolute"
-                  style={{
-                    bottom: `${(tick / yAxisMax) * 100}%`,
-                    left: 0,
-                    right: 0,
-                  }}
-                >
-                  <div className="absolute left-0 -top-2 text-xs text-muted-foreground">
-                    {tick}
+            {isReady && (
+              <div className="absolute top-0 left-0 right-0" style={{ bottom: '2rem' }}>
+                {yAxisTicks.map((tick) => (
+                  <div
+                    key={tick}
+                    className="absolute"
+                    style={{
+                      bottom: `${(tick / yAxisMax) * 100}%`,
+                      left: 0,
+                      right: 0,
+                    }}
+                  >
+                    <div className="absolute left-0 -top-2 text-xs text-muted-foreground">
+                      {tick}
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Scrollable chart area */}
           <div className="flex-1 relative overflow-x-auto overflow-y-hidden" ref={scrollContainerRef}>
-            <div className="relative h-full" style={{ width: `${Math.max(timeSlotData.length * SLOT_WIDTH_PX, containerWidth || 800)}px`, height: '100%' }}>
-              {/* Y-axis grid lines */}
-              <div className="absolute top-0 left-0 right-0" style={{ bottom: '2rem' }}>
+            {isReady && (
+              <div className="relative h-full" style={{ width: `${Math.max(timeSlotData.length * SLOT_WIDTH_PX, containerWidth || 800)}px`, height: '100%' }}>
+                {/* Y-axis grid lines */}
+                <div className="absolute top-0 left-0 right-0" style={{ bottom: '2rem' }}>
                 {yAxisTicks.map((tick) => {
                   const position = (tick / yAxisMax) * 100;
                   // For the top line (100%), offset it by 1px so it's visible
@@ -278,7 +298,8 @@ export function ActivityTimeline({ detections }: ActivityTimelineProps) {
                   )
                 })}
               </div>
-            </div>
+              </div>
+            )}
           </div>
         </div>
       </CardContent>
