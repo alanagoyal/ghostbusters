@@ -66,10 +66,11 @@ face_blurrer = FaceBlurrer(blur_strength=51)
 print("✅ Face blurrer initialized (privacy protection enabled)")
 
 # Detection parameters
-DWELL_TIME = 10  # Seconds person must be present before capture
+CONFIDENCE_THRESHOLD = 0.7  # Minimum confidence for person detection
+CONSECUTIVE_FRAMES_REQUIRED = 3  # Number of consecutive detections before capture
 CAPTURE_COOLDOWN = 60  # Seconds to wait before next capture
-CONFIDENCE_THRESHOLD = 0.5  # Minimum confidence for person detection
-print(f"⏱️  Dwell time: {DWELL_TIME}s, Cooldown: {CAPTURE_COOLDOWN}s, Confidence: {CONFIDENCE_THRESHOLD}")
+print(f"🎯 Detection: {CONSECUTIVE_FRAMES_REQUIRED} consecutive frames at >{CONFIDENCE_THRESHOLD} confidence")
+print(f"⏱️  Cooldown: {CAPTURE_COOLDOWN}s between captures")
 
 # Function to connect/reconnect to RTSP stream
 def connect_to_stream(url):
@@ -103,11 +104,10 @@ start_time = time.time()
 RECONNECT_INTERVAL = 3600  # Reconnect every hour to clear memory
 HEALTH_CHECK_INTERVAL = 300  # Print health stats every 5 minutes
 
-# Dwell-time tracking state
-person_present = False
-first_detection_time = None
-last_capture_time = 0
-in_cooldown = False
+# Detection tracking state
+consecutive_detections = 0  # Count of consecutive frames with person detected
+last_capture_time = 0  # When we last captured an image
+in_cooldown = False  # Whether we're in cooldown period
 
 try:
     while True:
@@ -159,14 +159,12 @@ try:
         # Run YOLO detection
         results = model(frame, verbose=False)
 
-        # Check for person detections (class 0 in COCO dataset)
-        # Apply confidence threshold to avoid false positives
+        # Check for person detections with high confidence (class 0 in COCO dataset)
         people_detected = False
         for result in results:
             boxes = result.boxes
             for box in boxes:
-                # Class 0 is 'person' in COCO dataset
-                if int(box.cls[0]) == 0:
+                if int(box.cls[0]) == 0:  # person class
                     confidence = float(box.conf[0])
                     if confidence > CONFIDENCE_THRESHOLD:
                         people_detected = True
@@ -176,31 +174,26 @@ try:
 
         current_time = time.time()
 
-        # State machine for dwell-time tracking
+        # Check if we're in cooldown period
+        if in_cooldown:
+            time_since_capture = current_time - last_capture_time
+            if time_since_capture >= CAPTURE_COOLDOWN:
+                # Cooldown expired
+                in_cooldown = False
+                print("✅ Cooldown expired - ready for next detection")
+            # While in cooldown, ignore all detections and reset counter
+            consecutive_detections = 0
+            continue
+
+        # Track consecutive detections
         if people_detected:
-            # Person is currently in frame
-            if not person_present:
-                # New person detected - start dwell timer
-                person_present = True
-                first_detection_time = current_time
-                print(f"👁️  Person detected - starting {DWELL_TIME}s dwell timer...")
+            consecutive_detections += 1
+            print(f"👁️  Person detected ({consecutive_detections}/{CONSECUTIVE_FRAMES_REQUIRED})")
 
-            # Check if we're in cooldown period
-            if in_cooldown:
-                time_until_ready = CAPTURE_COOLDOWN - (current_time - last_capture_time)
-                if time_until_ready > 0:
-                    # Still in cooldown, skip capture
-                    continue
-                else:
-                    # Cooldown expired
-                    in_cooldown = False
-                    print("✅ Cooldown expired - ready to capture again")
-
-            # Check if dwell time has been met
-            dwell_duration = current_time - first_detection_time
-            if dwell_duration >= DWELL_TIME and not in_cooldown:
-                # Person has been present long enough - capture!
-                print(f"📸 Dwell time met ({dwell_duration:.1f}s) - capturing still...")
+            # Check if we have enough consecutive detections to capture
+            if consecutive_detections >= CONSECUTIVE_FRAMES_REQUIRED:
+                # Person detected in required consecutive frames - capture!
+                print(f"📸 Capturing still ({CONSECUTIVE_FRAMES_REQUIRED} consecutive detections)...")
 
                 detection_count += 1
                 detection_timestamp = datetime.now(ZoneInfo("America/Los_Angeles"))
@@ -324,16 +317,16 @@ try:
 
                 print()
 
-                # Start cooldown period
+                # Start cooldown period and reset counter
                 last_capture_time = current_time
                 in_cooldown = True
+                consecutive_detections = 0
                 print(f"⏸️  Starting {CAPTURE_COOLDOWN}s cooldown period...")
         else:
-            # No person detected - reset state
-            if person_present:
-                print("👋 Person left frame - resetting dwell timer")
-                person_present = False
-                first_detection_time = None
+            # No person detected - reset consecutive counter
+            if consecutive_detections > 0:
+                print(f"👋 Person left frame - resetting counter (was at {consecutive_detections})")
+            consecutive_detections = 0
 
 except KeyboardInterrupt:
     print()
