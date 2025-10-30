@@ -155,27 +155,9 @@ try:
                 # Class 0 is 'person' in COCO dataset
                 if int(box.cls[0]) == 0:
                     people_detected = True
-                    confidence = float(box.conf[0])
-
-                    # Only show high-confidence detections
-                    if confidence > 0.5:
-                        # Get bounding box coordinates
-                        x1, y1, x2, y2 = map(int, box.xyxy[0])
-
-                        # Draw bounding box
-                        cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-
-                        # Draw label
-                        label = f"Person {confidence:.2f}"
-                        cv2.putText(
-                            frame,
-                            label,
-                            (x1, y1 - 10),
-                            cv2.FONT_HERSHEY_SIMPLEX,
-                            0.5,
-                            (0, 255, 0),
-                            2,
-                        )
+                    break
+            if people_detected:
+                break
 
         # If person detected, save frame and upload to Supabase
         if people_detected:
@@ -188,8 +170,35 @@ try:
                 timestamp_str = detection_timestamp.strftime("%Y%m%d_%H%M%S")
                 filename = f"detection_{timestamp_str}.jpg"
 
-                # Blur faces for privacy protection before saving
+                # Blur faces for privacy protection FIRST on original frame
                 blurred_frame, num_faces = face_blurrer.blur_faces(frame)
+
+                # Draw bounding boxes on the blurred frame
+                for result in results:
+                    boxes = result.boxes
+                    for box in boxes:
+                        # Class 0 is 'person' in COCO dataset
+                        if int(box.cls[0]) == 0:
+                            confidence = float(box.conf[0])
+                            # Only show high-confidence detections
+                            if confidence > 0.5:
+                                # Get bounding box coordinates
+                                x1, y1, x2, y2 = map(int, box.xyxy[0])
+
+                                # Draw bounding box on blurred frame
+                                cv2.rectangle(blurred_frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+
+                                # Draw label
+                                label = f"Person {confidence:.2f}"
+                                cv2.putText(
+                                    blurred_frame,
+                                    label,
+                                    (x1, y1 - 10),
+                                    cv2.FONT_HERSHEY_SIMPLEX,
+                                    0.5,
+                                    (0, 255, 0),
+                                    2,
+                                )
 
                 # Save blurred frame locally
                 cv2.imwrite(filename, blurred_frame)
