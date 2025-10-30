@@ -9,6 +9,7 @@ import { CostumeDistribution } from "@/components/dashboard/costume-distribution
 import { ActivityTimeline } from "@/components/dashboard/activity-timeline";
 import { LiveFeed } from "@/components/dashboard/live-feed";
 import { ConfidenceMeter } from "@/components/dashboard/confidence-meter";
+import { PhotoGallery } from "@/components/dashboard/photo-gallery";
 
 interface PersonDetection {
   id: string;
@@ -159,6 +160,10 @@ export function DashboardClient({ initialDetections }: DashboardClientProps) {
 
         <div className="mt-6">
           <ActivityTimeline detections={detections} />
+        </div>
+
+        <div className="mt-6">
+          <PhotoGallery />
         </div>
       </div>
     </div>

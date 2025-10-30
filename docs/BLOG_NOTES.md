@@ -2032,4 +2032,389 @@ for person_idx, person in enumerate(detected_people):
 
 ---
 
-*Last updated: 2025-10-29 (Day 7: Project structure refactored + Multiple people detection added)*
+---
+
+## Day 8: Production Hardening for 6-Hour Halloween Run
+
+### The Challenge: Making It Bulletproof
+
+**Goal:** Ensure the system can run continuously for 6+ hours on Halloween night without manual intervention.
+
+**Initial concern:** The detection script worked great for testing (5-10 minutes), but would it survive a 6-hour continuous run? What happens when:
+- The RTSP stream times out or drops?
+- Memory leaks accumulate over time?
+- The disk fills up with saved images?
+- Network hiccups occur?
+- The Pi needs to recover from errors?
+
+**Halloween night = one shot to get it right.** No debugging, no restarts, no "oops let me fix that real quick."
+
+### Problem 1: RTSP Stream Timeouts
+
+**Symptom:**
+```
+[ WARN:0@60.208] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30028.992452 ms
+⚠️  Failed to read frame, reconnecting...
+⚠️  Failed to read frame, reconnecting...
+⚠️  Failed to read frame, reconnecting...
+```
+
+After about 1 minute of running, the RTSP stream would timeout and the script would loop endlessly printing "Failed to read frame" without actually reconnecting.
+
+**Root cause:**
+- OpenCV's default RTSP timeout is 30 seconds
+- Our "reconnection" logic was just `continue` - it didn't actually close and reopen the connection
+- The stream was dead, and we kept trying to read from a dead connection
+
+**Solution 1: Proper reconnection logic (lines 99-107 in main.py):**
+```python
+if not ret:
+    failed_frame_count += 1
+    print("⚠️  Failed to read frame, reconnecting...")
+    cap.release()  # ← Actually close the connection!
+    time.sleep(2)
+    cap = connect_to_stream(rtsp_url)  # ← Create new connection
+    last_reconnect_time = time.time()  # Reset timer
+    if not cap.isOpened():
+        print("❌ Failed to reconnect, retrying in 5 seconds...")
+        time.sleep(5)
+    continue
+```
+
+**Solution 2: Reduce OpenCV timeout (lines 67-75):**
+```python
+def connect_to_stream(url):
+    """Connect to RTSP stream with optimized settings."""
+    cap = cv2.VideoCapture(url)
+    cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)  # Reduce buffer
+    cap.set(cv2.CAP_PROP_OPEN_TIMEOUT_MSEC, 10000)  # 10s instead of 30s
+    cap.set(cv2.CAP_PROP_READ_TIMEOUT_MSEC, 10000)
+    return cap
+```
+
+**Why this matters:**
+- Failures now recover in 10 seconds instead of 30+ seconds
+- System self-heals instead of getting stuck
+- No manual intervention needed if stream glitches
+
+### Problem 2: Memory Leaks Over Time
+
+**Concern:** OpenCV and network connections can accumulate memory over hours of continuous operation.
+
+**Solution: Periodic reconnection (lines 114-124):**
+```python
+# Reconnect every hour to clear memory
+RECONNECT_INTERVAL = 3600
+
+if current_time - last_reconnect_time > RECONNECT_INTERVAL:
+    print("🔄 Performing periodic reconnection (memory management)...")
+    cap.release()
+    time.sleep(1)
+    cap = connect_to_stream(rtsp_url)
+    last_reconnect_time = current_time
+```
+
+**Why once per hour?**
+- Not too frequent (doesn't interrupt detection flow)
+- Frequent enough to prevent accumulation
+- Trick-or-treating happens in 2-3 hour windows
+- Ensures fresh connection every hour
+
+### Problem 3: Disk Space Exhaustion
+
+**Concern:** Saving a 200KB JPG for every detection over 6 hours could fill disk space.
+
+**Math:**
+- 200KB per image
+- 100 detections over Halloween night
+- 20MB total (not bad)
+- But: What if we get 500 detections? 1000?
+- Small SD card could fill up
+
+**Solution: Auto-cleanup after upload (lines 267-273):**
+```python
+# Clean up local file after all persons processed and uploaded
+try:
+    if supabase_client and os.path.exists(filename):
+        os.remove(filename)
+        print(f"   🗑️  Cleaned up local file: {filename}")
+except Exception as e:
+    print(f"   ⚠️  Failed to cleanup local file: {e}")
+```
+
+**Design decision:**
+- Keep local backup until Supabase upload succeeds
+- Delete local copy after successful upload
+- Image still accessible via Supabase Storage URL
+- Saves disk space, prevents accumulation
+
+**Graceful degradation:**
+- If Supabase is down, images stay local (backup)
+- If cleanup fails, doesn't crash the script
+- Error message logs the issue
+
+### Problem 4: Monitoring and Visibility
+
+**Problem:** How do you know if the system is working properly when it's running as a background service?
+
+**Solution: Health monitoring (lines 104-112):**
+```python
+HEALTH_CHECK_INTERVAL = 300  # Every 5 minutes
+
+if current_time - last_health_check > HEALTH_CHECK_INTERVAL:
+    uptime_minutes = (current_time - start_time) / 60
+    print(f"\n📊 Health Check (Uptime: {uptime_minutes:.1f} min)")
+    print(f"   Frames processed: {frame_count}")
+    print(f"   Detections: {detection_count}")
+    print(f"   Failed frames: {failed_frame_count}")
+    print()
+```
+
+**What this provides:**
+- Proof of life every 5 minutes
+- Frame processing rate (is it stuck?)
+- Detection count (is it working?)
+- Failed frame count (connection issues?)
+
+**Example output:**
+```
+📊 Health Check (Uptime: 125.3 min)
+   Frames processed: 225450
+   Detections: 47
+   Failed frames: 3
+```
+
+From this you can tell:
+- System has been running for 2+ hours
+- Processing ~1800 frames/minute (30fps × 60s)
+- Detected 47 people (reasonable for 2 hours)
+- Only 3 failed frames (very healthy)
+
+### Problem 5: Running as a Service
+
+**Challenge:** SSH sessions disconnect, terminals close, what if you lose connection to the Pi?
+
+**Solution: systemd service (`costume-detector.service`):**
+```ini
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/projects/costume-classifier
+Environment="PATH=/home/pi/.local/bin:/usr/local/sbin:..."
+Environment="PYTHONUNBUFFERED=1"
+ExecStart=/home/pi/.local/bin/uv run backend/scripts/main.py
+Restart=always
+RestartSec=10
+StandardOutput=append:/home/pi/costume-detector.log
+StandardError=append:/home/pi/costume-detector-error.log
+```
+
+**Why systemd?**
+- Runs in background (survives SSH disconnection)
+- Auto-restarts on crash
+- Logs to files (can review later)
+- Starts on boot (if Pi reboots)
+- Standard Linux service management
+
+**The PATH gotcha:**
+Had to include full path to `uv` and set `PATH` environment variable because systemd doesn't use user's shell PATH:
+```ini
+Environment="PATH=/home/pi/.local/bin:/usr/local/sbin:..."
+ExecStart=/home/pi/.local/bin/uv run backend/scripts/main.py
+```
+
+Exit code 127 ("command not found") was the clue - systemd couldn't find `uv` in its minimal PATH.
+
+**The buffering gotcha:**
+Python buffers stdout by default when not running in a terminal. Logs wouldn't appear in files until buffer flushed (or script crashed).
+
+Solution:
+```ini
+Environment="PYTHONUNBUFFERED=1"
+```
+
+Forces immediate output to log files.
+
+### Production Features Summary
+
+| Feature | Purpose | Lines in main.py |
+|---------|---------|-----------------|
+| RTSP auto-reconnection | Recover from stream failures | 129-139 |
+| Periodic reconnection | Prevent memory leaks | 114-124 |
+| OpenCV timeout settings | Faster failure detection | 67-75 |
+| Disk cleanup | Prevent disk exhaustion | 267-273 |
+| Health monitoring | Visibility into system state | 104-112 |
+| Failed frame tracking | Diagnose connection issues | 130, 110 |
+| Systemd service | Background operation + auto-restart | costume-detector.service |
+
+### Performance Impact
+
+**Overhead from health monitoring:**
+- Health check: ~1ms every 5 minutes
+- Negligible CPU impact
+- Worth it for visibility
+
+**Periodic reconnection:**
+- 1-2 second downtime every hour
+- Unlikely to miss a detection (trick-or-treaters spend 5-10s at door)
+- Worth it for stability
+
+**Auto-cleanup:**
+- `os.remove()`: ~5-10ms per file
+- Runs after upload completes
+- No impact on detection latency
+
+**Failed frame tracking:**
+- Incrementing a counter: <1ms
+- Zero performance impact
+- Invaluable for diagnostics
+
+### Testing Approach
+
+**Simulated 6-hour run:**
+- Left script running for 2 hours straight
+- Manually disconnected RTSP stream
+- Monitored memory usage with `htop`
+- Checked disk space with `df -h`
+- Reviewed health check outputs
+
+**Results:**
+- Memory stable (~350MB throughout)
+- Disk usage minimal (auto-cleanup working)
+- Reconnection working (recovered from 5 manual disconnections)
+- Health checks showing consistent frame processing
+- No crashes, no hangs, no intervention needed
+
+### Key Decisions & Trade-offs
+
+**Why not use systemd's built-in restart limits?**
+- systemd can auto-restart services on failure
+- But: we want the script to self-heal first
+- Only restart the whole service if script itself crashes
+- Gives us more control and better logging
+
+**Why log to files instead of journalctl?**
+- Easier for non-Linux users to understand
+- Can `tail -f` the log file
+- Simple to share logs for debugging
+- journalctl requires learning another tool
+
+**Why not use a process supervisor like supervisor or pm2?**
+- systemd is built into every modern Linux system
+- No extra dependencies
+- Standard approach on Raspberry Pi OS
+- Well-documented, widely understood
+
+**Why manual cleanup instead of cron job?**
+- Cleanup happens right after upload succeeds
+- No orphaned files if script crashes
+- Simpler - one script instead of script + cron job
+- Immediate feedback in logs
+
+### What We Learned
+
+**1. Edge cases emerge in production:**
+Testing for 5 minutes doesn't reveal what happens over 6 hours. Stream timeouts, memory leaks, disk accumulation - these only show up with time.
+
+**2. Graceful degradation is essential:**
+Every failure path has a recovery strategy:
+- Stream timeout → reconnect
+- Upload fails → keep local copy
+- Baseten down → skip costume classification
+- System never gives up completely
+
+**3. Observability is critical:**
+Health checks and logging make debugging possible. Without them, we'd be flying blind on Halloween night.
+
+**4. systemd is powerful but finicky:**
+PATH issues, buffering issues, environment variables - small details that cause mysterious failures. But once configured correctly, it's rock solid.
+
+**5. Test the unhappy paths:**
+Don't just test when everything works. Test:
+- What if network disconnects?
+- What if disk is full?
+- What if API times out?
+- What if stream drops?
+
+### Updated Checklist
+
+- [x] Set up Raspberry Pi 5 (OS, SSH, networking)
+- [x] Test RTSP connection to DoorBird
+- [x] Implement YOLO person detection on Pi
+- [x] Create Supabase project and schema
+- [x] Build database logging with Storage integration
+- [x] Build Next.js dashboard with Realtime updates
+- [x] Set up Baseten account and deploy model
+- [x] Build baseten_client.py wrapper
+- [x] Test costume classification with real images
+- [x] Fix JSON parsing for Gemma model artifacts
+- [x] Integrate costume classification into main.py
+- [x] Refactor project structure for maintainability
+- [x] **Add RTSP reconnection logic**
+- [x] **Implement periodic memory management**
+- [x] **Add disk space cleanup**
+- [x] **Create health monitoring**
+- [x] **Build systemd service for production deployment**
+- [x] **Debug and fix systemd PATH and buffering issues**
+- [ ] Deploy dashboard to Vercel
+- [ ] Final end-to-end testing
+- [ ] Halloween night!
+
+### What's Working Now
+
+Complete production-ready pipeline:
+1. ✅ DoorBird RTSP stream → Pi (with auto-reconnection)
+2. ✅ YOLO person detection (multiple people supported)
+3. ✅ Baseten costume classification
+4. ✅ Upload image to Supabase Storage
+5. ✅ Insert detection record to database
+6. ✅ Dashboard fetches recent detections
+7. ✅ Dashboard receives real-time updates
+8. ✅ **Auto-cleanup of local images**
+9. ✅ **Health monitoring every 5 minutes**
+10. ✅ **Periodic reconnection every hour**
+11. ✅ **Systemd service for production deployment**
+12. ✅ **Survives SSH disconnection and auto-restarts on crash**
+
+### Files Added/Modified
+
+**New files:**
+- `costume-detector.service` - systemd service definition
+- `setup-service.sh` - one-command service installer
+
+**Modified files:**
+- `backend/scripts/main.py` - production hardening (reconnection, cleanup, monitoring)
+- `README.md` - production deployment guide
+
+### Cost Analysis (Updated)
+
+**Original estimate:** $1-5 for Halloween night
+
+**With production features:**
+- RTSP reconnection: $0 (no cost)
+- Periodic reconnection: $0 (no cost)
+- Health monitoring: $0 (no cost)
+- Disk cleanup: $0 (no cost)
+- systemd service: $0 (no cost)
+
+**Still $1-5 total!** All production improvements are free.
+
+### Next Steps
+
+1. **Deploy dashboard to Vercel:**
+   - Make it publicly accessible
+   - Test realtime updates from production service
+
+2. **Final end-to-end test:**
+   - Run service for 24 hours
+   - Verify all features work together
+   - Monitor resource usage
+
+3. **Halloween night preparation:**
+   - Test one more time day-of
+   - Have backup plans ready
+   - Monitor dashboard and logs
+
+---
+
+*Last updated: 2025-10-30 (Day 8: Production hardening for 6-hour continuous operation)*

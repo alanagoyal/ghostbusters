@@ -101,7 +101,7 @@ uv run backend/tests/integration/test_doorbird_connection.py
 uv run backend/tests/integration/test_supabase_connection.py
 ```
 
-**Run live person detection:**
+**Run live person detection (see Production Deployment below for long-running setup):**
 ```bash
 uv run backend/scripts/main.py
 ```
@@ -172,6 +172,146 @@ df -h
 **Update system packages:**
 ```bash
 sudo apt update && sudo apt upgrade -y
+```
+
+## 🎃 Production Deployment (Halloween Night)
+
+For long-running detection (6+ hours), the system includes production-ready features:
+
+### Production Features
+
+- **Auto-reconnection:** RTSP stream reconnects automatically on failure
+- **Periodic reconnection:** Full reconnect every hour to prevent memory leaks
+- **Disk management:** Local images auto-deleted after Supabase upload
+- **Health monitoring:** Stats printed every 5 minutes (uptime, detections, failures)
+- **Systemd service:** Auto-restart on crash, survives SSH disconnection
+
+### Option 1: Run Manually (Testing/Development)
+
+```bash
+ssh pi@halloween-pi
+cd ~/projects/costume-classifier
+uv run backend/scripts/main.py
+```
+
+This will show live output with:
+- Detection notifications
+- Health checks every 5 minutes
+- Reconnection status
+- Costume classifications
+
+Press `Ctrl+C` to stop.
+
+### Option 2: Run as Service (Production/Halloween Night)
+
+**Setup (one-time):**
+```bash
+ssh pi@halloween-pi
+cd ~/projects/costume-classifier
+sudo ./setup-service.sh
+```
+
+**Start the service:**
+```bash
+sudo systemctl start costume-detector
+```
+
+**Monitor live activity:**
+```bash
+# Watch main log (detections, health checks)
+tail -f ~/costume-detector.log
+
+# Watch error log
+tail -f ~/costume-detector-error.log
+```
+
+**Control the service:**
+```bash
+# Stop the service
+sudo systemctl stop costume-detector
+
+# Restart the service
+sudo systemctl restart costume-detector
+
+# Check status
+sudo systemctl status costume-detector
+
+# Disable auto-start on boot
+sudo systemctl disable costume-detector
+```
+
+### Service Benefits
+
+✅ Runs in background (SSH can disconnect)
+✅ Auto-restarts if it crashes
+✅ Starts automatically on Pi reboot
+✅ Logs saved to files for review
+
+### Monitoring During Halloween
+
+**Check if running:**
+```bash
+sudo systemctl status costume-detector
+```
+
+**See recent activity:**
+```bash
+tail -20 ~/costume-detector.log
+```
+
+**Monitor live:**
+```bash
+tail -f ~/costume-detector.log
+```
+
+**Health check output (every 5 minutes):**
+```
+📊 Health Check (Uptime: 125.3 min)
+   Frames processed: 225450
+   Detections: 47
+   Failed frames: 3
+```
+
+**See all detections today:**
+```bash
+grep "person(s) detected" ~/costume-detector.log
+```
+
+### Troubleshooting
+
+**Service fails to start (exit code 127):**
+```bash
+sudo systemctl status costume-detector
+# Shows: "Main process exited, code=exited, status=127"
+```
+
+**Problem:** systemd can't find `uv` command
+
+**Solution:** The service file needs the full path to uv:
+1. Find where uv is installed: `which uv` or `ls ~/.local/bin/uv`
+2. Service file should use: `ExecStart=/home/pi/.local/bin/uv run backend/scripts/main.py`
+3. And set PATH: `Environment="PATH=/home/pi/.local/bin:/usr/local/sbin:..."`
+
+**No output in logs:**
+
+**Problem:** Python buffers output when not running in a terminal
+
+**Solution:** Service file needs: `Environment="PYTHONUNBUFFERED=1"`
+
+**Service running but failing:**
+```bash
+# Check error log
+cat ~/costume-detector-error.log
+
+# Check system journal
+sudo journalctl -u costume-detector -n 50
+```
+
+**Stop endless restart loop:**
+```bash
+# If service is crashing and restarting constantly
+sudo systemctl stop costume-detector
+sudo systemctl disable costume-detector  # Prevents auto-start on boot
 ```
 
 ## 📖 Documentation
