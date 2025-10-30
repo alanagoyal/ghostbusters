@@ -69,7 +69,9 @@ print("✅ Face blurrer initialized (privacy protection enabled)")
 DWELL_TIME = int(os.getenv("DWELL_TIME", "10"))  # Seconds person must be present before capture
 CAPTURE_COOLDOWN = int(os.getenv("CAPTURE_COOLDOWN", "60"))  # Seconds to wait before next capture
 DETECTION_GRACE_PERIOD = int(os.getenv("DETECTION_GRACE_PERIOD", "3"))  # Seconds to allow brief detection gaps
+CONFIDENCE_THRESHOLD = float(os.getenv("CONFIDENCE_THRESHOLD", "0.5"))  # Minimum confidence for person detection
 print(f"⏱️  Dwell time: {DWELL_TIME}s, Cooldown: {CAPTURE_COOLDOWN}s, Grace period: {DETECTION_GRACE_PERIOD}s")
+print(f"🎯 Confidence threshold: {CONFIDENCE_THRESHOLD}")
 
 # Function to connect/reconnect to RTSP stream
 def connect_to_stream(url):
@@ -161,14 +163,17 @@ try:
         results = model(frame, verbose=False)
 
         # Check for person detections (class 0 in COCO dataset)
+        # Apply confidence threshold to avoid false positives
         people_detected = False
         for result in results:
             boxes = result.boxes
             for box in boxes:
                 # Class 0 is 'person' in COCO dataset
                 if int(box.cls[0]) == 0:
-                    people_detected = True
-                    break
+                    confidence = float(box.conf[0])
+                    if confidence > CONFIDENCE_THRESHOLD:
+                        people_detected = True
+                        break
             if people_detected:
                 break
 
@@ -218,7 +223,7 @@ try:
                         if int(box.cls[0]) == 0:
                             confidence = float(box.conf[0])
                             # Only show high-confidence detections
-                            if confidence > 0.5:
+                            if confidence > CONFIDENCE_THRESHOLD:
                                 # Get bounding box coordinates
                                 x1, y1, x2, y2 = map(int, box.xyxy[0])
 
@@ -235,7 +240,7 @@ try:
                     for box in boxes:
                         if int(box.cls[0]) == 0:  # person class
                             conf = float(box.conf[0])
-                            if conf > 0.5:
+                            if conf > CONFIDENCE_THRESHOLD:
                                 x1, y1, x2, y2 = map(int, box.xyxy[0])
                                 detected_people.append({
                                     "confidence": conf,
