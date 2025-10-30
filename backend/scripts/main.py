@@ -188,18 +188,6 @@ try:
                                 # Draw bounding box on blurred frame
                                 cv2.rectangle(blurred_frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
 
-                                # Draw label
-                                label = f"Person {confidence:.2f}"
-                                cv2.putText(
-                                    blurred_frame,
-                                    label,
-                                    (x1, y1 - 10),
-                                    cv2.FONT_HERSHEY_SIMPLEX,
-                                    0.5,
-                                    (0, 255, 0),
-                                    2,
-                                )
-
                 # Save blurred frame locally
                 cv2.imwrite(filename, blurred_frame)
 
