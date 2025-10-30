@@ -65,12 +65,11 @@ except Exception as e:
 face_blurrer = FaceBlurrer(blur_strength=51)
 print("✅ Face blurrer initialized (privacy protection enabled)")
 
-# Dwell-time and cooldown configuration
-DWELL_TIME = int(os.getenv("DWELL_TIME", "10"))  # Seconds person must be present before capture
-CAPTURE_COOLDOWN = int(os.getenv("CAPTURE_COOLDOWN", "60"))  # Seconds to wait before next capture
-CONFIDENCE_THRESHOLD = float(os.getenv("CONFIDENCE_THRESHOLD", "0.5"))  # Minimum confidence for person detection
-print(f"⏱️  Dwell time: {DWELL_TIME}s, Cooldown: {CAPTURE_COOLDOWN}s")
-print(f"🎯 Confidence threshold: {CONFIDENCE_THRESHOLD}")
+# Detection parameters
+DWELL_TIME = 10  # Seconds person must be present before capture
+CAPTURE_COOLDOWN = 60  # Seconds to wait before next capture
+CONFIDENCE_THRESHOLD = 0.5  # Minimum confidence for person detection
+print(f"⏱️  Dwell time: {DWELL_TIME}s, Cooldown: {CAPTURE_COOLDOWN}s, Confidence: {CONFIDENCE_THRESHOLD}")
 
 # Function to connect/reconnect to RTSP stream
 def connect_to_stream(url):
