@@ -7,7 +7,6 @@ interface TimeSlot {
   time: Date
   label: string
   count: number
-  detectionTimestamps: number[]
 }
 
 interface ActivityTimelineProps {
@@ -18,28 +17,11 @@ interface ActivityTimelineProps {
 const SLOT_DURATION_MS = 15 * 60 * 1000 // 15 minutes in milliseconds
 const SLOT_WIDTH_PX = 32 // Width per slot in pixels
 const Y_AXIS_WIDTH_PX = 32 // Width of y-axis label column
-const PULSE_DURATION_MS = 3000 // Duration of one pulse
-const PULSE_COUNT = 3 // Number of times to pulse
-const TOTAL_PULSE_DURATION_MS = PULSE_DURATION_MS * PULSE_COUNT // Total animation duration (9 seconds)
-const UPDATE_INTERVAL_MS = 1000 // Update current time every second
 
 export function ActivityTimeline({ detections }: ActivityTimelineProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const [containerWidth, setContainerWidth] = useState(0)
-  const [currentTime, setCurrentTime] = useState<number | null>(null)
-  const [mountTime, setMountTime] = useState<number | null>(null)
   const [isReady, setIsReady] = useState(false)
-
-  // Set current time on client only and update every second
-  useEffect(() => {
-    const now = Date.now()
-    setCurrentTime(now)
-    setMountTime(now)
-    const interval = setInterval(() => {
-      setCurrentTime(Date.now())
-    }, UPDATE_INTERVAL_MS)
-    return () => clearInterval(interval)
-  }, [])
 
   // Measure container width
   useEffect(() => {
@@ -110,14 +92,13 @@ export function ActivityTimeline({ detections }: ActivityTimelineProps) {
       slots.push({
         time: new Date(currentTime),
         label,
-        count: 0,
-        detectionTimestamps: []
+        count: 0
       })
 
       currentTime = new Date(currentTime.getTime() + SLOT_DURATION_MS)
     }
 
-    // Count detections in each slot and track timestamps
+    // Count detections in each slot
     detections.forEach(detection => {
       const detectionTime = new Date(detection.timestamp)
 
@@ -128,7 +109,6 @@ export function ActivityTimeline({ detections }: ActivityTimelineProps) {
 
         if (detectionTime >= slotStart && detectionTime < slotEnd) {
           slots[i].count++
-          slots[i].detectionTimestamps.push(detectionTime.getTime())
           break
         }
       }
@@ -167,21 +147,7 @@ export function ActivityTimeline({ detections }: ActivityTimelineProps) {
   const yAxisTicks = Array.from({ length: 6 }, (_, i) => Math.round((yAxisMax / 5) * i))
 
   return (
-    <>
-      <style>{`
-        @keyframes slow-pulse {
-          0%, 100% {
-            opacity: 1;
-          }
-          50% {
-            opacity: 0.5;
-          }
-        }
-        .slow-pulse {
-          animation: slow-pulse ${PULSE_DURATION_MS}ms cubic-bezier(0.4, 0, 0.6, 1) ${PULSE_COUNT};
-        }
-      `}</style>
-      <Card className="col-span-2">
+    <Card className="col-span-2">
         <CardHeader>
         <div className="space-y-1">
           <CardTitle>Activity Timeline</CardTitle>
@@ -250,24 +216,12 @@ export function ActivityTimeline({ detections }: ActivityTimelineProps) {
                   const heightPercent = (slot.count / yAxisMax) * 100;
                   const ampm = slot.time.getHours() >= 12 ? 'PM' : 'AM';
 
-                  // Check if this slot has any detections from the last pulse duration
-                  const hasRecentDetection = currentTime
-                    ? slot.detectionTimestamps.some(ts => ts >= currentTime - TOTAL_PULSE_DURATION_MS)
-                    : false;
-
-                  // Check if this is the current time slot and we're within the pulse duration of mount
-                  const slotStart = slot.time.getTime();
-                  const slotEnd = slotStart + SLOT_DURATION_MS;
-                  const isCurrentSlot = currentTime && currentTime >= slotStart && currentTime < slotEnd;
-                  const isInitialAnimation = mountTime && currentTime && (currentTime - mountTime) < TOTAL_PULSE_DURATION_MS;
-                  const shouldPulse = hasRecentDetection || (isCurrentSlot && isInitialAnimation);
-
                   return (
                     <div key={index} className="flex-1 flex justify-center relative min-w-0">
                       <div
                         className={`w-full rounded-t-sm transition-all duration-300 absolute bottom-0 ${
-                          slot.count > 0 ? 'hover:bg-primary/80' : 'bg-muted'
-                        } ${shouldPulse ? 'slow-pulse bg-primary' : 'bg-primary'}`}
+                          slot.count > 0 ? 'hover:bg-primary/80 bg-primary' : 'bg-muted'
+                        }`}
                         style={{
                           height: `${Math.max(heightPercent, 0)}%`,
                           minHeight: slot.count > 0 ? '4px' : '0',
@@ -304,6 +258,5 @@ export function ActivityTimeline({ detections }: ActivityTimelineProps) {
         </div>
       </CardContent>
     </Card>
-    </>
   )
 }
