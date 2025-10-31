@@ -15,7 +15,6 @@ from ultralytics import YOLO
 
 from backend.src.clients.baseten_client import BasetenClient
 from backend.src.clients.supabase_client import SupabaseClient
-from backend.src.utils.face_blur import FaceBlurrer
 
 # Load environment variables
 load_dotenv()
@@ -26,7 +25,6 @@ def process_multi_person_image(
     model: YOLO,
     baseten_client: BasetenClient,
     supabase_client: SupabaseClient,
-    face_blurrer: FaceBlurrer,
 ) -> list:
     """
     Process a single image that may contain multiple people.
@@ -96,36 +94,7 @@ def process_multi_person_image(
     frame_filename = f"frame_{timestamp_str}.jpg"
     frame_path = output_dir / frame_filename
 
-    # Create copy for drawing all boxes
-    frame_with_boxes = img.copy()
-    for idx, person in enumerate(detected_people, start=1):
-        bbox = person["bounding_box"]
-        x1, y1, x2, y2 = bbox["x1"], bbox["y1"], bbox["x2"], bbox["y2"]
-
-        # Draw bounding box
-        cv2.rectangle(frame_with_boxes, (x1, y1), (x2, y2), (0, 255, 0), 3)
-
-        # Add person number label
-        label = f"Person {idx} ({person['confidence']:.2f})"
-        cv2.putText(
-            frame_with_boxes,
-            label,
-            (x1, y1 - 10),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.9,
-            (0, 255, 0),
-            2,
-        )
-
-    # Blur faces for privacy protection before saving
-    blurred_frame, num_faces = face_blurrer.blur_faces(frame_with_boxes)
-    if num_faces > 0:
-        print(f"🔒 Blurred {num_faces} face(s) for privacy")
-
-    cv2.imwrite(str(frame_path), blurred_frame)
-    print(f"💾 Saved frame with all detections: {frame_path}")
-
-    # Process each detected person separately
+    # Process each detected person separately for costume classification (on UNBLURRED frame)
     detection_results = []
 
     for person_idx, person in enumerate(detected_people, start=1):
@@ -137,9 +106,9 @@ def process_multi_person_image(
         print(f"  YOLO Confidence: {person_conf:.2f}")
         print(f"  Bounding Box: {person_box}")
 
-        # Extract person crop from blurred frame
+        # Extract person crop from ORIGINAL unblurred frame for classification
         x1, y1, x2, y2 = person_box["x1"], person_box["y1"], person_box["x2"], person_box["y2"]
-        person_crop = blurred_frame[y1:y2, x1:x2]
+        person_crop = img[y1:y2, x1:x2]
 
         # Encode person crop to bytes
         _, buffer = cv2.imencode('.jpg', person_crop)
@@ -167,18 +136,66 @@ def process_multi_person_image(
             except Exception as e:
                 print(f"  ❌ Costume classification failed: {e}")
 
-        # Upload to Supabase
+        # Store classification results
+        person["costume_classification"] = costume_classification
+        person["costume_description"] = costume_description
+        person["costume_confidence"] = costume_confidence
+
+    # Now blur the frame for privacy before saving
+    print(f"\n🔒 Blurring {num_people} person(s) for privacy...")
+    blurred_frame = img.copy()
+    num_people_blurred = 0
+
+    for person in detected_people:
+        bbox = person["bounding_box"]
+        x1, y1, x2, y2 = bbox["x1"], bbox["y1"], bbox["x2"], bbox["y2"]
+
+        # Extract person region
+        person_region = blurred_frame[y1:y2, x1:x2]
+
+        # Apply lighter Gaussian blur (kernel size 15)
+        # This obscures facial features while keeping costume visible in saved image
+        if person_region.size > 0:
+            blurred_person = cv2.GaussianBlur(person_region, (15, 15), 0)
+            blurred_frame[y1:y2, x1:x2] = blurred_person
+            num_people_blurred += 1
+
+    # Draw bounding boxes and labels on the blurred frame
+    for idx, person in enumerate(detected_people, start=1):
+        bbox = person["bounding_box"]
+        x1, y1, x2, y2 = bbox["x1"], bbox["y1"], bbox["x2"], bbox["y2"]
+
+        # Draw bounding box
+        cv2.rectangle(blurred_frame, (x1, y1), (x2, y2), (0, 255, 0), 3)
+
+        # Add person number label
+        label = f"Person {idx} ({person['confidence']:.2f})"
+        cv2.putText(
+            blurred_frame,
+            label,
+            (x1, y1 - 10),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.9,
+            (0, 255, 0),
+            2,
+        )
+
+    cv2.imwrite(str(frame_path), blurred_frame)
+    print(f"💾 Saved blurred frame with all detections: {frame_path}")
+
+    # Upload to Supabase
+    for person_idx, person in enumerate(detected_people, start=1):
         if supabase_client:
             try:
-                print("  📤 Uploading to Supabase...")
+                print(f"  📤 Uploading person {person_idx} to Supabase...")
                 success = supabase_client.save_detection(
                     image_path=str(frame_path),
                     timestamp=timestamp,
-                    confidence=person_conf,
-                    bounding_box=person_box,
-                    costume_classification=costume_classification,
-                    costume_description=costume_description,
-                    costume_confidence=costume_confidence,
+                    confidence=person["confidence"],
+                    bounding_box=person["bounding_box"],
+                    costume_classification=person.get("costume_classification"),
+                    costume_description=person.get("costume_description"),
+                    costume_confidence=person.get("costume_confidence"),
                 )
 
                 if success:
@@ -188,9 +205,9 @@ def process_multi_person_image(
 
                 detection_results.append({
                     "person_number": person_idx,
-                    "confidence": person_conf,
-                    "classification": costume_classification,
-                    "description": costume_description,
+                    "confidence": person["confidence"],
+                    "classification": person.get("costume_classification"),
+                    "description": person.get("costume_description"),
                     "uploaded": success,
                 })
 
@@ -242,11 +259,6 @@ def main():
     model = YOLO("yolov8n.pt")
     print("✅ Model loaded!")
 
-    # Initialize face blurrer
-    print("🔒 Initializing face blurrer...")
-    face_blurrer = FaceBlurrer(blur_strength=51)
-    print("✅ Face blurrer initialized (privacy protection enabled)")
-
     # Find test images (only test-6.png and test-7.png for multi-person detection)
     test_images_dir = Path("backend/tests/fixtures")
     if not test_images_dir.exists():
@@ -277,7 +289,6 @@ def main():
             model,
             baseten_client,
             supabase_client,
-            face_blurrer,
         )
 
         if results:
