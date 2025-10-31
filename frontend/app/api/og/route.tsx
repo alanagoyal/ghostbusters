@@ -3,10 +3,13 @@ import { ImageResponse } from 'next/og';
 export const runtime = 'edge';
 
 export async function GET(request: Request) {
-  // Fetch the ghost image
-  const ghostImageData = await fetch(
-    new URL('../../../public/ghost.png', import.meta.url)
-  ).then((res) => res.arrayBuffer());
+  // Get the base URL from the request
+  const { origin } = new URL(request.url);
+
+  // Fetch the ghost image from the public directory
+  const ghostImageData = await fetch(`${origin}/ghost.png`).then((res) =>
+    res.arrayBuffer()
+  );
 
   return new ImageResponse(
     (
