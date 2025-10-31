@@ -227,6 +227,13 @@ try:
                 # Person detected in required consecutive frames - capture!
                 print(f"📸 Capturing still ({CONSECUTIVE_FRAMES_REQUIRED} consecutive detections)...")
 
+                # Start cooldown period immediately (before Baseten classification)
+                last_capture_time = current_time
+                in_cooldown = True
+                consecutive_detections = 0
+                print(f"⏸️  Starting {CAPTURE_COOLDOWN}s cooldown period...")
+                print()
+
                 detection_count += 1
                 detection_timestamp = datetime.now(ZoneInfo("America/Los_Angeles"))
                 timestamp_str = detection_timestamp.strftime("%Y%m%d_%H%M%S")
@@ -352,12 +359,6 @@ try:
                     print(f"   ⚠️  Failed to cleanup local file: {e}")
 
                 print()
-
-                # Start cooldown period and reset counter
-                last_capture_time = current_time
-                in_cooldown = True
-                consecutive_detections = 0
-                print(f"⏸️  Starting {CAPTURE_COOLDOWN}s cooldown period...")
         else:
             # No person detected - reset consecutive counter
             if consecutive_detections > 0:
