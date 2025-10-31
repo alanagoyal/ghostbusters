@@ -17,18 +17,10 @@ from ultralytics import YOLO
 
 from backend.src.clients.baseten_client import BasetenClient
 from backend.src.clients.supabase_client import SupabaseClient
+from backend.src.costume_detector import detect_people_and_costumes
 
 # Load environment variables
 load_dotenv()
-
-# YOLO COCO classes that inflatable costumes commonly get misclassified as
-# 0 = person (standard detection)
-# 2 = car (bulky inflatables like T-Rex)
-# 14 = bird (bird costumes)
-# 16 = dog (animal costumes)
-# 17 = cat (animal costumes)
-PERSON_CLASS = 0
-INFLATABLE_CLASSES = [2, 14, 16, 17]
 
 
 def process_nonhuman_costume_image(
@@ -66,70 +58,14 @@ def process_nonhuman_costume_image(
     height, width = img.shape[:2]
     print(f"📐 Image dimensions: {width}x{height}")
 
-    # Run YOLO detection with lower confidence for better recall
-    print("🔍 Running dual-pass YOLO detection...")
-    results = model(img, conf=0.5, iou=0.4, verbose=False)
-
-    # Debug: Print all detections
-    print("\n🔍 All YOLO detections (for debugging):")
-    for result in results:
-        boxes = result.boxes
-        for box in boxes:
-            cls = int(box.cls[0])
-            conf = float(box.conf[0])
-            class_name = model.names[cls] if cls < len(model.names) else f"class_{cls}"
-            print(f"  Class {cls} ({class_name}), Confidence: {conf:.3f}")
-
-    # PASS 1: Collect standard person detections (class 0)
-    detected_people = []
-    for result in results:
-        boxes = result.boxes
-        for box in boxes:
-            cls = int(box.cls[0])
-            if cls == PERSON_CLASS:
-                conf = float(box.conf[0])
-                if conf > 0.5:
-                    x1, y1, x2, y2 = map(int, box.xyxy[0])
-                    detected_people.append({
-                        "confidence": conf,
-                        "bounding_box": {
-                            "x1": x1,
-                            "y1": y1,
-                            "x2": x2,
-                            "y2": y2,
-                        },
-                        "detection_type": "person",
-                        "yolo_class": cls,
-                    })
-
-    print(f"\n✅ PASS 1: Detected {len(detected_people)} standard person(s)")
-
-    # PASS 2: Collect potential inflatable costume detections (non-person classes)
-    # These will be validated by the costume classifier
-    potential_inflatables = []
-    for result in results:
-        boxes = result.boxes
-        for box in boxes:
-            cls = int(box.cls[0])
-            if cls in INFLATABLE_CLASSES:
-                conf = float(box.conf[0])
-                if conf > 0.5:
-                    x1, y1, x2, y2 = map(int, box.xyxy[0])
-                    class_name = model.names[cls] if cls < len(model.names) else f"class_{cls}"
-                    potential_inflatables.append({
-                        "confidence": conf,
-                        "bounding_box": {
-                            "x1": x1,
-                            "y1": y1,
-                            "x2": x2,
-                            "y2": y2,
-                        },
-                        "detection_type": "inflatable",
-                        "yolo_class": cls,
-                        "yolo_class_name": class_name,
-                    })
-
-    print(f"🎈 PASS 2: Found {len(potential_inflatables)} potential inflatable costume(s)")
+    # Run YOLO dual-pass detection using shared detector
+    all_detections = detect_people_and_costumes(
+        img,
+        model,
+        baseten_client,
+        confidence_threshold=0.5,  # Lower threshold for test images
+        verbose=True,
+    )
 
     # Generate timestamp for this frame (Pacific time)
     timestamp = datetime.now(ZoneInfo("America/Los_Angeles"))
@@ -142,25 +78,40 @@ def process_nonhuman_costume_image(
     frame_filename = f"frame_{timestamp_str}.jpg"
     frame_path = output_dir / frame_filename
 
-    # Process standard person detections
+    # Prepare results for processing
     detection_results = []
-    all_detections = detected_people.copy()
 
-    for person_idx, person in enumerate(detected_people, start=1):
+    # Print summary
+    num_standard = sum(1 for d in all_detections if d.get("detection_type") == "person")
+    num_inflatables = sum(1 for d in all_detections if d.get("detection_type") == "inflatable")
+    print(f"\n🎃 Total detections: {len(all_detections)} ({num_standard} standard + {num_inflatables} inflatable)")
+
+    # Classify costumes for detections that don't already have classification
+    # (inflatables were already classified during validation)
+    for person_idx, person in enumerate(all_detections, start=1):
+        if person.get("costume_classification"):
+            # Already classified during inflatable validation
+            print(f"\n{'─'*70}")
+            print(f"Detection {person_idx}/{len(all_detections)} - Already classified")
+            print(f"  Type: {person['detection_type']}")
+            print(f"  Costume: {person['costume_classification']}")
+            continue
+
         person_conf = person["confidence"]
         person_box = person["bounding_box"]
+        detection_type = person.get("detection_type", "person")
 
         print(f"\n{'─'*70}")
-        print(f"Processing Standard Person {person_idx}/{len(detected_people)}")
+        print(f"Processing {detection_type.capitalize()} {person_idx}/{len(all_detections)}")
         print(f"  YOLO Confidence: {person_conf:.2f}")
         print(f"  Bounding Box: {person_box}")
 
-        # Extract person crop from ORIGINAL unblurred frame for classification
+        # Extract crop from ORIGINAL unblurred frame for classification
         x1, y1, x2, y2 = person_box["x1"], person_box["y1"], person_box["x2"], person_box["y2"]
-        person_crop = img[y1:y2, x1:x2]
+        crop = img[y1:y2, x1:x2]
 
-        # Encode person crop to bytes
-        _, buffer = cv2.imencode('.jpg', person_crop)
+        # Encode crop to bytes
+        _, buffer = cv2.imencode('.jpg', crop)
         image_bytes = buffer.tobytes()
 
         # Classify costume
@@ -189,71 +140,6 @@ def process_nonhuman_costume_image(
         person["costume_classification"] = costume_classification
         person["costume_description"] = costume_description
         person["costume_confidence"] = costume_confidence
-
-    # VALIDATE potential inflatable costumes with Baseten classifier
-    # Only keep ones that return valid costume classifications
-    validated_inflatables = 0
-
-    for inflate_idx, inflatable in enumerate(potential_inflatables, start=1):
-        inflate_conf = inflatable["confidence"]
-        inflate_box = inflatable["bounding_box"]
-        yolo_class_name = inflatable["yolo_class_name"]
-
-        print(f"\n{'─'*70}")
-        print(f"Validating Potential Inflatable {inflate_idx}/{len(potential_inflatables)}")
-        print(f"  YOLO Detection: {yolo_class_name} (class {inflatable['yolo_class']})")
-        print(f"  YOLO Confidence: {inflate_conf:.2f}")
-        print(f"  Bounding Box: {inflate_box}")
-
-        # Extract crop from ORIGINAL unblurred frame for classification
-        x1, y1, x2, y2 = inflate_box["x1"], inflate_box["y1"], inflate_box["x2"], inflate_box["y2"]
-        crop = img[y1:y2, x1:x2]
-
-        # Encode crop to bytes
-        _, buffer = cv2.imencode('.jpg', crop)
-        image_bytes = buffer.tobytes()
-
-        # Validate with costume classifier
-        costume_classification = None
-        costume_confidence = None
-        costume_description = None
-
-        if baseten_client:
-            try:
-                print("  🎭 Validating with costume classifier...")
-                (
-                    costume_classification,
-                    costume_confidence,
-                    costume_description,
-                ) = baseten_client.classify_costume(image_bytes)
-
-                # Only validate if we got a real costume classification
-                # Reject if: no classification, or "person" with "No costume"
-                is_valid_costume = (
-                    costume_classification and
-                    not (costume_classification.lower() == "person" and
-                         costume_description and "no costume" in costume_description.lower())
-                )
-
-                if is_valid_costume:
-                    print(f"  ✅ VALIDATED as costume: {costume_classification} ({costume_confidence:.2f})")
-                    print(f"     {costume_description}")
-
-                    # This is a valid inflatable costume - add to detections
-                    inflatable["costume_classification"] = costume_classification
-                    inflatable["costume_description"] = costume_description
-                    inflatable["costume_confidence"] = costume_confidence
-                    all_detections.append(inflatable)
-                    validated_inflatables += 1
-                else:
-                    rejection_reason = "Not a costume" if costume_description and "no costume" in costume_description.lower() else "No classification"
-                    print(f"  ❌ REJECTED - {rejection_reason} (likely actual {yolo_class_name})")
-            except Exception as e:
-                print(f"  ❌ Validation failed: {e}")
-                print(f"  ❌ REJECTED - Classification error")
-
-    print(f"\n🎈 Validated {validated_inflatables}/{len(potential_inflatables)} inflatable costume(s)")
-    print(f"🎃 Total detections: {len(all_detections)} ({len(detected_people)} standard + {validated_inflatables} inflatable)")
 
     # Now blur the frame for privacy before saving
     print(f"\n🔒 Blurring {len(all_detections)} detection(s) for privacy...")

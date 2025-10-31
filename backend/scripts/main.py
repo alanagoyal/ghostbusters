@@ -23,6 +23,11 @@ from ultralytics import YOLO
 
 from backend.src.clients.baseten_client import BasetenClient
 from backend.src.clients.supabase_client import SupabaseClient
+from backend.src.costume_detector import (
+    INFLATABLE_CLASSES,
+    PERSON_CLASS,
+    detect_people_and_costumes,
+)
 from backend.src.utils.face_blur import FaceBlurrer
 
 # Load environment variables
@@ -77,11 +82,6 @@ CONFIDENCE_THRESHOLD = 0.7  # Minimum confidence for person detection
 CONSECUTIVE_FRAMES_REQUIRED = 2  # Number of consecutive detections before capture
 CAPTURE_COOLDOWN = 60  # Seconds to wait before next capture
 
-# YOLO COCO classes for dual-pass detection
-# Standard person detection + inflatable costume classes
-PERSON_CLASS = 0
-INFLATABLE_CLASSES = [2, 14, 16, 17]  # car, bird, dog, cat (common misclassifications for inflatables)
-
 # Region of Interest (ROI) - only detect people in doorstep area
 # Coordinates are normalized (0.0 to 1.0) relative to frame dimensions
 # Based on the camera view: doorstep is roughly the left half of the frame
@@ -91,7 +91,7 @@ ROI_Y_MIN = 0.0   # Start at top of frame
 ROI_Y_MAX = 1.0   # Bottom edge (100%)
 
 print(f"🎯 Detection: {CONSECUTIVE_FRAMES_REQUIRED} consecutive frames at >{CONFIDENCE_THRESHOLD} confidence")
-print(f"🎈 Dual-pass: Standard people (class 0) + inflatable costumes (classes {INFLATABLE_CLASSES})")
+print(f"🎈 Dual-pass: Standard people (class 0) + inflatable costumes (classes 2, 14, 16, 17)")
 print(f"📍 ROI: Doorstep area only (x: {ROI_X_MIN}-{ROI_X_MAX}, y: {ROI_Y_MIN}-{ROI_Y_MAX})")
 print(f"⏱️  Cooldown: {CAPTURE_COOLDOWN}s between captures")
 
@@ -249,83 +249,25 @@ try:
                 timestamp_str = detection_timestamp.strftime("%Y%m%d_%H%M%S")
                 filename = f"detection_{timestamp_str}.jpg"
 
-                # DUAL-PASS DETECTION: Collect ALL detections in ROI
-                # PASS 1: Collect standard person detections (class 0)
-                detected_people = []
-                potential_inflatables = []
+                # DUAL-PASS DETECTION: Collect ALL detections using shared detector
+                all_detections = detect_people_and_costumes(
+                    frame,
+                    model,
+                    baseten_client,
+                    confidence_threshold=CONFIDENCE_THRESHOLD,
+                    verbose=True,
+                )
 
-                for result in results:
-                    boxes = result.boxes
-                    for box in boxes:
-                        cls = int(box.cls[0])
-                        conf = float(box.conf[0])
-
-                        if conf > CONFIDENCE_THRESHOLD:
-                            x1, y1, x2, y2 = map(int, box.xyxy[0])
-                            bbox_dict = {"x1": x1, "y1": y1, "x2": x2, "y2": y2}
-
-                            # Only include detections in the doorstep ROI
-                            if is_in_roi([x1, y1, x2, y2], frame_width, frame_height):
-                                if cls == PERSON_CLASS:
-                                    # Standard person detection
-                                    detected_people.append({
-                                        "confidence": conf,
-                                        "bounding_box": bbox_dict,
-                                        "detection_type": "person",
-                                        "yolo_class": cls,
-                                    })
-                                elif cls in INFLATABLE_CLASSES:
-                                    # Potential inflatable costume (needs validation)
-                                    class_name = model.names[cls] if cls < len(model.names) else f"class_{cls}"
-                                    potential_inflatables.append({
-                                        "confidence": conf,
-                                        "bounding_box": bbox_dict,
-                                        "detection_type": "inflatable",
-                                        "yolo_class": cls,
-                                        "yolo_class_name": class_name,
-                                    })
-
-                # PASS 2: Validate potential inflatable costumes with Baseten
-                # Only add inflatables that return valid costume classifications
-                if baseten_client and potential_inflatables:
-                    print(f"   🎈 Validating {len(potential_inflatables)} potential inflatable costume(s)...")
-
-                    for inflatable in potential_inflatables:
-                        try:
-                            # Extract crop for validation
-                            bbox = inflatable["bounding_box"]
-                            x1, y1, x2, y2 = bbox["x1"], bbox["y1"], bbox["x2"], bbox["y2"]
-                            crop = frame[y1:y2, x1:x2]
-
-                            # Encode to bytes
-                            _, buffer = cv2.imencode('.jpg', crop)
-                            image_bytes = buffer.tobytes()
-
-                            # Validate with costume classifier
-                            (
-                                costume_classification,
-                                costume_confidence,
-                                costume_description,
-                            ) = baseten_client.classify_costume(image_bytes)
-
-                            # Only accept if it's a real costume (reject "No costume")
-                            is_valid_costume = (
-                                costume_classification and
-                                not (costume_classification.lower() == "person" and
-                                     costume_description and "no costume" in costume_description.lower())
-                            )
-
-                            if is_valid_costume:
-                                print(f"   ✅ Validated inflatable: {costume_classification} (YOLO saw as {inflatable['yolo_class_name']})")
-                                # Pre-populate costume data for this validated inflatable
-                                inflatable["costume_classification"] = costume_classification
-                                inflatable["costume_description"] = costume_description
-                                inflatable["costume_confidence"] = costume_confidence
-                                detected_people.append(inflatable)
-                            else:
-                                print(f"   ❌ Rejected {inflatable['yolo_class_name']} (not a costume)")
-                        except Exception as e:
-                            print(f"   ⚠️  Validation failed for {inflatable.get('yolo_class_name', 'unknown')}: {e}")
+                # Filter detections to only include those in the doorstep ROI
+                detected_people = [
+                    person for person in all_detections
+                    if is_in_roi(
+                        [person["bounding_box"]["x1"], person["bounding_box"]["y1"],
+                         person["bounding_box"]["x2"], person["bounding_box"]["y2"]],
+                        frame_width,
+                        frame_height
+                    )
+                ]
 
                 num_people = len(detected_people)
                 print(f"👤 {num_people} person(s) detected! (Detection #{detection_count})")

@@ -22,13 +22,10 @@ from ultralytics import YOLO
 
 from backend.src.clients.baseten_client import BasetenClient
 from backend.src.clients.supabase_client import SupabaseClient
+from backend.src.costume_detector import detect_people_and_costumes
 
 # Load environment variables
 load_dotenv()
-
-# YOLO COCO classes for dual-pass detection
-PERSON_CLASS = 0
-INFLATABLE_CLASSES = [2, 14, 16, 17]  # car, bird, dog, cat
 
 
 def process_test_image(
@@ -67,70 +64,14 @@ def process_test_image(
     height, width = img.shape[:2]
     print(f"📐 Image dimensions: {width}x{height}")
 
-    # Run YOLO detection
-    print("🔍 Running YOLO dual-pass detection...")
-    results = model(img, verbose=False)
-
-    # DUAL-PASS DETECTION: Collect detections
-    detected_people = []
-    potential_inflatables = []
-
-    for result in results:
-        boxes = result.boxes
-        for box in boxes:
-            cls = int(box.cls[0])
-            conf = float(box.conf[0])
-
-            if conf > 0.5:  # Lower threshold for test images
-                x1, y1, x2, y2 = map(int, box.xyxy[0])
-                bbox = {"x1": x1, "y1": y1, "x2": x2, "y2": y2}
-
-                if cls == PERSON_CLASS:
-                    detected_people.append({
-                        "confidence": conf,
-                        "bounding_box": bbox,
-                        "detection_type": "person",
-                    })
-                elif cls in INFLATABLE_CLASSES:
-                    class_name = model.names[cls]
-                    potential_inflatables.append({
-                        "confidence": conf,
-                        "bounding_box": bbox,
-                        "detection_type": "inflatable",
-                        "yolo_class_name": class_name,
-                    })
-
-    print(f"✅ PASS 1: Detected {len(detected_people)} standard person(s)")
-    print(f"🎈 PASS 2: Found {len(potential_inflatables)} potential inflatable(s)")
-
-    # Validate inflatables
-    if baseten_client and potential_inflatables:
-        for inflatable in potential_inflatables:
-            try:
-                bbox = inflatable["bounding_box"]
-                x1, y1, x2, y2 = bbox["x1"], bbox["y1"], bbox["x2"], bbox["y2"]
-                crop = img[y1:y2, x1:x2]
-                _, buffer = cv2.imencode('.jpg', crop)
-                image_bytes = buffer.tobytes()
-
-                classification, confidence, description = baseten_client.classify_costume(image_bytes)
-
-                is_valid = (
-                    classification and
-                    not (classification.lower() == "person" and
-                         description and "no costume" in description.lower())
-                )
-
-                if is_valid:
-                    print(f"   ✅ Validated inflatable: {classification}")
-                    inflatable["costume_classification"] = classification
-                    inflatable["costume_description"] = description
-                    inflatable["costume_confidence"] = confidence
-                    detected_people.append(inflatable)
-                else:
-                    print(f"   ❌ Rejected {inflatable['yolo_class_name']} (not a costume)")
-            except Exception as e:
-                print(f"   ⚠️  Validation failed: {e}")
+    # Run YOLO dual-pass detection using shared detector
+    detected_people = detect_people_and_costumes(
+        img,
+        model,
+        baseten_client,
+        confidence_threshold=0.5,  # Lower threshold for test images
+        verbose=True,
+    )
 
     if not detected_people:
         print("⚠️  No people or valid costumes detected")
