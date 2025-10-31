@@ -74,8 +74,8 @@ CAPTURE_COOLDOWN = 60  # Seconds to wait before next capture
 # Coordinates are normalized (0.0 to 1.0) relative to frame dimensions
 # Based on the camera view: doorstep is roughly the left half of the frame
 ROI_X_MIN = 0.0   # Left edge (0%)
-ROI_X_MAX = 0.6   # Stop at 60% across (excludes street on right)
-ROI_Y_MIN = 0.3   # Start 30% down (exclude top of frame)
+ROI_X_MAX = 0.7   # Stop at 70% across (excludes street on right)
+ROI_Y_MIN = 0.0   # Start at top of frame
 ROI_Y_MAX = 1.0   # Bottom edge (100%)
 
 print(f"🎯 Detection: {CONSECUTIVE_FRAMES_REQUIRED} consecutive frames at >{CONFIDENCE_THRESHOLD} confidence")
