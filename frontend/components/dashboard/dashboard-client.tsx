@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 import { Users, Shirt, Activity } from "lucide-react";
 import { truncateString, toTitleCase } from "@/lib/string-utils";
@@ -118,9 +119,66 @@ export function DashboardClient({ initialDetections }: DashboardClientProps) {
     <div className="min-h-screen bg-background pt-10 sm:pt-20">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 pb-6 space-y-6">
         <div className="space-y-3 sm:space-y-4">
-          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">
-            {DASHBOARD_TITLE}
-          </h1>
+          <div className="flex items-center justify-between gap-4">
+            <h1
+              className="text-4xl sm:text-5xl font-bold tracking-tight bg-gradient-to-r from-zinc-100 via-white to-zinc-100 text-zinc-900 px-10 py-5 shadow-lg relative overflow-hidden max-w-xl"
+              style={{
+                transform: 'rotate(-2deg)',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.5)',
+              }}
+            >
+              <span className="relative z-10 flex items-center gap-3">
+                <Image
+                  src="/detective-icon.png"
+                  alt="Detective"
+                  width={48}
+                  height={48}
+                  className="w-10 h-10 sm:w-12 sm:h-12"
+                />
+                <span>Ghost<span className="italic">busters</span></span>
+              </span>
+              {/* Gauze texture overlay */}
+              <div
+                className="absolute inset-0 opacity-10"
+                style={{
+                  backgroundImage: `repeating-linear-gradient(
+                    90deg,
+                    transparent,
+                    transparent 2px,
+                    rgba(0,0,0,0.05) 2px,
+                    rgba(0,0,0,0.05) 4px
+                  ),
+                  repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 2px,
+                    rgba(0,0,0,0.05) 2px,
+                    rgba(0,0,0,0.05) 4px
+                  )`
+                }}
+              />
+              {/* Torn edges effect */}
+              <div
+                className="absolute left-0 top-0 bottom-0 w-1 bg-zinc-200"
+                style={{
+                  clipPath: 'polygon(0 0, 100% 5%, 100% 15%, 0 10%, 0 20%, 100% 25%, 100% 35%, 0 30%, 0 40%, 100% 45%, 100% 55%, 0 50%, 0 60%, 100% 65%, 100% 75%, 0 70%, 0 80%, 100% 85%, 100% 95%, 0 90%, 0 100%)'
+                }}
+              />
+              <div
+                className="absolute right-0 top-0 bottom-0 w-1 bg-zinc-200"
+                style={{
+                  clipPath: 'polygon(0 5%, 100% 0, 100% 10%, 0 15%, 0 25%, 100% 20%, 100% 30%, 0 35%, 0 45%, 100% 40%, 100% 50%, 0 55%, 0 65%, 100% 60%, 100% 70%, 0 75%, 0 85%, 100% 80%, 100% 90%, 0 95%, 0 100%, 100% 100%)'
+                }}
+              />
+            </h1>
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                <div className="absolute inset-0 w-3 h-3 bg-green-500 rounded-full animate-ping opacity-75"></div>
+              </div>
+              <span className="text-sm font-medium text-green-600">LIVE</span>
+            </div>
+          </div>
           <p className="text-sm sm:text-base text-muted-foreground max-w-2xl">
             {DASHBOARD_DESCRIPTION}
           </p>
