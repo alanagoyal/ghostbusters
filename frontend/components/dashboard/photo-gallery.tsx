@@ -12,6 +12,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Camera } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { toTitleCase } from "@/lib/string-utils";
 
 interface PersonDetection {
   id: string;
@@ -25,7 +26,6 @@ interface PersonDetection {
 
 export function PhotoGallery() {
   const [detections, setDetections] = useState<PersonDetection[]>([]);
-  const [hoveredId, setHoveredId] = useState<string | null>(null);
 
   useEffect(() => {
     // Fetch initial detections with images
@@ -89,53 +89,55 @@ export function PhotoGallery() {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="overflow-x-auto overflow-y-hidden">
-          <div className="flex gap-3 pb-2">
-            {detections.map((detection, index) => (
-              <div
-                key={detection.id}
-                className="relative aspect-[3/4] group overflow-hidden border border-border flex-shrink-0"
-                style={{
-                  width: "180px",
-                  animation: `slideInFromBottom 0.6s ease-out ${
-                    index * 50
-                  }ms backwards`,
-                }}
-                onMouseEnter={() => setHoveredId(detection.id)}
-                onMouseLeave={() => setHoveredId(null)}
-              >
-                {detection.image_url && (
-                  <>
-                    <Image
-                      src={detection.image_url}
-                      alt={detection.costume_classification || "Detection"}
-                      fill
-                      className="object-cover transition-transform duration-500 group-hover:scale-110"
-                      sizes="180px"
-                    />
-                    <div
-                      className={`absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent transition-opacity duration-300 ${
-                        hoveredId === detection.id ? "opacity-100" : "opacity-0"
-                      }`}
-                    >
-                      <div className="absolute bottom-0 left-0 right-0 p-2 space-y-1">
-                        {detection.costume_classification && (
-                          <Badge
-                            variant="secondary"
-                            className="text-[10px] truncate max-w-full"
-                          >
-                            {detection.costume_classification}
-                          </Badge>
-                        )}
-                        <div className="text-[10px] text-muted-foreground font-mono">
-                          {formatTime(detection.timestamp)}
-                        </div>
+        <div className="overflow-x-auto overflow-y-hidden py-4">
+          <div className="flex gap-6 px-2">
+            {detections.map((detection, index) => {
+              // Alternate slight rotations for polaroid effect
+              const rotation = index % 3 === 0 ? -2 : index % 3 === 1 ? 2 : 0;
+
+              return (
+                <div
+                  key={detection.id}
+                  className="flex-shrink-0 group"
+                  style={{
+                    animation: `slideInFromBottom 0.6s ease-out ${
+                      index * 50
+                    }ms backwards`,
+                  }}
+                >
+                  {/* Polaroid frame */}
+                  <div
+                    className="bg-white p-3 pb-3 shadow-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+                    style={{
+                      width: "180px",
+                      transform: `rotate(${rotation}deg)`,
+                    }}
+                  >
+                    {/* Photo */}
+                    <div className="relative aspect-[3/4] overflow-hidden bg-gray-100">
+                      {detection.image_url && (
+                        <Image
+                          src={detection.image_url}
+                          alt={detection.costume_classification || "Detection"}
+                          fill
+                          className="object-cover transition-transform duration-500 group-hover:scale-110"
+                          sizes="180px"
+                        />
+                      )}
+                    </div>
+                    {/* Caption area */}
+                    <div className="pt-2 flex items-center justify-between gap-2 min-h-[32px]">
+                      <div className="text-[10px] text-gray-600 font-mono truncate flex-1">
+                        {detection.costume_classification ? toTitleCase(detection.costume_classification) : ""}
+                      </div>
+                      <div className="text-[10px] text-gray-500 font-mono whitespace-nowrap">
+                        {formatTime(detection.timestamp)}
                       </div>
                     </div>
-                  </>
-                )}
-              </div>
-            ))}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 
