@@ -3260,6 +3260,74 @@ This will:
 **Complexity increase:** Moderate (one new concept, well-contained)
 **Maintainability:** High (consistent pattern, well-tested)
 
+### Refactoring: Centralizing Detection Logic
+
+**The problem with duplication:**
+After implementing dual-pass detection across all scripts, we had the same detection logic duplicated in 4 places:
+- `backend/scripts/main.py` - ~70 lines of detection code
+- `backend/tests/integration/test_costume_detection.py` - ~70 lines (duplicated)
+- `backend/tests/integration/test_multiple_people.py` - ~70 lines (duplicated)
+- `backend/tests/integration/test_nonhuman_costume.py` - ~70 lines (duplicated)
+
+**Issues with duplication:**
+1. **Maintenance burden:** Bug fix needs to be applied 4 times
+2. **Consistency risk:** Easy to update one file and forget the others
+3. **Testing complexity:** Changes need verification across all scripts
+4. **Code bloat:** ~280 lines of duplicated logic
+
+**The refactoring solution:**
+
+Created `backend/src/costume_detector.py` as a single source of truth:
+
+```python
+def detect_people_and_costumes(
+    frame: np.ndarray,
+    model: YOLO,
+    baseten_client: BasetenClient,
+    confidence_threshold: float = 0.7,
+    verbose: bool = False,
+) -> list[dict]:
+    """
+    Detect people and costumes using dual-pass YOLO detection.
+
+    Returns:
+        List of detection dicts with bounding boxes and costume data
+    """
+    # PASS 1: Detect standard people (YOLO class 0)
+    # PASS 2: Detect potential inflatables (classes 2, 14, 16, 17)
+    # Validate and return all detections
+```
+
+**Benefits achieved:**
+1. **Single source of truth:** Detection logic exists in exactly one place
+2. **Easy maintenance:** Bug fixes propagate automatically to all scripts
+3. **Consistency guaranteed:** All scripts use identical logic
+4. **Code reduction:** Removed ~150 net lines of duplicate code
+5. **Better testing:** Can unit test the detector independently
+
+**Files updated to use shared detector:**
+- `backend/scripts/main.py` - imports `detect_people_and_costumes()`
+- `backend/tests/integration/test_costume_detection.py` - uses shared detector
+- `backend/tests/integration/test_multiple_people.py` - uses shared detector
+- `backend/tests/integration/test_nonhuman_costume.py` - uses shared detector
+
+**Net impact:**
+- **Lines added:** +150 (new costume_detector.py module)
+- **Lines removed:** -376 (duplicate logic from 4 files)
+- **Net reduction:** -226 lines
+- **Maintainability:** Significantly improved
+- **Test coverage:** No change (all tests still pass)
+
+**When to centralize vs. duplicate:**
+- ✅ **Centralize** when logic is identical across files
+- ✅ **Centralize** when changes need to propagate everywhere
+- ✅ **Centralize** when logic is complex and error-prone
+- ❌ **Don't centralize** if implementations have different requirements
+- ❌ **Don't centralize** if it adds unnecessary coupling
+
+**Key learning:**
+Start with duplication to understand the pattern, then refactor to centralize once the pattern is stable. We waited until all three test scripts were working before extracting the shared logic.
+
 ### Future Considerations
 
 **Potential improvements we didn't need:**
