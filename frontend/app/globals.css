@@ -36,9 +36,9 @@
 
 :root {
   --background: #9d152b;
-  --foreground: hsl(100 40% 100%);
+  --foreground: #E2E8ED;
   --card: transparent;
-  --card-foreground: hsl(100 40% 100%);
+  --card-foreground: #E2E8ED;
   --popover: #9d152b;
   --popover-foreground: hsl(100 40% 100%);
   --primary: hsl(100 40% 100%);
@@ -148,6 +148,18 @@
     }
   }
 
+  @keyframes wiggle {
+    0%, 100% {
+      transform: rotate(-2deg);
+    }
+    25% {
+      transform: rotate(-3deg);
+    }
+    75% {
+      transform: rotate(-1deg);
+    }
+  }
+
   .animate-slide-in {
     animation: slideInFromBottom 0.6s ease-out forwards;
   }
@@ -170,5 +182,13 @@
 
   .animate-scale-in {
     animation: scaleIn 0.5s ease-out forwards;
+  }
+
+  .title-banner {
+    transform: rotate(-2deg);
+  }
+
+  .title-banner.wiggling {
+    animation: wiggle 0.9s ease-in-out;
   }
 }

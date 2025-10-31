@@ -12,8 +12,19 @@ import { ConfidenceMeter } from "@/components/dashboard/confidence-meter";
 import { PhotoGallery } from "@/components/dashboard/photo-gallery";
 
 const DASHBOARD_TITLE = "Ghostbusters";
-const DASHBOARD_DESCRIPTION =
-  "This is a live feed from my front door in Noe Valley that identifies the costumes of trick-or-treaters in real time. The video stream is sent over RTSP to a Raspberry Pi, which runs YOLOv8 to detect people. The frames are then classified for costumes using Baseten, the detections are stored in Supabase using real-time listeners, and this dashboard displays the results as they happen.";
+const linkClassName = "relative text-muted-foreground font-medium after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-0 after:bg-muted-foreground after:transition-all after:duration-300 hover:after:w-full";
+
+const DASHBOARD_DESCRIPTION = (
+  <>
+    This is a live feed from my front door in Noe Valley that identifies the costumes of trick-or-treaters in real time. The video stream is sent over{' '}
+    <a href="https://en.wikipedia.org/wiki/Real_Streaming_Protocol" target="_blank" rel="noopener noreferrer" className={linkClassName}>RTSP</a> to a{' '}
+    <a href="https://www.raspberrypi.org/" target="_blank" rel="noopener noreferrer" className={linkClassName}>Raspberry Pi</a>, which runs{' '}
+    <a href="https://github.com/ultralytics/ultralytics" target="_blank" rel="noopener noreferrer" className={linkClassName}>YOLOv8</a> to detect people. The frames are then classified for costumes using{' '}
+    <a href="https://baseten.co/" target="_blank" rel="noopener noreferrer" className={linkClassName}>Baseten</a>, the detections are stored in{' '}
+    <a href="https://supabase.com/" target="_blank" rel="noopener noreferrer" className={linkClassName}>Supabase</a> using real-time listeners, and this dashboard displays the results as they happen. It's fully open-source and available on{' '}
+    <a href="https://github.com/alanagoyal/costume-classifier" target="_blank" rel="noopener noreferrer" className={linkClassName}>GitHub</a>.
+  </>
+);
 
 interface PersonDetection {
   id: string;
@@ -114,14 +125,72 @@ export function DashboardClient({ initialDetections }: DashboardClientProps) {
     return ((lastHour - prevHour) / prevHour) * 100;
   }, [detections]);
 
+  const handleTitleHover = (e: React.MouseEvent<HTMLHeadingElement>) => {
+    const target = e.currentTarget;
+    target.classList.add('wiggling');
+    setTimeout(() => {
+      target.classList.remove('wiggling');
+    }, 900);
+  };
+
   return (
     <div className="min-h-screen bg-background pt-10 sm:pt-20">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 pb-6 space-y-6">
         <div className="space-y-3 sm:space-y-4">
-          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">
-            {DASHBOARD_TITLE}
-          </h1>
-          <p className="text-sm sm:text-base text-muted-foreground max-w-2xl">
+          <div className="flex items-center justify-between gap-4">
+            <h1
+              className="text-4xl sm:text-5xl font-bold tracking-tight bg-gradient-to-r from-zinc-100 via-white to-zinc-100 text-zinc-900 px-10 py-5 shadow-lg relative overflow-hidden max-w-xl title-banner cursor-default"
+              style={{
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.5)',
+              }}
+              onMouseEnter={handleTitleHover}
+            >
+              <span className="relative z-10">
+                {DASHBOARD_TITLE}
+              </span>
+              {/* Gauze texture overlay */}
+              <div
+                className="absolute inset-0 opacity-10"
+                style={{
+                  backgroundImage: `repeating-linear-gradient(
+                    90deg,
+                    transparent,
+                    transparent 2px,
+                    rgba(0,0,0,0.05) 2px,
+                    rgba(0,0,0,0.05) 4px
+                  ),
+                  repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 2px,
+                    rgba(0,0,0,0.05) 2px,
+                    rgba(0,0,0,0.05) 4px
+                  )`
+                }}
+              />
+              {/* Torn edges effect */}
+              <div
+                className="absolute left-0 top-0 bottom-0 w-1 bg-zinc-200"
+                style={{
+                  clipPath: 'polygon(0 0, 100% 5%, 100% 15%, 0 10%, 0 20%, 100% 25%, 100% 35%, 0 30%, 0 40%, 100% 45%, 100% 55%, 0 50%, 0 60%, 100% 65%, 100% 75%, 0 70%, 0 80%, 100% 85%, 100% 95%, 0 90%, 0 100%)'
+                }}
+              />
+              <div
+                className="absolute right-0 top-0 bottom-0 w-1 bg-zinc-200"
+                style={{
+                  clipPath: 'polygon(0 5%, 100% 0, 100% 10%, 0 15%, 0 25%, 100% 20%, 100% 30%, 0 35%, 0 45%, 100% 40%, 100% 50%, 0 55%, 0 65%, 100% 60%, 100% 70%, 0 75%, 0 85%, 100% 80%, 100% 90%, 0 95%, 0 100%, 100% 100%)'
+                }}
+              />
+            </h1>
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                <div className="absolute inset-0 w-3 h-3 bg-green-500 rounded-full animate-ping opacity-75"></div>
+              </div>
+              <span className="text-sm font-medium text-green-600">LIVE</span>
+            </div>
+          </div>
+          <p className="text-sm sm:text-base text-muted-foreground max-w-4xl">
             {DASHBOARD_DESCRIPTION}
           </p>
         </div>
