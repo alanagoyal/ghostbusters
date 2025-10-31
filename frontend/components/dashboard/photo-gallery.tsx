@@ -142,7 +142,7 @@ export function PhotoGallery() {
                     </div>
                     {/* Caption area */}
                     <div className="pt-2 flex items-center justify-between gap-2 min-h-[32px]">
-                      <div className="text-[10px] text-gray-600 font-mono truncate flex-1">
+                      <div className="text-xs font-bold text-gray-600 font-mono truncate flex-1">
                         {detection.costume_classification ? toTitleCase(detection.costume_classification) : ""}
                       </div>
                       <div className="text-[10px] text-gray-500 font-mono whitespace-nowrap">
