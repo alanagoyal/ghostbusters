@@ -72,7 +72,7 @@ class BasetenClient:
             Tuple of (classification, confidence, description) where:
             - classification: Short costume type (e.g., "witch", "skeleton")
             - confidence: Confidence score (0.0-1.0)
-            - description: Detailed description (e.g., "witch with purple hat and broom")
+            - description: Short description (e.g., "witch with purple hat and broom")
 
         Example:
             >>> client = BasetenClient()
@@ -90,7 +90,7 @@ class BasetenClient:
             # Default prompt optimized for Halloween costume classification
             prompt = custom_prompt or (
                 "Analyze this Halloween costume and respond with ONLY a JSON object in this exact format:\n"
-                '{"classification": "costume_type", "confidence": 0.95, "description": "costume label"}\n\n'
+                '{"classification": "costume_type", "confidence": 0.95, "description": "costume description"}\n\n'
                 "Preferred categories:\n"
                 "- witch, vampire, zombie, skeleton, ghost\n"
                 "- superhero, princess, pirate, ninja, clown, monster\n"
