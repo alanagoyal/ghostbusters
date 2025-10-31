@@ -21,10 +21,14 @@ class FaceBlurrer:
         """
         self.blur_strength = blur_strength if blur_strength % 2 == 1 else blur_strength + 1
 
-        # Load the pre-trained Haar Cascade classifier for face detection
+        # Load the pre-trained Haar Cascade classifiers for face detection
         # This is included with OpenCV by default
-        self.face_cascade = cv2.CascadeClassifier(
+        self.face_cascade_frontal = cv2.CascadeClassifier(
             cv2.data.haarcascades + 'haarcascade_frontalface_default.xml'
+        )
+        # Add profile face detection for better coverage
+        self.face_cascade_profile = cv2.CascadeClassifier(
+            cv2.data.haarcascades + 'haarcascade_profileface.xml'
         )
 
     def blur_faces(self, image: np.ndarray, padding: float = 0.2) -> tuple[np.ndarray, int]:
@@ -41,21 +45,68 @@ class FaceBlurrer:
         # Convert to grayscale for face detection
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-        # Detect faces
+        # Detect frontal faces with more aggressive detection parameters
         # scaleFactor: How much the image size is reduced at each scale
         # minNeighbors: How many neighbors each candidate rectangle should have
-        faces = self.face_cascade.detectMultiScale(
+        faces_frontal = self.face_cascade_frontal.detectMultiScale(
             gray,
-            scaleFactor=1.1,
-            minNeighbors=5,
-            minSize=(30, 30)
+            scaleFactor=1.05,  # More scales (was 1.1) - slower but catches more faces
+            minNeighbors=3,    # Lower threshold (was 5) - more sensitive
+            minSize=(20, 20)   # Smaller min size (was 30x30) - catches distant faces
         )
+
+        # Detect profile faces (left and right profiles)
+        faces_profile = self.face_cascade_profile.detectMultiScale(
+            gray,
+            scaleFactor=1.05,
+            minNeighbors=3,
+            minSize=(20, 20)
+        )
+
+        # Combine all face detections and remove duplicates
+        all_faces = list(faces_frontal) + list(faces_profile)
+
+        # Remove overlapping detections using Intersection over Union (IoU)
+        unique_faces = []
+        for (x, y, w, h) in all_faces:
+            is_duplicate = False
+            for i, (ux, uy, uw, uh) in enumerate(unique_faces):
+                # Calculate intersection
+                x1_inter = max(x, ux)
+                y1_inter = max(y, uy)
+                x2_inter = min(x + w, ux + uw)
+                y2_inter = min(y + h, uy + uh)
+
+                # Calculate intersection area
+                if x2_inter > x1_inter and y2_inter > y1_inter:
+                    intersection = (x2_inter - x1_inter) * (y2_inter - y1_inter)
+                else:
+                    intersection = 0
+
+                # Calculate union area
+                area1 = w * h
+                area2 = uw * uh
+                union = area1 + area2 - intersection
+
+                # Calculate IoU (Intersection over Union)
+                iou = intersection / union if union > 0 else 0
+
+                # If IoU > 0.3, consider it a duplicate (same face detected by different classifiers)
+                if iou > 0.3:
+                    is_duplicate = True
+                    # Keep the larger detection
+                    if area1 > area2:
+                        unique_faces[i] = (x, y, w, h)
+                    break
+
+            if not is_duplicate:
+                unique_faces.append((x, y, w, h))
 
         # Create a copy of the image to modify
         blurred_image = image.copy()
 
         # Blur each detected face
-        for (x, y, w, h) in faces:
+        for (x, y, w, h) in unique_faces:
             # Add padding to ensure entire face is covered
             pad_w = int(w * padding)
             pad_h = int(h * padding)
@@ -79,7 +130,7 @@ class FaceBlurrer:
             # Replace the face region with blurred version
             blurred_image[y1:y2, x1:x2] = blurred_face
 
-        return blurred_image, len(faces)
+        return blurred_image, len(unique_faces)
 
     def blur_faces_in_region(
         self,
