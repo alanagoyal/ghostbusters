@@ -3,8 +3,8 @@ import type { Metadata } from 'next'
 import { GeistMono } from 'geist/font/mono'
 
 export const metadata: Metadata = {
-  title: 'Trick-or-Treater Dashboard',
-  description: 'Real-time Halloween trick-or-treater monitoring with costume analytics and visitor insights',
+  title: 'Ghostbusters',
+  description: 'A live classification of trick-or-treaters in San Francisco',
 }
 
 export default function RootLayout({
