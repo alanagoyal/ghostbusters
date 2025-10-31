@@ -5,7 +5,7 @@ After=network.target
 [Service]
 Type=simple
 User=pi
-WorkingDirectory=/home/pi/projects/costume-classifier
+WorkingDirectory=/home/pi/projects/ghostbusters
 Environment="PATH=/home/pi/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 Environment="PYTHONUNBUFFERED=1"
 ExecStart=/home/pi/.local/bin/uv run backend/scripts/main.py
@@ -15,7 +15,7 @@ StandardOutput=append:/home/pi/costume-detector.log
 StandardError=append:/home/pi/costume-detector-error.log
 
 # Environment variables (alternatively, load from .env file)
-# EnvironmentFile=/home/pi/projects/costume-classifier/.env
+# EnvironmentFile=/home/pi/projects/ghostbusters/.env
 
 [Install]
 WantedBy=multi-user.target
