@@ -66,9 +66,15 @@ face_blurrer = FaceBlurrer(blur_strength=51)
 print("✅ Face blurrer initialized (privacy protection enabled)")
 
 # Detection parameters
-CONFIDENCE_THRESHOLD = 0.7  # Minimum confidence for person detection
+CONFIDENCE_THRESHOLD = 0.5  # Minimum confidence for person detection (lowered to catch costumes)
 CONSECUTIVE_FRAMES_REQUIRED = 2  # Number of consecutive detections before capture
 CAPTURE_COOLDOWN = 60  # Seconds to wait before next capture
+
+# COCO classes that might represent people in costumes
+# Class 0 = person (standard human detection)
+# Class 77 = teddy bear (mascot/character costumes may be detected as this)
+# Class 21 = bear (animal costumes)
+PERSON_LIKE_CLASSES = [0, 21, 77]  # Expanded to catch full-body costumes
 
 # Region of Interest (ROI) - only detect people in doorstep area
 # Coordinates are normalized (0.0 to 1.0) relative to frame dimensions
@@ -188,15 +194,16 @@ try:
         # Get frame dimensions for ROI checking
         frame_height, frame_width = frame.shape[:2]
 
-        # Check for person detections with high confidence in the ROI (class 0 in COCO dataset)
+        # Check for person-like detections (including costumed people) in the ROI
         people_detected = False
         for result in results:
             boxes = result.boxes
             for box in boxes:
-                if int(box.cls[0]) == 0:  # person class
+                detected_class = int(box.cls[0])
+                if detected_class in PERSON_LIKE_CLASSES:  # person or costume-like classes
                     confidence = float(box.conf[0])
                     if confidence > CONFIDENCE_THRESHOLD:
-                        # Check if person is in the doorstep ROI
+                        # Check if detection is in the doorstep ROI
                         bbox = box.xyxy[0].tolist()
                         if is_in_roi(bbox, frame_width, frame_height):
                             people_detected = True
@@ -232,12 +239,13 @@ try:
                 timestamp_str = detection_timestamp.strftime("%Y%m%d_%H%M%S")
                 filename = f"detection_{timestamp_str}.jpg"
 
-                # Collect ALL person detections in ROI (not just the highest confidence)
+                # Collect ALL person-like detections in ROI (including costumes)
                 detected_people = []
                 for result in results:
                     boxes = result.boxes
                     for box in boxes:
-                        if int(box.cls[0]) == 0:  # person class
+                        detected_class = int(box.cls[0])
+                        if detected_class in PERSON_LIKE_CLASSES:  # person or costume-like classes
                             conf = float(box.conf[0])
                             if conf > CONFIDENCE_THRESHOLD:
                                 x1, y1, x2, y2 = map(int, box.xyxy[0])
@@ -245,6 +253,7 @@ try:
                                 if is_in_roi([x1, y1, x2, y2], frame_width, frame_height):
                                     detected_people.append({
                                         "confidence": conf,
+                                        "detected_as_class": detected_class,
                                         "bounding_box": {
                                             "x1": x1,
                                             "y1": y1,
@@ -267,9 +276,16 @@ try:
                 for person_idx, person in enumerate(detected_people, start=1):
                     person_conf = person["confidence"]
                     person_box = person["bounding_box"]
+                    detected_as = person.get("detected_as_class", 0)
+
+                    # Map class ID to name for logging
+                    class_names = {0: "person", 21: "bear", 77: "teddy bear"}
+                    class_name = class_names.get(detected_as, f"class {detected_as}")
 
                     if num_people > 1:
-                        print(f"   Processing person {person_idx}/{num_people} (confidence: {person_conf:.2f})")
+                        print(f"   Processing person {person_idx}/{num_people} (confidence: {person_conf:.2f}, detected as: {class_name})")
+                    else:
+                        print(f"   Detection confidence: {person_conf:.2f}, detected as: {class_name}")
 
                     # Classify costume using Baseten if configured (using original unblurred frame)
                     costume_classification = None

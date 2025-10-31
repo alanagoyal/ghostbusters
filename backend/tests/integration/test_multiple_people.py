@@ -19,6 +19,13 @@ from backend.src.clients.supabase_client import SupabaseClient
 # Load environment variables
 load_dotenv()
 
+# COCO classes that might represent people in costumes
+# Class 0 = person (standard human detection)
+# Class 77 = teddy bear (mascot/character costumes may be detected as this)
+# Class 21 = bear (animal costumes)
+PERSON_LIKE_CLASSES = [0, 21, 77]
+CONFIDENCE_THRESHOLD = 0.5  # Lowered to catch costumes
+
 
 def process_multi_person_image(
     image_path: str,
@@ -56,17 +63,19 @@ def process_multi_person_image(
     print("🔍 Running YOLO person detection...")
     results = model(img, verbose=False)
 
-    # Collect all person detections
+    # Collect all person-like detections (including costumes)
     detected_people = []
     for result in results:
         boxes = result.boxes
         for box in boxes:
-            if int(box.cls[0]) == 0:  # person class
+            detected_class = int(box.cls[0])
+            if detected_class in PERSON_LIKE_CLASSES:  # person or costume-like classes
                 conf = float(box.conf[0])
-                if conf > 0.5:
+                if conf > CONFIDENCE_THRESHOLD:
                     x1, y1, x2, y2 = map(int, box.xyxy[0])
                     detected_people.append({
                         "confidence": conf,
+                        "detected_as_class": detected_class,
                         "bounding_box": {
                             "x1": x1,
                             "y1": y1,
@@ -100,10 +109,16 @@ def process_multi_person_image(
     for person_idx, person in enumerate(detected_people, start=1):
         person_conf = person["confidence"]
         person_box = person["bounding_box"]
+        detected_as = person.get("detected_as_class", 0)
+
+        # Map class ID to name for logging
+        class_names = {0: "person", 21: "bear", 77: "teddy bear"}
+        class_name = class_names.get(detected_as, f"class {detected_as}")
 
         print(f"\n{'─'*70}")
         print(f"Processing Person {person_idx}/{num_people}")
         print(f"  YOLO Confidence: {person_conf:.2f}")
+        print(f"  Detected as: {class_name}")
         print(f"  Bounding Box: {person_box}")
 
         # Extract person crop from ORIGINAL unblurred frame for classification
