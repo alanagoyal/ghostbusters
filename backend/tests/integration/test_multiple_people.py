@@ -2,6 +2,12 @@
 """
 Test script for multi-person detection in a single frame.
 Uses YOLOv8n to detect all people in test images and processes each separately.
+
+DUAL-PASS DETECTION:
+- PASS 1: Detects standard people (YOLO class 0)
+- PASS 2: Detects potential inflatable costumes (YOLO classes 2, 14, 16, 17)
+- Validates inflatable detections with Baseten costume classifier
+- Rejects detections that return "No costume" (filters out actual cars/objects)
 """
 
 import os
@@ -19,6 +25,10 @@ from backend.src.clients.supabase_client import SupabaseClient
 
 # Load environment variables
 load_dotenv()
+
+# YOLO COCO classes for dual-pass detection
+PERSON_CLASS = 0
+INFLATABLE_CLASSES = [2, 14, 16, 17]  # car, bird, dog, cat
 
 
 def process_multi_person_image(
@@ -53,28 +63,81 @@ def process_multi_person_image(
     height, width = img.shape[:2]
     print(f"📐 Image dimensions: {width}x{height}")
 
-    # Run YOLO detection
-    print("🔍 Running YOLO person detection...")
+    # Run YOLO detection with dual-pass approach
+    print("🔍 Running YOLO dual-pass detection...")
     results = model(img, verbose=False)
 
-    # Collect all person detections
+    # DUAL-PASS DETECTION: Collect all detections
+    # PASS 1: Collect standard person detections (class 0)
     detected_people = []
+    potential_inflatables = []
+
     for result in results:
         boxes = result.boxes
         for box in boxes:
-            if int(box.cls[0]) == 0:  # person class
-                conf = float(box.conf[0])
-                if conf > 0.5:
-                    x1, y1, x2, y2 = map(int, box.xyxy[0])
+            cls = int(box.cls[0])
+            conf = float(box.conf[0])
+
+            if conf > 0.5:
+                x1, y1, x2, y2 = map(int, box.xyxy[0])
+                bbox_dict = {"x1": x1, "y1": y1, "x2": x2, "y2": y2}
+
+                if cls == PERSON_CLASS:
+                    # Standard person detection
                     detected_people.append({
                         "confidence": conf,
-                        "bounding_box": {
-                            "x1": x1,
-                            "y1": y1,
-                            "x2": x2,
-                            "y2": y2,
-                        }
+                        "bounding_box": bbox_dict,
+                        "detection_type": "person",
+                        "yolo_class": cls,
                     })
+                elif cls in INFLATABLE_CLASSES:
+                    # Potential inflatable costume (needs validation)
+                    class_name = model.names[cls]
+                    potential_inflatables.append({
+                        "confidence": conf,
+                        "bounding_box": bbox_dict,
+                        "detection_type": "inflatable",
+                        "yolo_class": cls,
+                        "yolo_class_name": class_name,
+                    })
+
+    print(f"\n✅ PASS 1: Detected {len(detected_people)} standard person(s)")
+    print(f"🎈 PASS 2: Found {len(potential_inflatables)} potential inflatable(s)")
+
+    # PASS 2: Validate potential inflatable costumes with Baseten
+    if baseten_client and potential_inflatables:
+        print(f"   Validating {len(potential_inflatables)} potential inflatable costume(s)...")
+
+        for inflatable in potential_inflatables:
+            try:
+                bbox = inflatable["bounding_box"]
+                x1, y1, x2, y2 = bbox["x1"], bbox["y1"], bbox["x2"], bbox["y2"]
+                crop = img[y1:y2, x1:x2]
+                _, buffer = cv2.imencode('.jpg', crop)
+                image_bytes = buffer.tobytes()
+
+                (
+                    costume_classification,
+                    costume_confidence,
+                    costume_description,
+                ) = baseten_client.classify_costume(image_bytes)
+
+                is_valid = (
+                    costume_classification and
+                    not (costume_classification.lower() == "person" and
+                         costume_description and "no costume" in costume_description.lower())
+                )
+
+                if is_valid:
+                    print(f"   ✅ Validated inflatable: {costume_classification} (YOLO saw as {inflatable['yolo_class_name']})")
+                    inflatable["costume_classification"] = costume_classification
+                    inflatable["costume_description"] = costume_description
+                    inflatable["costume_confidence"] = costume_confidence
+                    detected_people.append(inflatable)
+                else:
+                    print(f"   ❌ Rejected {inflatable['yolo_class_name']} (not a costume)")
+            except Exception as e:
+                print(f"   ⚠️  Validation failed for {inflatable.get('yolo_class_name', 'unknown')}: {e}")
 
     num_people = len(detected_people)
 
@@ -101,11 +164,17 @@ def process_multi_person_image(
     for person_idx, person in enumerate(detected_people, start=1):
         person_conf = person["confidence"]
         person_box = person["bounding_box"]
+        detection_type = person.get("detection_type", "person")
 
         print(f"\n{'─'*70}")
-        print(f"Processing Person {person_idx}/{num_people}")
+        print(f"Processing {detection_type.capitalize()} {person_idx}/{num_people}")
         print(f"  YOLO Confidence: {person_conf:.2f}")
         print(f"  Bounding Box: {person_box}")
+
+        # Skip costume classification if already done during inflatable validation
+        if person.get("costume_classification"):
+            print(f"  ✓ Costume already classified: {person['costume_classification']}")
+            continue
 
         # Extract person crop from ORIGINAL unblurred frame for classification
         x1, y1, x2, y2 = person_box["x1"], person_box["y1"], person_box["x2"], person_box["y2"]
