@@ -256,6 +256,13 @@ try:
                 num_people = len(detected_people)
                 print(f"👤 {num_people} person(s) detected! (Detection #{detection_count})")
 
+                # Start cooldown period immediately after detection (before Baseten call)
+                last_capture_time = current_time
+                in_cooldown = True
+                consecutive_detections = 0
+                print(f"⏸️  Starting {CAPTURE_COOLDOWN}s cooldown period...")
+                print()
+
                 # Process each detected person separately for costume classification (on UNBLURRED frame)
                 for person_idx, person in enumerate(detected_people, start=1):
                     person_conf = person["confidence"]
@@ -359,14 +366,6 @@ try:
                         print(f"   🗑️  Cleaned up local file: {filename}")
                 except Exception as e:
                     print(f"   ⚠️  Failed to cleanup local file: {e}")
-
-                print()
-
-                # Start cooldown period and reset counter
-                last_capture_time = current_time
-                in_cooldown = True
-                consecutive_detections = 0
-                print(f"⏸️  Starting {CAPTURE_COOLDOWN}s cooldown period...")
         else:
             # No person detected - reset consecutive counter
             if consecutive_detections > 0:
