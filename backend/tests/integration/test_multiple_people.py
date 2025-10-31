@@ -153,10 +153,10 @@ def process_multi_person_image(
         # Extract person region
         person_region = blurred_frame[y1:y2, x1:x2]
 
-        # Apply moderate Gaussian blur (kernel size 25)
+        # Apply moderate Gaussian blur (kernel size 33)
         # This obscures facial features while keeping costume colors/shapes visible
         if person_region.size > 0:
-            blurred_person = cv2.GaussianBlur(person_region, (25, 25), 0)
+            blurred_person = cv2.GaussianBlur(person_region, (33, 33), 0)
             blurred_frame[y1:y2, x1:x2] = blurred_person
             num_people_blurred += 1
 
