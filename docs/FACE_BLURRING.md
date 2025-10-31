@@ -42,11 +42,6 @@ Once faces are detected, they are blurred using:
   - `blur_faces()`: Blur all faces in an image
   - `blur_faces_in_region()`: Blur faces only within a specific bounding box
 
-- **`backend/scripts/test_face_blur.py`**: Test script to verify face blurring on test images
-  - Processes all test images in `backend/tests/fixtures/`
-  - Outputs blurred images to `backend/test_blurred_output/`
-  - Reports number of faces detected and blurred
-
 ### Modified Files
 
 - **`backend/scripts/main.py`**: Main detection script
@@ -76,17 +71,15 @@ Console output will show:
 
 ### Testing Face Blurring
 
-To test face blurring on the fixture images:
+Face blurring is automatically tested as part of the integration tests. When you run any of the costume detection tests, faces are blurred before saving:
 
 ```bash
-uv run backend/scripts/test_face_blur.py
+uv run backend/tests/integration/test_costume_detection.py
+uv run backend/tests/integration/test_multiple_people.py
+uv run backend/tests/integration/test_nonhuman_costume.py
 ```
 
-This will:
-1. Process all `test-*.png` images in `backend/tests/fixtures/`
-2. Detect and blur faces in each image
-3. Save blurred versions to `backend/test_blurred_output/`
-4. Report statistics on faces detected
+All test output images are saved with faces blurred to `backend/tests/test_detections/`.
 
 ### Adjusting Blur Strength
 
@@ -188,13 +181,15 @@ def test_blur_faces_returns_tuple():
 
 ### Integration Testing
 
-Test with real costume images:
+Face blurring is tested automatically when running the costume detection integration tests:
 
 ```bash
-uv run backend/scripts/test_face_blur.py
+uv run backend/tests/integration/test_costume_detection.py
+uv run backend/tests/integration/test_multiple_people.py
+uv run backend/tests/integration/test_nonhuman_costume.py
 ```
 
-Check output in `backend/test_blurred_output/` directory.
+All output images are saved with faces blurred to `backend/tests/test_detections/`.
 
 ## Performance Impact
 
