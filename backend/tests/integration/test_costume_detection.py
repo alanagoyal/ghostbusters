@@ -8,6 +8,7 @@ import os
 import sys
 from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import cv2
 from dotenv import load_dotenv
@@ -107,8 +108,8 @@ def process_test_image(
         print(f"❌ Baseten API error: {e}")
         return None
 
-    # Generate timestamp for this detection
-    timestamp = datetime.now()
+    # Generate timestamp for this detection (Pacific time)
+    timestamp = datetime.now(ZoneInfo("America/Los_Angeles"))
 
     # Save processed image locally
     output_dir = Path("backend/tests/test_detections")

@@ -8,6 +8,7 @@ import os
 import sys
 from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import cv2
 from dotenv import load_dotenv
@@ -83,8 +84,8 @@ def process_multi_person_image(
 
     print(f"✅ Detected {num_people} person(s)")
 
-    # Generate timestamp for this frame
-    timestamp = datetime.now()
+    # Generate timestamp for this frame (Pacific time)
+    timestamp = datetime.now(ZoneInfo("America/Los_Angeles"))
     timestamp_str = timestamp.strftime("%Y%m%d_%H%M%S")
 
     # Save frame locally with all bounding boxes drawn
