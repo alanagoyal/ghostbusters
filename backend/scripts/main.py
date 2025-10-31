@@ -233,7 +233,15 @@ try:
                 filename = f"detection_{timestamp_str}.jpg"
 
                 # Blur faces for privacy protection FIRST on original frame
-                blurred_frame, num_faces = face_blurrer.blur_faces(frame)
+                try:
+                    blurred_frame, num_faces = face_blurrer.blur_faces(frame)
+                    face_blur_success = True
+                except Exception as e:
+                    print(f"   ⚠️  Face blurring failed: {e}")
+                    print(f"   Using original frame without blurring")
+                    blurred_frame = frame.copy()
+                    num_faces = 0
+                    face_blur_success = False
 
                 # Draw bounding boxes on the blurred frame (only for people in ROI)
                 for result in results:
@@ -278,8 +286,15 @@ try:
 
                 num_people = len(detected_people)
                 print(f"👤 {num_people} person(s) detected! (Detection #{detection_count})")
-                if num_faces > 0:
+
+                # Always show face blur status for transparency
+                if not face_blur_success:
+                    print(f"   ❌ Face blurring error - image saved without privacy protection")
+                elif num_faces > 0:
                     print(f"   🔒 {num_faces} face(s) blurred for privacy")
+                else:
+                    print(f"   👁️  No faces detected (privacy protection active)")
+
                 print(f"   Saved locally: {filename}")
 
                 # Process each detected person separately
