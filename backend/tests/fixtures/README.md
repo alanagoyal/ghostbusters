@@ -20,6 +20,15 @@ Images containing multiple people for multi-person detection testing:
 - These images should feature 2 or more people in Halloween costumes
 - Used to test YOLO detection and separate classification for each person
 
+### Non-Human Costume Images (prefix: `test-nonhuman-`)
+
+Images containing inflatable or non-human-shaped costumes for dual-pass detection testing:
+
+- Example: `test-nonhuman-costume.png`
+- These images should feature people in bulky inflatable costumes (T-Rex, dinosaurs, etc.)
+- Used to test dual-pass YOLO detection that validates non-person classes as costumes
+- Tests the validation logic that filters out false positives (actual cars/objects)
+
 ## Image Format
 
 - All images are PNG format
@@ -61,6 +70,24 @@ This will:
 7. Save annotated frames with all bounding boxes drawn
 8. Save individual person crops to `backend/tests/test_detections/`
 
+### Non-Human Costume Detection Test
+
+Run the non-human costume test script to test dual-pass detection for images with `test-nonhuman-` prefix:
+
+```bash
+uv run test_nonhuman_costume.py
+```
+
+This will:
+1. Load all images matching `test-nonhuman-*` pattern
+2. **PASS 1**: Detect standard people (YOLO class 0)
+3. **PASS 2**: Detect potential inflatable costumes (YOLO classes 2=car, 14=bird, 16=dog, 17=cat)
+4. Validate inflatable detections with Baseten costume classifier
+5. **Reject** detections that return "No costume" (filtering out actual cars/objects)
+6. Create database entries only for validated costume detections
+7. Upload validated detections to Supabase database
+8. Save annotated frames with different colored boxes (green=person, magenta=validated inflatable)
+
 ## Expected Results
 
 ### Single Person Images
@@ -91,11 +118,23 @@ When running `test_multiple_people.py`:
 - Accurate visitor counting (groups counted separately)
 - No data loss when groups arrive together
 
+### Non-Human Costume Detection Highlights
+
+When running `test_nonhuman_costume.py`:
+- **Dual-pass detection** catches both regular people and inflatable costumes
+- YOLO may misclassify bulky inflatables as cars/animals (class 2, 14, 16, 17)
+- Baseten validation ensures only actual costumes are saved
+- False positives (real cars, objects) are filtered out
+- Green boxes = standard person detection
+- Magenta boxes = validated inflatable costume detection
+
 ## Notes
 
 - Images with `test-single-` prefix are for single-person detection testing
 - Images with `test-multiple-` prefix demonstrate multi-person scenarios (groups of trick-or-treaters)
+- Images with `test-nonhuman-` prefix test inflatable/bulky costumes that YOLO may misclassify
 - YOLO runs on each frame to detect people and generate bounding boxes
+- Dual-pass detection validates non-person YOLO classes through costume classification
 - In production, the system processes all detected people separately
 - Images are used for development and testing only
-- Add new test images following the naming convention: `test-single-*.png` or `test-multiple-*.png`
+- Add new test images following the naming convention: `test-single-*.png`, `test-multiple-*.png`, or `test-nonhuman-*.png`
