@@ -13,21 +13,66 @@ import requests
 
 # Allowed costume categories for classification
 ALLOWED_CATEGORIES = [
-    "witch",
-    "vampire",
-    "zombie",
-    "skeleton",
-    "ghost",
-    "superhero",
-    "princess",
-    "pirate",
-    "ninja",
-    "clown",
-    "monster",
-    "character",  # For recognizable characters (Spiderman, Elsa, etc.)
-    "animal",     # For animal costumes (tiger, cat, etc.)
-    "person",     # No costume visible
-    "other",      # Doesn't fit any category
+    "Witch",
+    "Vampire",
+    "Zombie",
+    "Skeleton",
+    "Ghost",
+    "Superhero",
+    "Princess",
+    "Pirate",
+    "Ninja",
+    "Clown",
+    "Monster",
+    "Character",  # For recognizable characters (Spiderman, Elsa, etc.)
+    "Animal",     # For animal costumes (tiger, cat, etc.)
+    "Person",     # No costume visible
+    "Alien",
+    "Angel",
+    "Devil",
+    "Demon",
+    "Mummy",
+    "Frankenstein",
+    "Werewolf",
+    "Fairy",
+    "Mermaid",
+    "Wizard",
+    "Grim Reaper",
+    "Pumpkin",
+    "Scarecrow",
+    "Dragon",
+    "Dinosaur",
+    "Robot",
+    "Astronaut",
+    "Knight",
+    "Viking",
+    "Samurai",
+    "Cowboy",
+    "Cowgirl",
+    "Doctor",
+    "Nurse",
+    "Police Officer",
+    "Firefighter",
+    "Chef",
+    "Detective",
+    "Jester",
+    "Gladiator",
+    "Pharaoh",
+    "Greek God/Goddess",
+    "Mad Scientist",
+    "Steampunk",
+    "Mime",
+    "Hippie",
+    "Rocker",
+    "Ghostbuster",
+    "Elf",
+    "Pirate Wench",
+    "Sorcerer/Sorceress",
+    "Royalty",
+    "Ballerina",
+    "Cheerleader",
+    "Athlete",
+    "Other",      # Doesn't fit any category
 ]
 
 
@@ -72,7 +117,7 @@ class BasetenClient:
             Tuple of (classification, confidence, description) where:
             - classification: Short costume type (e.g., "witch", "skeleton")
             - confidence: Confidence score (0.0-1.0)
-            - description: Detailed description (e.g., "witch with purple hat and broom")
+            - description: Short costume description (e.g., "witch with purple hat and broom")
 
         Example:
             >>> client = BasetenClient()
@@ -90,18 +135,24 @@ class BasetenClient:
             # Default prompt optimized for Halloween costume classification
             prompt = custom_prompt or (
                 "Analyze this Halloween costume and respond with ONLY a JSON object in this exact format:\n"
-                '{"classification": "costume_type", "confidence": 0.95, "description": "detailed description"}\n\n'
+                '{"classification": "costume type", "confidence": 0.95, "description": "costume description"}\n\n'
                 "Preferred categories:\n"
                 "- witch, vampire, zombie, skeleton, ghost\n"
                 "- superhero, princess, pirate, ninja, clown, monster\n"
                 "- character (for recognizable characters like Spiderman, Elsa, Mickey Mouse)\n"
                 "- animal (for animal costumes like tiger, cat, dinosaur)\n"
                 "- person (if no costume visible)\n"
-                "- other (if costume doesn't fit above categories)\n\n"
+                "- classic monsters: mummy, frankenstein, werewolf, grim reaper, demon, devil\n"
+                "- fantasy/mythical: fairy, mermaid, wizard, dragon, elf, sorcerer/sorceress\n"
+                "- historical/warrior: knight, viking, samurai, gladiator, pharaoh, greek god/goddess\n"
+                "- occupations: doctor, nurse, police officer, firefighter, chef, detective, astronaut, ghostbuster\n"
+                "- western/sport/dance: cowboy, cowgirl, ballerina, cheerleader, athlete\n"
+                "- sci-fi/other: alien, robot, dinosaur, pumpkin, scarecrow, jester, mime, hippie, rocker, steampunk, royalty, pirate wench\n\n"
+                "- other (if costume doesn't fit above categories)\n"
                 "Rules:\n"
-                "- classification: Try to use one of the preferred categories above, or be specific (e.g., 'Spiderman', 'tiger')\n"
+                "- classification: Use one of the preferred categories above\n"
                 "- confidence: Your confidence score between 0.0 and 1.0\n"
-                "- description: A detailed one-sentence description of the costume\n"
+                "- description: A short description focused on the costume itself (e.g., 'An astronaut with a space helmet', 'A pop-star holding a microphone', 'A witch with a pointed hat'). Describe the costume elements directly, not the person or their clothing. If no costume is visible, use 'No costume'.\n"
                 "- Output ONLY the JSON object, nothing else"
             )
 
