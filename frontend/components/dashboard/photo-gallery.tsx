@@ -26,6 +26,7 @@ interface PersonDetection {
 
 export function PhotoGallery() {
   const [detections, setDetections] = useState<PersonDetection[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -41,6 +42,7 @@ export function PhotoGallery() {
       if (data && !error) {
         setDetections(data);
       }
+      setIsLoading(false);
     };
 
     fetchDetections();
@@ -154,7 +156,7 @@ export function PhotoGallery() {
           </div>
         </div>
 
-        {detections.length === 0 && (
+        {!isLoading && detections.length === 0 && (
           <div className="text-center py-12 text-muted-foreground">
             <Camera className="h-12 w-12 mx-auto mb-4 opacity-20" />
             <p>No photos captured yet</p>
