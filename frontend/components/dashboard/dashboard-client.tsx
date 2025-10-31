@@ -11,6 +11,10 @@ import { LiveFeed } from "@/components/dashboard/live-feed";
 import { ConfidenceMeter } from "@/components/dashboard/confidence-meter";
 import { PhotoGallery } from "@/components/dashboard/photo-gallery";
 
+const DASHBOARD_TITLE = "Ghostbusters";
+const DASHBOARD_DESCRIPTION =
+  "This is a live feed from my front door in Noe Valley that identifies the costumes of trick-or-treaters in real time. The video stream is sent over RTSP to a Raspberry Pi, which runs YOLOv8 to detect people. The frames are then classified for costumes using Baseten, the detections are stored in Supabase using real-time listeners, and this dashboard displays the results as they happen.";
+
 interface PersonDetection {
   id: string;
   timestamp: string;
@@ -28,7 +32,8 @@ interface DashboardClientProps {
 }
 
 export function DashboardClient({ initialDetections }: DashboardClientProps) {
-  const [detections, setDetections] = useState<PersonDetection[]>(initialDetections);
+  const [detections, setDetections] =
+    useState<PersonDetection[]>(initialDetections);
 
   // Subscribe to real-time updates
   useEffect(() => {
@@ -51,7 +56,10 @@ export function DashboardClient({ initialDetections }: DashboardClientProps) {
 
   // Calculate costume statistics
   const costumeStats = useMemo(() => {
-    const costumeCounts = new Map<string, { count: number; descriptions: string[] }>();
+    const costumeCounts = new Map<
+      string,
+      { count: number; descriptions: string[] }
+    >();
     let totalWithCostume = 0;
 
     detections.forEach((d) => {
@@ -59,13 +67,16 @@ export function DashboardClient({ initialDetections }: DashboardClientProps) {
         const existing = costumeCounts.get(d.costume_classification);
         if (existing) {
           existing.count++;
-          if (d.costume_description && !existing.descriptions.includes(d.costume_description)) {
+          if (
+            d.costume_description &&
+            !existing.descriptions.includes(d.costume_description)
+          ) {
             existing.descriptions.push(d.costume_description);
           }
         } else {
           costumeCounts.set(d.costume_classification, {
             count: 1,
-            descriptions: d.costume_description ? [d.costume_description] : []
+            descriptions: d.costume_description ? [d.costume_description] : [],
           });
         }
         totalWithCostume++;
@@ -78,7 +89,8 @@ export function DashboardClient({ initialDetections }: DashboardClientProps) {
         fullName: name,
         count: data.count,
         descriptions: data.descriptions,
-        percentage: totalWithCostume > 0 ? (data.count / totalWithCostume) * 100 : 0,
+        percentage:
+          totalWithCostume > 0 ? (data.count / totalWithCostume) * 100 : 0,
       }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
@@ -107,14 +119,10 @@ export function DashboardClient({ initialDetections }: DashboardClientProps) {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 pb-6 space-y-6">
         <div className="space-y-3 sm:space-y-4">
           <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">
-            Costume Classifier
+            {DASHBOARD_TITLE}
           </h1>
           <p className="text-sm sm:text-base text-muted-foreground max-w-2xl">
-            I hacked my doorbell to detect trick-or-treaters using computer
-            vision, classify their costumes with AI, and track the data in
-            real-time. The system processes the video feed on a Raspberry Pi 5
-            using YOLOv8 to detect people and OpenAI to classify their costumes.
-            The results are displayed here.
+            {DASHBOARD_DESCRIPTION}
           </p>
         </div>
 
