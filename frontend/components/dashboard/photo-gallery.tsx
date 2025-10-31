@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import {
   Card,
@@ -26,6 +26,7 @@ interface PersonDetection {
 
 export function PhotoGallery() {
   const [detections, setDetections] = useState<PersonDetection[]>([]);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // Fetch initial detections with images
@@ -68,6 +69,15 @@ export function PhotoGallery() {
     };
   }, []);
 
+  // Auto-scroll to the right (most recent photos) whenever detections update
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      const container = scrollContainerRef.current;
+      // Scroll to the far right
+      container.scrollLeft = container.scrollWidth - container.clientWidth;
+    }
+  }, [detections]);
+
   const formatTime = (timestamp: string) => {
     const date = new Date(timestamp);
     return date.toLocaleTimeString("en-US", {
@@ -89,9 +99,12 @@ export function PhotoGallery() {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="overflow-x-auto overflow-y-hidden py-4">
+        <div
+          ref={scrollContainerRef}
+          className="overflow-x-auto overflow-y-hidden py-4"
+        >
           <div className="flex gap-6 px-2">
-            {detections.map((detection, index) => {
+            {[...detections].reverse().map((detection, index) => {
               // Alternate slight rotations for polaroid effect
               const rotation = index % 3 === 0 ? -2 : index % 3 === 1 ? 2 : 0;
 
