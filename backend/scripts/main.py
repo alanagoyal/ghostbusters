@@ -38,9 +38,13 @@ rtsp_url = f"rtsp://{DOORBIRD_USER}:{DOORBIRD_PASSWORD}@{DOORBIRD_IP}/mpeg/media
 print("🚀 Starting person detection system...")
 print(f"📹 Connecting to DoorBird at {DOORBIRD_IP}")
 
-# Load YOLOv8n model (smallest/fastest)
-print("🤖 Loading YOLOv8n model...")
-model = YOLO("yolov8n.pt")  # Will download on first run (~6MB)
+# Load YOLO model - configurable via environment variable for costume detection
+# YOLOv8n (default): Fastest, ~6MB, good for regular people
+# YOLOv8s: Better accuracy for costumes, ~22MB, slight performance impact
+# YOLOv8m: Best accuracy for difficult cases, ~50MB, slower
+YOLO_MODEL = os.getenv("YOLO_MODEL", "yolov8n.pt")
+print(f"🤖 Loading YOLO model: {YOLO_MODEL}...")
+model = YOLO(YOLO_MODEL)  # Will download on first run
 print("✅ Model loaded!")
 
 # Initialize Supabase client (optional - graceful degradation if not configured)
@@ -66,9 +70,17 @@ face_blurrer = FaceBlurrer(blur_strength=51)
 print("✅ Face blurrer initialized (privacy protection enabled)")
 
 # Detection parameters
-CONFIDENCE_THRESHOLD = 0.7  # Minimum confidence for person detection
+# Lower threshold for Halloween costumes (dinosaurs, full-body suits, etc.)
+# YOLO may detect costume-wearing people with lower confidence (0.5-0.6)
+CONFIDENCE_THRESHOLD = float(os.getenv("CONFIDENCE_THRESHOLD", "0.5"))  # Lowered from 0.7 for costumes
 CONSECUTIVE_FRAMES_REQUIRED = 2  # Number of consecutive detections before capture
 CAPTURE_COOLDOWN = 60  # Seconds to wait before next capture
+
+# YOLO inference parameters for better costume detection
+# Lower IOU threshold helps detect overlapping/partial detections (groups in costumes)
+YOLO_IOU_THRESHOLD = float(os.getenv("YOLO_IOU_THRESHOLD", "0.4"))  # Lower = more permissive
+# Confidence threshold can also be set at inference time (in addition to post-filtering)
+YOLO_CONF_THRESHOLD = float(os.getenv("YOLO_CONF_THRESHOLD", "0.3"))  # Even lower for initial detection
 
 # Region of Interest (ROI) - only detect people in doorstep area
 # Coordinates are normalized (0.0 to 1.0) relative to frame dimensions
@@ -79,6 +91,7 @@ ROI_Y_MIN = 0.0   # Start at top of frame
 ROI_Y_MAX = 1.0   # Bottom edge (100%)
 
 print(f"🎯 Detection: {CONSECUTIVE_FRAMES_REQUIRED} consecutive frames at >{CONFIDENCE_THRESHOLD} confidence")
+print(f"🎭 Costume mode: YOLO conf={YOLO_CONF_THRESHOLD}, IOU={YOLO_IOU_THRESHOLD}")
 print(f"📍 ROI: Doorstep area only (x: {ROI_X_MIN}-{ROI_X_MAX}, y: {ROI_Y_MIN}-{ROI_Y_MAX})")
 print(f"⏱️  Cooldown: {CAPTURE_COOLDOWN}s between captures")
 
@@ -182,8 +195,9 @@ try:
         if frame_count % 30 != 0:
             continue
 
-        # Run YOLO detection
-        results = model(frame, verbose=False)
+        # Run YOLO detection with costume-friendly parameters
+        # Lower conf/IOU thresholds help detect people in full-body costumes (dinosaurs, mascots, etc.)
+        results = model(frame, conf=YOLO_CONF_THRESHOLD, iou=YOLO_IOU_THRESHOLD, verbose=False)
 
         # Get frame dimensions for ROI checking
         frame_height, frame_width = frame.shape[:2]
