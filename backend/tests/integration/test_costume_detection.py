@@ -14,7 +14,6 @@ from dotenv import load_dotenv
 
 from backend.src.clients.baseten_client import BasetenClient
 from backend.src.clients.supabase_client import SupabaseClient
-from backend.src.utils.face_blur import FaceBlurrer
 
 # Load environment variables
 load_dotenv()
@@ -48,7 +47,6 @@ def process_test_image(
     image_path: str,
     baseten_client: BasetenClient,
     supabase_client: SupabaseClient,
-    face_blurrer: FaceBlurrer,
 ) -> dict:
     """
     Process a single test image through the complete pipeline:
@@ -81,18 +79,11 @@ def process_test_image(
     bbox = extract_person_bbox_from_image(image_path)
     print(f"📦 Bounding box: {bbox}")
 
-    # Blur faces for privacy protection
-    blurred_img, num_faces = face_blurrer.blur_faces(img)
-    if num_faces > 0:
-        print(f"🔒 Blurred {num_faces} face(s) for privacy")
+    # Extract person crop from ORIGINAL unblurred image for classification
+    person_crop = img[bbox["y1"]:bbox["y2"], bbox["x1"]:bbox["x2"]]
 
-    # Extract person crop from blurred image
-    person_crop = blurred_img[bbox["y1"]:bbox["y2"], bbox["x1"]:bbox["x2"]]
-
-    # Encode blurred full image to bytes (for Baseten - using full image for better context)
-    # In production, we'd send just the person crop, but these test images
-    # have good context that helps with classification
-    _, buffer = cv2.imencode('.jpg', blurred_img)
+    # Encode person crop to bytes (for Baseten)
+    _, buffer = cv2.imencode('.jpg', person_crop)
     image_bytes = buffer.tobytes()
 
     print("\n🎭 Classifying costume with Baseten...")
@@ -127,11 +118,25 @@ def process_test_image(
     output_filename = f"detection_{timestamp_str}_{classification}.jpg"
     output_path = output_dir / output_filename
 
+    # Now blur the frame for privacy before saving
+    blurred_img = img.copy()
+    x1, y1, x2, y2 = bbox["x1"], bbox["y1"], bbox["x2"], bbox["y2"]
+
+    # Extract person region
+    person_region = blurred_img[y1:y2, x1:x2]
+
+    # Apply moderate Gaussian blur (kernel size 33)
+    # This obscures facial features while keeping costume colors/shapes visible
+    if person_region.size > 0:
+        blurred_person = cv2.GaussianBlur(person_region, (33, 33), 0)
+        blurred_img[y1:y2, x1:x2] = blurred_person
+        print(f"🔒 Blurred person for privacy")
+
     # Draw bounding box on blurred image
     cv2.rectangle(
         blurred_img,
-        (bbox["x1"], bbox["y1"]),
-        (bbox["x2"], bbox["y2"]),
+        (x1, y1),
+        (x2, y2),
         (0, 255, 0),
         3
     )
@@ -141,7 +146,7 @@ def process_test_image(
     cv2.putText(
         blurred_img,
         label_text,
-        (bbox["x1"], bbox["y1"] - 10),
+        (x1, y1 - 10),
         cv2.FONT_HERSHEY_SIMPLEX,
         1.0,
         (0, 255, 0),
@@ -220,11 +225,6 @@ def main():
         print(f"❌ Failed to initialize Supabase client: {e}")
         sys.exit(1)
 
-    # Initialize face blurrer
-    print("🔒 Initializing face blurrer...")
-    face_blurrer = FaceBlurrer(blur_strength=51)
-    print("✅ Face blurrer initialized (privacy protection enabled)")
-
     # Find test images (only test-1.png through test-5.png for single-person detection)
     test_images_dir = Path("backend/tests/fixtures")
     if not test_images_dir.exists():
@@ -252,7 +252,6 @@ def main():
             str(image_path),
             baseten_client,
             supabase_client,
-            face_blurrer,
         )
 
         if result:
