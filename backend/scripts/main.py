@@ -253,39 +253,10 @@ try:
                                         }
                                     })
 
-                # Blur person bounding boxes for privacy (lighter blur to preserve costume visibility)
-                blurred_frame = frame.copy()
-                num_people_blurred = 0
-
-                for person in detected_people:
-                    bbox = person["bounding_box"]
-                    x1, y1, x2, y2 = bbox["x1"], bbox["y1"], bbox["x2"], bbox["y2"]
-
-                    # Extract person region
-                    person_region = blurred_frame[y1:y2, x1:x2]
-
-                    # Apply lighter Gaussian blur (kernel size 15 instead of 51)
-                    # This preserves costume colors/shapes while obscuring facial features
-                    if person_region.size > 0:  # Ensure region is valid
-                        blurred_person = cv2.GaussianBlur(person_region, (15, 15), 0)
-                        blurred_frame[y1:y2, x1:x2] = blurred_person
-                        num_people_blurred += 1
-
-                # Draw bounding boxes on the blurred frame
-                for person in detected_people:
-                    bbox = person["bounding_box"]
-                    x1, y1, x2, y2 = bbox["x1"], bbox["y1"], bbox["x2"], bbox["y2"]
-                    cv2.rectangle(blurred_frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-
-                # Save blurred frame locally
-                cv2.imwrite(filename, blurred_frame)
-
                 num_people = len(detected_people)
                 print(f"👤 {num_people} person(s) detected! (Detection #{detection_count})")
-                print(f"   🔒 {num_people_blurred} person(s) blurred for privacy")
-                print(f"   Saved locally: {filename}")
 
-                # Process each detected person separately
+                # Process each detected person separately for costume classification (on UNBLURRED frame)
                 for person_idx, person in enumerate(detected_people, start=1):
                     person_conf = person["confidence"]
                     person_box = person["bounding_box"]
@@ -293,7 +264,7 @@ try:
                     if num_people > 1:
                         print(f"   Processing person {person_idx}/{num_people} (confidence: {person_conf:.2f})")
 
-                    # Classify costume using Baseten if configured
+                    # Classify costume using Baseten if configured (using original unblurred frame)
                     costume_classification = None
                     costume_confidence = None
                     costume_description = None
@@ -301,14 +272,14 @@ try:
                     if baseten_client:
                         try:
                             print(f"   🎭 Classifying costume...")
-                            # Extract person crop from blurred frame
+                            # Extract person crop from ORIGINAL frame (not blurred)
                             x1, y1, x2, y2 = (
                                 person_box["x1"],
                                 person_box["y1"],
                                 person_box["x2"],
                                 person_box["y2"],
                             )
-                            person_crop = blurred_frame[y1:y2, x1:x2]
+                            person_crop = frame[y1:y2, x1:x2]
 
                             # Encode image to bytes
                             _, buffer = cv2.imencode(".jpg", person_crop)
@@ -331,17 +302,52 @@ try:
                         except Exception as e:
                             print(f"   ⚠️  Costume classification failed: {e}")
 
-                    # Upload to Supabase if configured
+                    # Store classification results for later use
+                    person["costume_classification"] = costume_classification
+                    person["costume_description"] = costume_description
+                    person["costume_confidence"] = costume_confidence
+
+                # Now blur the frame for privacy before saving/uploading
+                blurred_frame = frame.copy()
+                num_people_blurred = 0
+
+                for person in detected_people:
+                    bbox = person["bounding_box"]
+                    x1, y1, x2, y2 = bbox["x1"], bbox["y1"], bbox["x2"], bbox["y2"]
+
+                    # Extract person region
+                    person_region = blurred_frame[y1:y2, x1:x2]
+
+                    # Apply lighter Gaussian blur (kernel size 15)
+                    # This obscures facial features while keeping costume visible in saved image
+                    if person_region.size > 0:  # Ensure region is valid
+                        blurred_person = cv2.GaussianBlur(person_region, (15, 15), 0)
+                        blurred_frame[y1:y2, x1:x2] = blurred_person
+                        num_people_blurred += 1
+
+                # Draw bounding boxes on the blurred frame
+                for person in detected_people:
+                    bbox = person["bounding_box"]
+                    x1, y1, x2, y2 = bbox["x1"], bbox["y1"], bbox["x2"], bbox["y2"]
+                    cv2.rectangle(blurred_frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+
+                # Save blurred frame locally
+                cv2.imwrite(filename, blurred_frame)
+                print(f"   🔒 {num_people_blurred} person(s) blurred for privacy")
+                print(f"   Saved locally: {filename}")
+
+                # Upload to Supabase if configured
+                for person_idx, person in enumerate(detected_people, start=1):
                     if supabase_client:
                         try:
                             supabase_client.save_detection(
                                 image_path=filename,
                                 timestamp=detection_timestamp,
-                                confidence=person_conf,
-                                bounding_box=person_box,
-                                costume_classification=costume_classification,
-                                costume_description=costume_description,
-                                costume_confidence=costume_confidence,
+                                confidence=person["confidence"],
+                                bounding_box=person["bounding_box"],
+                                costume_classification=person.get("costume_classification"),
+                                costume_description=person.get("costume_description"),
+                                costume_confidence=person.get("costume_confidence"),
                             )
                         except Exception as e:
                             print(f"   ⚠️  Supabase upload failed: {e}")
