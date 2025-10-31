@@ -232,37 +232,6 @@ try:
                 timestamp_str = detection_timestamp.strftime("%Y%m%d_%H%M%S")
                 filename = f"detection_{timestamp_str}.jpg"
 
-                # Blur faces for privacy protection FIRST on original frame
-                try:
-                    blurred_frame, num_faces = face_blurrer.blur_faces(frame)
-                    face_blur_success = True
-                except Exception as e:
-                    print(f"   ⚠️  Face blurring failed: {e}")
-                    print(f"   Using original frame without blurring")
-                    blurred_frame = frame.copy()
-                    num_faces = 0
-                    face_blur_success = False
-
-                # Draw bounding boxes on the blurred frame (only for people in ROI)
-                for result in results:
-                    boxes = result.boxes
-                    for box in boxes:
-                        # Class 0 is 'person' in COCO dataset
-                        if int(box.cls[0]) == 0:
-                            confidence = float(box.conf[0])
-                            # Only show high-confidence detections in ROI
-                            if confidence > CONFIDENCE_THRESHOLD:
-                                # Get bounding box coordinates
-                                x1, y1, x2, y2 = map(int, box.xyxy[0])
-
-                                # Only draw if person is in doorstep ROI
-                                if is_in_roi([x1, y1, x2, y2], frame_width, frame_height):
-                                    # Draw bounding box on blurred frame
-                                    cv2.rectangle(blurred_frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-
-                # Save blurred frame locally
-                cv2.imwrite(filename, blurred_frame)
-
                 # Collect ALL person detections in ROI (not just the highest confidence)
                 detected_people = []
                 for result in results:
@@ -284,17 +253,36 @@ try:
                                         }
                                     })
 
+                # Blur person bounding boxes for privacy (lighter blur to preserve costume visibility)
+                blurred_frame = frame.copy()
+                num_people_blurred = 0
+
+                for person in detected_people:
+                    bbox = person["bounding_box"]
+                    x1, y1, x2, y2 = bbox["x1"], bbox["y1"], bbox["x2"], bbox["y2"]
+
+                    # Extract person region
+                    person_region = blurred_frame[y1:y2, x1:x2]
+
+                    # Apply lighter Gaussian blur (kernel size 15 instead of 51)
+                    # This preserves costume colors/shapes while obscuring facial features
+                    if person_region.size > 0:  # Ensure region is valid
+                        blurred_person = cv2.GaussianBlur(person_region, (15, 15), 0)
+                        blurred_frame[y1:y2, x1:x2] = blurred_person
+                        num_people_blurred += 1
+
+                # Draw bounding boxes on the blurred frame
+                for person in detected_people:
+                    bbox = person["bounding_box"]
+                    x1, y1, x2, y2 = bbox["x1"], bbox["y1"], bbox["x2"], bbox["y2"]
+                    cv2.rectangle(blurred_frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+
+                # Save blurred frame locally
+                cv2.imwrite(filename, blurred_frame)
+
                 num_people = len(detected_people)
                 print(f"👤 {num_people} person(s) detected! (Detection #{detection_count})")
-
-                # Always show face blur status for transparency
-                if not face_blur_success:
-                    print(f"   ❌ Face blurring error - image saved without privacy protection")
-                elif num_faces > 0:
-                    print(f"   🔒 {num_faces} face(s) blurred for privacy")
-                else:
-                    print(f"   👁️  No faces detected (privacy protection active)")
-
+                print(f"   🔒 {num_people_blurred} person(s) blurred for privacy")
                 print(f"   Saved locally: {filename}")
 
                 # Process each detected person separately
