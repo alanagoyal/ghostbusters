@@ -91,6 +91,12 @@ uv run backend/tests/integration/test_multiple_people.py
 ```
 This uses YOLOv8n to detect ALL people in each frame (including test-6.png and test-7.png with 3 kids each), processes each person separately, and creates individual database entries. Perfect for testing group scenarios like multiple trick-or-treaters arriving together.
 
+**Test inflatable/non-human costume detection:**
+```bash
+uv run backend/tests/integration/test_nonhuman_costume.py
+```
+This tests dual-pass YOLO detection for inflatable costumes (like T-Rex, dinosaurs) that YOLO may misclassify as objects instead of people. Uses Baseten validation to distinguish real costumes from background objects.
+
 **Test DoorBird camera connection:**
 ```bash
 uv run backend/tests/integration/test_doorbird_connection.py

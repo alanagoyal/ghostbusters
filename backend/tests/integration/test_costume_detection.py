@@ -2,6 +2,12 @@
 """
 Test script for costume detection with real Halloween images.
 Processes test images through Baseten API and uploads to Supabase.
+
+DUAL-PASS DETECTION:
+- PASS 1: Detects standard people (YOLO class 0)
+- PASS 2: Detects potential inflatable costumes (YOLO classes 2, 14, 16, 17)
+- Validates inflatable detections with Baseten costume classifier
+- Rejects detections that return "No costume" (filters out actual cars/objects)
 """
 
 import os
@@ -12,51 +18,33 @@ from zoneinfo import ZoneInfo
 
 import cv2
 from dotenv import load_dotenv
+from ultralytics import YOLO
 
 from backend.src.clients.baseten_client import BasetenClient
 from backend.src.clients.supabase_client import SupabaseClient
+from backend.src.costume_detector import detect_people_and_costumes
 
 # Load environment variables
 load_dotenv()
 
 
-def extract_person_bbox_from_image(image_path: str) -> dict:
-    """
-    Extract bounding box from test image filename.
-    These test images already have YOLO detections with bounding boxes visible.
-    We'll use the full image for now, but in production this would come from YOLO.
-
-    Returns:
-        Dict with approximate bounding box coordinates
-    """
-    # Read image to get dimensions
-    img = cv2.imread(image_path)
-    height, width = img.shape[:2]
-
-    # For these test images, the person is roughly centered
-    # We'll use approximate values based on the visible green bounding boxes
-    # In production, these come from YOLO detection
-    return {
-        "x1": int(width * 0.35),   # Left edge
-        "y1": int(height * 0.15),  # Top edge
-        "x2": int(width * 0.65),   # Right edge
-        "y2": int(height * 0.90),  # Bottom edge
-    }
-
-
 def process_test_image(
     image_path: str,
+    model: YOLO,
     baseten_client: BasetenClient,
     supabase_client: SupabaseClient,
 ) -> dict:
     """
-    Process a single test image through the complete pipeline:
+    Process a single test image through the complete pipeline with dual-pass detection:
     1. Load image
-    2. Classify costume with Baseten
-    3. Upload to Supabase
+    2. PASS 1: Detect standard people (YOLO class 0)
+    3. PASS 2: Detect and validate potential inflatable costumes (classes 2, 14, 16, 17)
+    4. Classify costumes with Baseten
+    5. Upload to Supabase
 
     Args:
         image_path: Path to test image
+        model: YOLOv8 model
         baseten_client: Initialized Baseten client
         supabase_client: Initialized Supabase client
 
@@ -76,37 +64,58 @@ def process_test_image(
     height, width = img.shape[:2]
     print(f"📐 Image dimensions: {width}x{height}")
 
-    # Get bounding box (simulated - in production this comes from YOLO)
-    bbox = extract_person_bbox_from_image(image_path)
-    print(f"📦 Bounding box: {bbox}")
+    # Run YOLO dual-pass detection using shared detector
+    detected_people = detect_people_and_costumes(
+        img,
+        model,
+        baseten_client,
+        confidence_threshold=0.5,  # Lower threshold for test images
+        verbose=True,
+    )
 
-    # Extract person crop from ORIGINAL unblurred image for classification
-    person_crop = img[bbox["y1"]:bbox["y2"], bbox["x1"]:bbox["x2"]]
-
-    # Encode person crop to bytes (for Baseten)
-    _, buffer = cv2.imencode('.jpg', person_crop)
-    image_bytes = buffer.tobytes()
-
-    print("\n🎭 Classifying costume with Baseten...")
-
-    # Classify costume
-    try:
-        classification, confidence, description = baseten_client.classify_costume(
-            image_bytes
-        )
-
-        if classification:
-            print(f"✅ Classification successful!")
-            print(f"   Type:        {classification}")
-            print(f"   Confidence:  {confidence:.2f}")
-            print(f"   Description: {description}")
-        else:
-            print("❌ Classification failed - no results returned")
-            return None
-
-    except Exception as e:
-        print(f"❌ Baseten API error: {e}")
+    if not detected_people:
+        print("⚠️  No people or valid costumes detected")
         return None
+
+    # Process first detection (for single-person test images)
+    person = detected_people[0]
+    bbox = person["bounding_box"]
+    print(f"📦 Using detection: {bbox}")
+
+    # Check if already classified (from inflatable validation)
+    if person.get("costume_classification"):
+        classification = person["costume_classification"]
+        confidence = person["costume_confidence"]
+        description = person["costume_description"]
+        print(f"✅ Costume already classified: {classification} ({confidence:.2f})")
+    else:
+        # Extract person crop from ORIGINAL unblurred image for classification
+        person_crop = img[bbox["y1"]:bbox["y2"], bbox["x1"]:bbox["x2"]]
+
+        # Encode person crop to bytes (for Baseten)
+        _, buffer = cv2.imencode('.jpg', person_crop)
+        image_bytes = buffer.tobytes()
+
+        print("\n🎭 Classifying costume with Baseten...")
+
+        # Classify costume
+        try:
+            classification, confidence, description = baseten_client.classify_costume(
+                image_bytes
+            )
+
+            if classification:
+                print(f"✅ Classification successful!")
+                print(f"   Type:        {classification}")
+                print(f"   Confidence:  {confidence:.2f}")
+                print(f"   Description: {description}")
+            else:
+                print("❌ Classification failed - no results returned")
+                return None
+
+        except Exception as e:
+            print(f"❌ Baseten API error: {e}")
+            return None
 
     # Generate timestamp for this detection (Pacific time)
     timestamp = datetime.now(ZoneInfo("America/Los_Angeles"))
@@ -151,7 +160,7 @@ def process_test_image(
         success = supabase_client.save_detection(
             image_path=str(output_path),
             timestamp=timestamp,
-            confidence=0.94,  # High confidence from YOLO detection (simulated)
+            confidence=person["confidence"],  # YOLO detection confidence
             bounding_box=bbox,
             costume_classification=classification,
             costume_description=description,
@@ -214,6 +223,11 @@ def main():
         print(f"❌ Failed to initialize Supabase client: {e}")
         sys.exit(1)
 
+    # Load YOLO model
+    print("\n🤖 Loading YOLOv8n model...")
+    model = YOLO("yolov8n.pt")
+    print("✅ Model loaded!")
+
     # Find test images (all images with prefix "test-single-" for single-person detection)
     test_images_dir = Path("backend/tests/fixtures")
     if not test_images_dir.exists():
@@ -234,6 +248,7 @@ def main():
     for i, image_path in enumerate(test_images, 1):
         result = process_test_image(
             str(image_path),
+            model,
             baseten_client,
             supabase_client,
         )

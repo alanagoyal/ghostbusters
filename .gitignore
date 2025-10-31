@@ -34,12 +34,12 @@ build/
 
 # Test outputs
 backend/tests/test_detections/
-backend/tests/test_blurred_output/
 
 # Keep test images but ignore detection outputs
 *.jpg
 *.png
 !test_images/*.png
+!backend/tests/fixtures/*.png
 
 # Model files
 *.pt

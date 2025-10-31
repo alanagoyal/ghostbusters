@@ -3,6 +3,13 @@
 Person detection script using YOLOv8n on DoorBird RTSP stream.
 Detects people in real-time and saves frames with bounding boxes.
 Uploads detections to Supabase for dashboard display.
+
+DUAL-PASS DETECTION:
+- PASS 1: Detects standard people (YOLO class 0)
+- PASS 2: Detects potential inflatable costumes (YOLO classes 2, 14, 16, 17)
+  that may be misclassified by YOLO (e.g., T-Rex detected as "car")
+- Validates inflatable detections with Baseten costume classifier
+- Rejects detections that return "No costume" (filters out actual cars/objects)
 """
 
 import os
@@ -16,6 +23,11 @@ from ultralytics import YOLO
 
 from backend.src.clients.baseten_client import BasetenClient
 from backend.src.clients.supabase_client import SupabaseClient
+from backend.src.costume_detector import (
+    INFLATABLE_CLASSES,
+    PERSON_CLASS,
+    detect_people_and_costumes,
+)
 from backend.src.utils.face_blur import FaceBlurrer
 
 # Load environment variables
@@ -79,6 +91,7 @@ ROI_Y_MIN = 0.0   # Start at top of frame
 ROI_Y_MAX = 1.0   # Bottom edge (100%)
 
 print(f"🎯 Detection: {CONSECUTIVE_FRAMES_REQUIRED} consecutive frames at >{CONFIDENCE_THRESHOLD} confidence")
+print(f"🎈 Dual-pass: Standard people (class 0) + inflatable costumes (classes 2, 14, 16, 17)")
 print(f"📍 ROI: Doorstep area only (x: {ROI_X_MIN}-{ROI_X_MAX}, y: {ROI_Y_MIN}-{ROI_Y_MAX})")
 print(f"⏱️  Cooldown: {CAPTURE_COOLDOWN}s between captures")
 
@@ -188,15 +201,19 @@ try:
         # Get frame dimensions for ROI checking
         frame_height, frame_width = frame.shape[:2]
 
-        # Check for person detections with high confidence in the ROI (class 0 in COCO dataset)
+        # DUAL-PASS DETECTION: Check for people OR potential inflatable costumes in ROI
+        # PASS 1: Standard person detection (class 0)
+        # PASS 2: Potential inflatable costumes (classes 2, 14, 16, 17)
         people_detected = False
         for result in results:
             boxes = result.boxes
             for box in boxes:
-                if int(box.cls[0]) == 0:  # person class
+                cls = int(box.cls[0])
+                # Check both standard people and potential inflatables
+                if cls == PERSON_CLASS or cls in INFLATABLE_CLASSES:
                     confidence = float(box.conf[0])
                     if confidence > CONFIDENCE_THRESHOLD:
-                        # Check if person is in the doorstep ROI
+                        # Check if detection is in the doorstep ROI
                         bbox = box.xyxy[0].tolist()
                         if is_in_roi(bbox, frame_width, frame_height):
                             people_detected = True
@@ -232,26 +249,25 @@ try:
                 timestamp_str = detection_timestamp.strftime("%Y%m%d_%H%M%S")
                 filename = f"detection_{timestamp_str}.jpg"
 
-                # Collect ALL person detections in ROI (not just the highest confidence)
-                detected_people = []
-                for result in results:
-                    boxes = result.boxes
-                    for box in boxes:
-                        if int(box.cls[0]) == 0:  # person class
-                            conf = float(box.conf[0])
-                            if conf > CONFIDENCE_THRESHOLD:
-                                x1, y1, x2, y2 = map(int, box.xyxy[0])
-                                # Only include people in the doorstep ROI
-                                if is_in_roi([x1, y1, x2, y2], frame_width, frame_height):
-                                    detected_people.append({
-                                        "confidence": conf,
-                                        "bounding_box": {
-                                            "x1": x1,
-                                            "y1": y1,
-                                            "x2": x2,
-                                            "y2": y2,
-                                        }
-                                    })
+                # DUAL-PASS DETECTION: Collect ALL detections using shared detector
+                all_detections = detect_people_and_costumes(
+                    frame,
+                    model,
+                    baseten_client,
+                    confidence_threshold=CONFIDENCE_THRESHOLD,
+                    verbose=True,
+                )
+
+                # Filter detections to only include those in the doorstep ROI
+                detected_people = [
+                    person for person in all_detections
+                    if is_in_roi(
+                        [person["bounding_box"]["x1"], person["bounding_box"]["y1"],
+                         person["bounding_box"]["x2"], person["bounding_box"]["y2"]],
+                        frame_width,
+                        frame_height
+                    )
+                ]
 
                 num_people = len(detected_people)
                 print(f"👤 {num_people} person(s) detected! (Detection #{detection_count})")
@@ -264,12 +280,19 @@ try:
                 print()
 
                 # Process each detected person separately for costume classification (on UNBLURRED frame)
+                # Note: Validated inflatables already have costume data from validation step
                 for person_idx, person in enumerate(detected_people, start=1):
                     person_conf = person["confidence"]
                     person_box = person["bounding_box"]
+                    detection_type = person.get("detection_type", "person")
 
                     if num_people > 1:
-                        print(f"   Processing person {person_idx}/{num_people} (confidence: {person_conf:.2f})")
+                        print(f"   Processing {detection_type} {person_idx}/{num_people} (confidence: {person_conf:.2f})")
+
+                    # Skip costume classification if already done during inflatable validation
+                    if person.get("costume_classification"):
+                        print(f"   ✓ Costume already classified: {person['costume_classification']}")
+                        continue
 
                     # Classify costume using Baseten if configured (using original unblurred frame)
                     costume_classification = None
