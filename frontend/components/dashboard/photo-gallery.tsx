@@ -2,7 +2,13 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Camera } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -76,13 +82,8 @@ export function PhotoGallery() {
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="flex items-center gap-2">
-              <Camera className="h-5 w-5" />
-              Photo Gallery
-            </CardTitle>
-            <CardDescription>
-              Detected visitors gallery
-            </CardDescription>
+            <CardTitle>Photo Gallery</CardTitle>
+            <CardDescription>Detected visitors gallery</CardDescription>
           </div>
           <Badge variant="outline">{detections.length} photos</Badge>
         </div>
@@ -96,7 +97,9 @@ export function PhotoGallery() {
                 className="relative aspect-[3/4] group overflow-hidden border border-border flex-shrink-0"
                 style={{
                   width: "180px",
-                  animation: `slideInFromBottom 0.6s ease-out ${index * 50}ms backwards`,
+                  animation: `slideInFromBottom 0.6s ease-out ${
+                    index * 50
+                  }ms backwards`,
                 }}
                 onMouseEnter={() => setHoveredId(detection.id)}
                 onMouseLeave={() => setHoveredId(null)}
