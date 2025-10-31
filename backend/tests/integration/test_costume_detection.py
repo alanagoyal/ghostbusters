@@ -8,6 +8,7 @@ import os
 import sys
 from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import cv2
 from dotenv import load_dotenv
@@ -107,8 +108,8 @@ def process_test_image(
         print(f"❌ Baseten API error: {e}")
         return None
 
-    # Generate timestamp for this detection
-    timestamp = datetime.now()
+    # Generate timestamp for this detection (Pacific time)
+    timestamp = datetime.now(ZoneInfo("America/Los_Angeles"))
 
     # Save processed image locally
     output_dir = Path("backend/tests/test_detections")
@@ -139,18 +140,6 @@ def process_test_image(
         (x2, y2),
         (0, 255, 0),
         3
-    )
-
-    # Add label
-    label_text = f"{classification} ({confidence:.2f})"
-    cv2.putText(
-        blurred_img,
-        label_text,
-        (x1, y1 - 10),
-        cv2.FONT_HERSHEY_SIMPLEX,
-        1.0,
-        (0, 255, 0),
-        2,
     )
 
     cv2.imwrite(str(output_path), blurred_img)
@@ -225,22 +214,17 @@ def main():
         print(f"❌ Failed to initialize Supabase client: {e}")
         sys.exit(1)
 
-    # Find test images (only test-1.png through test-5.png for single-person detection)
+    # Find test images (all images with prefix "test-single-" for single-person detection)
     test_images_dir = Path("backend/tests/fixtures")
     if not test_images_dir.exists():
         print(f"❌ ERROR: {test_images_dir} directory not found")
         sys.exit(1)
 
-    test_images = [
-        test_images_dir / f"test-{i}.png"
-        for i in range(1, 6)  # test-1 through test-5
-    ]
-
-    # Filter to only existing files
-    test_images = [img for img in test_images if img.exists()]
+    # Find all images with "test-single-" prefix
+    test_images = sorted(test_images_dir.glob("test-single-*"))
 
     if not test_images:
-        print(f"❌ ERROR: No test images (test-1 through test-5) found in {test_images_dir}")
+        print(f"❌ ERROR: No test images with prefix 'test-single-' found in {test_images_dir}")
         sys.exit(1)
 
     print(f"\n📸 Found {len(test_images)} test images")
