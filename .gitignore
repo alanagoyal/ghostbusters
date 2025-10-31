@@ -40,6 +40,7 @@ backend/tests/test_blurred_output/
 *.jpg
 *.png
 !test_images/*.png
+!backend/tests/fixtures/*.png
 
 # Model files
 *.pt
