@@ -90,7 +90,7 @@ class BasetenClient:
             # Default prompt optimized for Halloween costume classification
             prompt = custom_prompt or (
                 "Analyze this Halloween costume and respond with ONLY a JSON object in this exact format:\n"
-                '{"classification": "costume_type", "confidence": 0.95, "description": "detailed description"}\n\n'
+                '{"classification": "costume_type", "confidence": 0.95, "description": "costume label"}\n\n'
                 "Preferred categories:\n"
                 "- witch, vampire, zombie, skeleton, ghost\n"
                 "- superhero, princess, pirate, ninja, clown, monster\n"
@@ -101,7 +101,7 @@ class BasetenClient:
                 "Rules:\n"
                 "- classification: Try to use one of the preferred categories above, or be specific (e.g., 'Spiderman', 'tiger')\n"
                 "- confidence: Your confidence score between 0.0 and 1.0\n"
-                "- description: A detailed one-sentence description of the costume\n"
+                "- description: A short costume-focused label describing the costume itself (e.g., 'An astronaut with a space helmet', 'A pop-star holding a microphone', 'A witch with a pointed hat'). Focus on the costume elements, not descriptive analysis. If no costume is visible, use 'No costume' instead of describing clothing.\n"
                 "- Output ONLY the JSON object, nothing else"
             )
 
