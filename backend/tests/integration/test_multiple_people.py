@@ -160,25 +160,13 @@ def process_multi_person_image(
             blurred_frame[y1:y2, x1:x2] = blurred_person
             num_people_blurred += 1
 
-    # Draw bounding boxes and labels on the blurred frame
+    # Draw bounding boxes on the blurred frame
     for idx, person in enumerate(detected_people, start=1):
         bbox = person["bounding_box"]
         x1, y1, x2, y2 = bbox["x1"], bbox["y1"], bbox["x2"], bbox["y2"]
 
         # Draw bounding box
         cv2.rectangle(blurred_frame, (x1, y1), (x2, y2), (0, 255, 0), 3)
-
-        # Add person number label
-        label = f"Person {idx} ({person['confidence']:.2f})"
-        cv2.putText(
-            blurred_frame,
-            label,
-            (x1, y1 - 10),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.9,
-            (0, 255, 0),
-            2,
-        )
 
     cv2.imwrite(str(frame_path), blurred_frame)
     print(f"💾 Saved blurred frame with all detections: {frame_path}")
@@ -259,22 +247,17 @@ def main():
     model = YOLO("yolov8n.pt")
     print("✅ Model loaded!")
 
-    # Find test images (only test-6.png and test-7.png for multi-person detection)
+    # Find test images (all images with prefix "test-multiple-" for multi-person detection)
     test_images_dir = Path("backend/tests/fixtures")
     if not test_images_dir.exists():
         print(f"❌ ERROR: {test_images_dir} directory not found")
         sys.exit(1)
 
-    test_images = [
-        test_images_dir / "test-6.png",
-        test_images_dir / "test-7.png",
-    ]
-
-    # Filter to only existing files
-    test_images = [img for img in test_images if img.exists()]
+    # Find all images with "test-multiple-" prefix
+    test_images = sorted(test_images_dir.glob("test-multiple-*"))
 
     if not test_images:
-        print(f"❌ ERROR: test-6.png and test-7.png not found in {test_images_dir}")
+        print(f"❌ ERROR: No test images with prefix 'test-multiple-' found in {test_images_dir}")
         sys.exit(1)
 
     print(f"\n📸 Found {len(test_images)} test images")
