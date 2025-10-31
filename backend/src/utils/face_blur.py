@@ -66,20 +66,33 @@ class FaceBlurrer:
         # Combine all face detections and remove duplicates
         all_faces = list(faces_frontal) + list(faces_profile)
 
-        # Remove overlapping detections (keep larger bounding box)
+        # Remove overlapping detections using Intersection over Union (IoU)
         unique_faces = []
         for (x, y, w, h) in all_faces:
             is_duplicate = False
             for i, (ux, uy, uw, uh) in enumerate(unique_faces):
-                # Calculate overlap
-                x_overlap = max(0, min(x + w, ux + uw) - max(x, ux))
-                y_overlap = max(0, min(y + h, uy + uh) - max(y, uy))
-                overlap_area = x_overlap * y_overlap
+                # Calculate intersection
+                x1_inter = max(x, ux)
+                y1_inter = max(y, uy)
+                x2_inter = min(x + w, ux + uw)
+                y2_inter = min(y + h, uy + uh)
+
+                # Calculate intersection area
+                if x2_inter > x1_inter and y2_inter > y1_inter:
+                    intersection = (x2_inter - x1_inter) * (y2_inter - y1_inter)
+                else:
+                    intersection = 0
+
+                # Calculate union area
                 area1 = w * h
                 area2 = uw * uh
+                union = area1 + area2 - intersection
 
-                # If more than 30% overlap, consider it a duplicate
-                if overlap_area > 0.3 * min(area1, area2):
+                # Calculate IoU (Intersection over Union)
+                iou = intersection / union if union > 0 else 0
+
+                # If IoU > 0.3, consider it a duplicate (same face detected by different classifiers)
+                if iou > 0.3:
                     is_duplicate = True
                     # Keep the larger detection
                     if area1 > area2:
