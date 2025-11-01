@@ -10,21 +10,9 @@ import { ActivityTimeline } from "@/components/dashboard/activity-timeline";
 import { LiveFeed } from "@/components/dashboard/live-feed";
 import { ConfidenceMeter } from "@/components/dashboard/confidence-meter";
 import { PhotoGallery } from "@/components/dashboard/photo-gallery";
+import { About } from "@/components/dashboard/about";
 
 const DASHBOARD_TITLE = "Ghostbusters";
-const linkClassName = "relative text-muted-foreground font-medium after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-0 after:bg-muted-foreground after:transition-all after:duration-300 hover:after:w-full";
-
-const DASHBOARD_DESCRIPTION = (
-  <>
-    This is a live feed from my front door in Noe Valley that identifies the costumes of trick-or-treaters in real time. The video stream is sent over{' '}
-    <a href="https://en.wikipedia.org/wiki/Real_Streaming_Protocol" target="_blank" rel="noopener noreferrer" className={linkClassName}>RTSP</a> to a{' '}
-    <a href="https://www.raspberrypi.org/" target="_blank" rel="noopener noreferrer" className={linkClassName}>Raspberry Pi</a>, which runs{' '}
-    <a href="https://github.com/ultralytics/ultralytics" target="_blank" rel="noopener noreferrer" className={linkClassName}>YOLOv8</a> to detect people. The frames are then classified for costumes using{' '}
-    <a href="https://baseten.co/" target="_blank" rel="noopener noreferrer" className={linkClassName}>Baseten</a>, the detections are stored in{' '}
-    <a href="https://supabase.com/" target="_blank" rel="noopener noreferrer" className={linkClassName}>Supabase</a> using real-time listeners, and this dashboard displays the results as they happen. It's fully open-source and available on{' '}
-    <a href="https://github.com/alanagoyal/costume-classifier" target="_blank" rel="noopener noreferrer" className={linkClassName}>GitHub</a>.
-  </>
-);
 
 interface PersonDetection {
   id: string;
@@ -136,10 +124,10 @@ export function DashboardClient({ initialDetections }: DashboardClientProps) {
   return (
     <div className="min-h-screen bg-background pt-10 sm:pt-20">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 pb-6 space-y-6">
-        <div className="space-y-3 sm:space-y-4">
+        <div className="mb-8">
           <div className="flex items-center justify-between gap-4">
             <h1
-              className="text-4xl sm:text-5xl font-bold tracking-tight bg-gradient-to-r from-zinc-100 via-white to-zinc-100 text-zinc-900 px-6 py-3 shadow-lg relative overflow-hidden w-fit title-banner cursor-default"
+              className="text-4xl sm:text-5xl font-bold tracking-tight bg-gradient-to-r from-zinc-100 via-white to-zinc-100 text-zinc-900 px-6 py-6 shadow-lg relative overflow-hidden w-fit title-banner cursor-default"
               style={{
                 boxShadow: '0 4px 12px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.5)',
               }}
@@ -190,9 +178,6 @@ export function DashboardClient({ initialDetections }: DashboardClientProps) {
               <span className="text-sm font-medium text-green-600">LIVE</span>
             </div>
           </div>
-          <p className="text-sm sm:text-base text-muted-foreground max-w-4xl">
-            {DASHBOARD_DESCRIPTION}
-          </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -226,6 +211,10 @@ export function DashboardClient({ initialDetections }: DashboardClientProps) {
           <ConfidenceMeter detections={detections} />
         </div>
 
+        <div className="mt-6">
+          <PhotoGallery />
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <div className="lg:col-span-2">
             <CostumeDistribution costumes={costumeStats.costumes} />
@@ -240,7 +229,7 @@ export function DashboardClient({ initialDetections }: DashboardClientProps) {
         </div>
 
         <div className="mt-6">
-          <PhotoGallery />
+          <About />
         </div>
       </div>
     </div>
