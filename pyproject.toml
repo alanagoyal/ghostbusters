@@ -1,5 +1,5 @@
 [project]
-name = "costume-classifier"
+name = "ghostbusters"
 version = "0.1.0"
 description = "Doorstep costume classifier - Raspberry Pi edge computer vision system for Halloween"
 requires-python = ">=3.10"

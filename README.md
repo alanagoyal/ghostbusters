@@ -16,7 +16,7 @@ Raspberry Pi edge computer vision system that watches a DoorBird doorbell camera
 ## 📁 Project Structure
 
 ```
-costume-classifier/
+ghostbusters/
 ├── backend/                    # Python ML backend
 │   ├── src/
 │   │   └── clients/           # External service clients
@@ -52,8 +52,8 @@ costume-classifier/
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/alanagoyal/costume-classifier.git
-   cd costume-classifier
+   git clone https://github.com/alanagoyal/ghostbusters.git
+   cd ghostbusters
    ```
 
 2. **Install uv (if not already installed):**
@@ -196,7 +196,7 @@ For long-running detection (6+ hours), the system includes production-ready feat
 
 ```bash
 ssh pi@halloween-pi
-cd ~/projects/costume-classifier
+cd ~/projects/ghostbusters
 uv run backend/scripts/main.py
 ```
 
@@ -213,7 +213,7 @@ Press `Ctrl+C` to stop.
 **Setup (one-time):**
 ```bash
 ssh pi@halloween-pi
-cd ~/projects/costume-classifier
+cd ~/projects/ghostbusters
 sudo ./setup-service.sh
 ```
 

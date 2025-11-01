@@ -201,8 +201,8 @@ uv --version  # 0.9.5
 ```bash
 mkdir -p ~/projects
 cd ~/projects
-git clone https://github.com/alanagoyal/costume-classifier.git
-cd costume-classifier
+git clone https://github.com/alanagoyal/ghostbusters.git
+cd ghostbusters
 ```
 
 **Environment configuration:**
@@ -842,7 +842,7 @@ Current pipeline (end-to-end):
 
 **Created new Next.js project:**
 ```bash
-cd costume-classifier
+cd ghostbusters
 mkdir dashboard
 cd dashboard
 npm init -y
@@ -1619,7 +1619,7 @@ After implementing all the core features (YOLO detection, Baseten classification
 ### New Structure
 
 ```
-costume-classifier/
+ghostbusters/
 ├── backend/                    # Python ML backend
 │   ├── src/
 │   │   └── clients/           # External service clients
@@ -2199,7 +2199,7 @@ From this you can tell:
 [Service]
 Type=simple
 User=pi
-WorkingDirectory=/home/pi/projects/costume-classifier
+WorkingDirectory=/home/pi/projects/ghostbusters
 Environment="PATH=/home/pi/.local/bin:/usr/local/sbin:..."
 Environment="PYTHONUNBUFFERED=1"
 ExecStart=/home/pi/.local/bin/uv run backend/scripts/main.py

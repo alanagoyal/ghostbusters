@@ -374,35 +374,6 @@ wheels = [
 ]
 
 [[package]]
-name = "costume-classifier"
-version = "0.1.0"
-source = { editable = "." }
-dependencies = [
-    { name = "opencv-python" },
-    { name = "python-dotenv" },
-    { name = "requests" },
-    { name = "supabase" },
-    { name = "ultralytics" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "ruff" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "opencv-python", specifier = ">=4.12.0.88" },
-    { name = "python-dotenv", specifier = ">=1.1.1" },
-    { name = "requests", specifier = ">=2.31.0" },
-    { name = "supabase", specifier = ">=2.12.0" },
-    { name = "ultralytics", specifier = ">=8.3.63" },
-]
-
-[package.metadata.requires-dev]
-dev = [{ name = "ruff", specifier = ">=0.14.2" }]
-
-[[package]]
 name = "cryptography"
 version = "46.0.3"
 source = { registry = "https://pypi.org/simple" }
@@ -574,6 +545,35 @@ sdist = { url = "https://files.pythonhosted.org/packages/de/e0/bab50af11c2d75c9c
 wheels = [
     { url = "https://files.pythonhosted.org/packages/47/71/70db47e4f6ce3e5c37a607355f80da8860a33226be640226ac52cb05ef2e/fsspec-2025.9.0-py3-none-any.whl", hash = "sha256:530dc2a2af60a414a832059574df4a6e10cce927f6f4a78209390fe38955cfb7", size = 199289, upload-time = "2025-09-02T19:10:47.708Z" },
 ]
+
+[[package]]
+name = "ghostbusters"
+version = "0.1.0"
+source = { editable = "." }
+dependencies = [
+    { name = "opencv-python" },
+    { name = "python-dotenv" },
+    { name = "requests" },
+    { name = "supabase" },
+    { name = "ultralytics" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "ruff" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "opencv-python", specifier = ">=4.12.0.88" },
+    { name = "python-dotenv", specifier = ">=1.1.1" },
+    { name = "requests", specifier = ">=2.31.0" },
+    { name = "supabase", specifier = ">=2.12.0" },
+    { name = "ultralytics", specifier = ">=8.3.63" },
+]
+
+[package.metadata.requires-dev]
+dev = [{ name = "ruff", specifier = ">=0.14.2" }]
 
 [[package]]
 name = "h11"
