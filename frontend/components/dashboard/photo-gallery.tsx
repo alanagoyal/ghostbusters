@@ -36,8 +36,7 @@ export function PhotoGallery() {
         .from("person_detections")
         .select("*")
         .not("image_url", "is", null)
-        .order("timestamp", { ascending: false })
-        .limit(24);
+        .order("timestamp", { ascending: false });
 
       if (data && !error) {
         setDetections(data);
@@ -60,7 +59,7 @@ export function PhotoGallery() {
         (payload) => {
           const newDetection = payload.new as PersonDetection;
           if (newDetection.image_url) {
-            setDetections((prev) => [newDetection, ...prev].slice(0, 24));
+            setDetections((prev) => [newDetection, ...prev]);
           }
         }
       )
@@ -103,7 +102,7 @@ export function PhotoGallery() {
       <CardContent>
         <div
           ref={scrollContainerRef}
-          className="overflow-x-auto overflow-y-hidden py-4"
+          className="overflow-x-auto overflow-y-hidden py-4 h-[310px]"
         >
           <div className="flex gap-6 px-2">
             {[...detections].reverse().map((detection, index) => {
