@@ -89,7 +89,7 @@
 - [ ] `docs/DOORBIRD_SETUP.md` exists
 - [ ] `docs/SUPABASE_SETUP.md` exists
 - [ ] `docs/PROJECT_SPEC.md` exists
-- [ ] `docs/BLOG_NOTES.md` exists
+- [ ] `docs/IMPLEMENTATION_NOTES.md` exists
 
 ### README Links
 - [ ] All documentation links in README work
