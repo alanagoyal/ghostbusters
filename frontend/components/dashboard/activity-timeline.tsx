@@ -55,22 +55,27 @@ export function ActivityTimeline({ detections }: ActivityTimelineProps) {
       ? Math.floor((containerWidth - Y_AXIS_WIDTH_PX) / SLOT_WIDTH_PX)
       : 8
 
-    // End time is always current time, rounded up to nearest 15 minutes
-    const endTime = new Date(now)
-    endTime.setMinutes(Math.ceil(endTime.getMinutes() / 15) * 15, 0, 0)
-
-    // Determine start time
+    // Determine start and end time based on detections
     let startTime: Date
+    let endTime: Date
+
     if (detections.length === 0) {
-      // If no detections, go back enough to fill the visible area
+      // If no detections, default to current time
+      endTime = new Date(now)
+      endTime.setMinutes(Math.ceil(endTime.getMinutes() / 15) * 15, 0, 0)
       startTime = new Date(endTime.getTime() - visibleSlots * SLOT_DURATION_MS)
     } else {
-      // Use earliest detection time
+      // Use earliest and latest detection times
       const timestamps = detections.map(d => new Date(d.timestamp).getTime())
       const earliest = Math.min(...timestamps)
-      startTime = new Date(earliest)
+      const latest = Math.max(...timestamps)
 
-      // Round start time down to nearest 15 minutes
+      // Set end time to latest detection, rounded up to nearest 15 minutes
+      endTime = new Date(latest)
+      endTime.setMinutes(Math.ceil(endTime.getMinutes() / 15) * 15, 0, 0)
+
+      // Set start time to earliest detection, rounded down to nearest 15 minutes
+      startTime = new Date(earliest)
       startTime.setMinutes(Math.floor(startTime.getMinutes() / 15) * 15, 0, 0)
 
       // Ensure we have enough slots to fill the visible area
