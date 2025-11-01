@@ -139,7 +139,7 @@ export function DashboardClient({ initialDetections }: DashboardClientProps) {
         <div className="space-y-3 sm:space-y-4">
           <div className="flex items-center justify-between gap-4">
             <h1
-              className="text-4xl sm:text-5xl font-bold tracking-tight bg-gradient-to-r from-zinc-100 via-white to-zinc-100 text-zinc-900 px-10 py-5 shadow-lg relative overflow-hidden max-w-xl title-banner cursor-default"
+              className="text-4xl sm:text-5xl font-bold tracking-tight bg-gradient-to-r from-zinc-100 via-white to-zinc-100 text-zinc-900 px-6 py-3 shadow-lg relative overflow-hidden w-fit title-banner cursor-default"
               style={{
                 boxShadow: '0 4px 12px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.5)',
               }}
