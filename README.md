@@ -36,7 +36,7 @@ costume-classifier/
 │   ├── DOORBIRD_SETUP.md     # Camera configuration
 │   ├── SUPABASE_SETUP.md     # Database setup
 │   ├── PROJECT_SPEC.md       # System architecture
-│   └── BLOG_NOTES.md         # Implementation notes
+│   └── IMPLEMENTATION_NOTES.md         # Implementation notes
 └── Configuration files         # Root configs (pyproject.toml, etc.)
 ```
 
@@ -326,7 +326,7 @@ sudo systemctl disable costume-detector  # Prevents auto-start on boot
 - [DoorBird Setup Guide](docs/DOORBIRD_SETUP.md) - Camera configuration and RTSP setup
 - [Supabase Setup Guide](docs/SUPABASE_SETUP.md) - Database and storage configuration
 - [Project Specification](docs/PROJECT_SPEC.md) - Complete system architecture
-- [Blog Notes](docs/BLOG_NOTES.md) - Implementation journey and decisions
+- [Implementation Notes](docs/IMPLEMENTATION_NOTES.md) - Implementation journey and decisions
 
 ## 📊 Dashboard
 
