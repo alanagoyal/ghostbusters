@@ -80,7 +80,7 @@ print("✅ Face blurrer initialized (privacy protection enabled)")
 # Detection parameters
 CONFIDENCE_THRESHOLD = 0.7  # Minimum confidence for person detection
 CONSECUTIVE_FRAMES_REQUIRED = 2  # Number of consecutive detections before capture
-CAPTURE_COOLDOWN = 60  # Seconds to wait before next capture
+CAPTURE_COOLDOWN = 30  # Seconds to wait before next capture
 
 # Region of Interest (ROI) - only detect people in doorstep area
 # Coordinates are normalized (0.0 to 1.0) relative to frame dimensions
