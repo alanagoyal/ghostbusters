@@ -39,7 +39,6 @@ backend/tests/test_detections/
 *.jpg
 *.png
 !test_images/*.png
-!backend/tests/fixtures/*.png
 
 # Model files
 *.pt
