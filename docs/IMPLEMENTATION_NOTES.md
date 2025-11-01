@@ -1639,7 +1639,7 @@ costume-classifier/
 │   ├── DOORBIRD_SETUP.md
 │   ├── SUPABASE_SETUP.md
 │   ├── PROJECT_SPEC.md
-│   └── BLOG_NOTES.md
+│   └── IMPLEMENTATION_NOTES.md
 └── Root configs                # Only config files at root
     ├── pyproject.toml
     ├── .env.example
