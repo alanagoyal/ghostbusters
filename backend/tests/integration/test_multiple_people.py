@@ -247,17 +247,17 @@ def main():
     model = YOLO("yolov8n.pt")
     print("✅ Model loaded!")
 
-    # Find test images (all images with prefix "test-multiple-" for multi-person detection)
-    test_images_dir = Path("backend/tests/fixtures")
+    # Find test images (all images in multiple/ folder for multi-person detection)
+    test_images_dir = Path("backend/tests/fixtures/multiple")
     if not test_images_dir.exists():
         print(f"❌ ERROR: {test_images_dir} directory not found")
         sys.exit(1)
 
-    # Find all images with "test-multiple-" prefix
-    test_images = sorted(test_images_dir.glob("test-multiple-*"))
+    # Find all images in multiple/ folder
+    test_images = sorted(test_images_dir.glob("*"))
 
     if not test_images:
-        print(f"❌ ERROR: No test images with prefix 'test-multiple-' found in {test_images_dir}")
+        print(f"❌ ERROR: No test images found in {test_images_dir}")
         sys.exit(1)
 
     print(f"\n📸 Found {len(test_images)} test images")
