@@ -2,29 +2,31 @@
 
 This directory contains sample Halloween costume images for testing the Baseten costume classification system and multi-person detection.
 
-## Images
+## Image Organization
 
-### Single Person Images (prefix: `test-single-`)
+Test images are organized into three subdirectories based on their testing purpose:
+
+### Single Person Images (`single/`)
 
 Images containing one person for single-person detection testing:
 
-- Example: `test-single-1.png`, `test-single-2.png`, etc.
+- Location: `backend/tests/fixtures/single/`
 - These images should feature one person in a Halloween costume
 - Used to test basic costume classification
 
-### Multi-Person Images (prefix: `test-multiple-`)
+### Multi-Person Images (`multiple/`)
 
 Images containing multiple people for multi-person detection testing:
 
-- Example: `test-multiple-1.png`, `test-multiple-2.png`, etc.
+- Location: `backend/tests/fixtures/multiple/`
 - These images should feature 2 or more people in Halloween costumes
 - Used to test YOLO detection and separate classification for each person
 
-### Non-Human Costume Images (prefix: `test-nonhuman-`)
+### Non-Human Costume Images (`nonhuman/`)
 
 Images containing inflatable or non-human-shaped costumes for dual-pass detection testing:
 
-- Example: `test-nonhuman-costume.png`
+- Location: `backend/tests/fixtures/nonhuman/`
 - These images should feature people in bulky inflatable costumes (T-Rex, dinosaurs, etc.)
 - Used to test dual-pass YOLO detection that validates non-person classes as costumes
 - Tests the validation logic that filters out false positives (actual cars/objects)
@@ -40,28 +42,28 @@ Images containing inflatable or non-human-shaped costumes for dual-pass detectio
 
 ### Single Person Detection Test
 
-Run the original test script to process all images with `test-single-` prefix:
+Run the original test script to process all images in the `single/` folder:
 
 ```bash
 uv run test_costume_detection.py
 ```
 
 This will:
-1. Load all images matching `test-single-*` pattern
+1. Load all images from `backend/tests/fixtures/single/`
 2. Classify the costume using Baseten API
 3. Upload results to Supabase database
 4. Save annotated images to `backend/tests/test_detections/`
 
 ### Multi-Person Detection Test
 
-Run the multi-person test script to detect all people in each image with `test-multiple-` prefix:
+Run the multi-person test script to detect all people in each image in the `multiple/` folder:
 
 ```bash
 uv run test_multiple_people.py
 ```
 
 This will:
-1. Load all images matching `test-multiple-*` pattern
+1. Load all images from `backend/tests/fixtures/multiple/`
 2. Use YOLOv8n to detect ALL people in the frame
 3. Process each detected person separately
 4. Classify each person's costume using Baseten API
@@ -72,14 +74,14 @@ This will:
 
 ### Non-Human Costume Detection Test
 
-Run the non-human costume test script to test dual-pass detection for images with `test-nonhuman-` prefix:
+Run the non-human costume test script to test dual-pass detection for images in the `nonhuman/` folder:
 
 ```bash
 uv run test_nonhuman_costume.py
 ```
 
 This will:
-1. Load all images matching `test-nonhuman-*` pattern
+1. Load all images from `backend/tests/fixtures/nonhuman/`
 2. **PASS 1**: Detect standard people (YOLO class 0)
 3. **PASS 2**: Detect potential inflatable costumes (YOLO classes 2=car, 14=bird, 16=dog, 17=cat)
 4. Validate inflatable detections with Baseten costume classifier
@@ -130,11 +132,11 @@ When running `test_nonhuman_costume.py`:
 
 ## Notes
 
-- Images with `test-single-` prefix are for single-person detection testing
-- Images with `test-multiple-` prefix demonstrate multi-person scenarios (groups of trick-or-treaters)
-- Images with `test-nonhuman-` prefix test inflatable/bulky costumes that YOLO may misclassify
+- Images in `single/` folder are for single-person detection testing
+- Images in `multiple/` folder demonstrate multi-person scenarios (groups of trick-or-treaters)
+- Images in `nonhuman/` folder test inflatable/bulky costumes that YOLO may misclassify
 - YOLO runs on each frame to detect people and generate bounding boxes
 - Dual-pass detection validates non-person YOLO classes through costume classification
 - In production, the system processes all detected people separately
 - Images are used for development and testing only
-- Add new test images following the naming convention: `test-single-*.png`, `test-multiple-*.png`, or `test-nonhuman-*.png`
+- Add new test images by placing them in the appropriate folder: `single/`, `multiple/`, or `nonhuman/`
