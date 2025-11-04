@@ -210,7 +210,7 @@ def main():
     print("🎃 Multi-Person Detection Test")
     print("="*70)
     print("\nThis script will:")
-    print("1. Load test images from backend/tests/fixtures/")
+    print("1. Load test images from backend/tests/fixtures/multiple/")
     print("2. Detect ALL people using YOLOv8n")
     print("3. Classify each person's costume separately")
     print("4. Upload each detection as a separate database entry")

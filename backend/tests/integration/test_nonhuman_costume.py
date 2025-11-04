@@ -213,10 +213,11 @@ def main():
     print("🎃 Non-Human Costume Detection Test")
     print("="*70)
     print("\nThis script tests dual-pass detection for inflatable/non-human costumes:")
-    print("1. PASS 1: Detect standard people (YOLO class 0)")
-    print("2. PASS 2: Detect potential inflatable costumes (YOLO classes 2, 14, 16, 17)")
-    print("3. Validate inflatable detections with costume classifier")
-    print("4. Upload validated detections to Supabase")
+    print("1. Load test images from backend/tests/fixtures/nonhuman/")
+    print("2. PASS 1: Detect standard people (YOLO class 0)")
+    print("3. PASS 2: Detect potential inflatable costumes (YOLO classes 2, 14, 16, 17)")
+    print("4. Validate inflatable detections with costume classifier")
+    print("5. Upload validated detections to Supabase")
     print()
 
     # Check for required environment variables

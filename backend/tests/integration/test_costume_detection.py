@@ -190,7 +190,7 @@ def main():
     print("🎃 Halloween Costume Detection Test")
     print("="*70)
     print("\nThis script will:")
-    print("1. Load test images from test_images/")
+    print("1. Load test images from backend/tests/fixtures/single/")
     print("2. Classify costumes using Baseten API")
     print("3. Upload results to Supabase database")
     print("4. Save annotated images to backend/tests/test_detections/")
