@@ -2,7 +2,13 @@
 const nextConfig = {
   basePath: '/ghostbusters',
   images: {
-    domains: ['szsjlqaxcznegnjflogo.supabase.co'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'szsjlqaxcznegnjflogo.supabase.co',
+        pathname: '/storage/v1/object/public/**',
+      },
+    ],
   },
 };
 

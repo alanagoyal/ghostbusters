@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import Image from "next/image";
 import {
   Card,
@@ -13,6 +13,9 @@ import { Badge } from "@/components/ui/badge";
 import { Camera } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { toTitleCase } from "@/lib/string-utils";
+
+// Simple blur placeholder for loading state
+const shimmerPlaceholder = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTgwIiBoZWlnaHQ9IjI0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZTVlN2ViIi8+PC9zdmc+";
 
 interface PersonDetection {
   id: string;
@@ -108,6 +111,9 @@ export function PhotoGallery() {
             {[...detections].reverse().map((detection, index) => {
               // Alternate slight rotations for polaroid effect
               const rotation = index % 3 === 0 ? -2 : index % 3 === 1 ? 2 : 0;
+              // Priority load the last 5 images (most recent, shown on the right)
+              const totalImages = detections.length;
+              const isPriority = index >= totalImages - 5;
 
               return (
                 <div
@@ -136,6 +142,10 @@ export function PhotoGallery() {
                           fill
                           className="object-cover transition-transform duration-500 group-hover:scale-110"
                           sizes="180px"
+                          priority={isPriority}
+                          placeholder="blur"
+                          blurDataURL={shimmerPlaceholder}
+                          unoptimized
                         />
                       )}
                     </div>
