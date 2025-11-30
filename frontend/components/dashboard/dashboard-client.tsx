@@ -212,7 +212,7 @@ export function DashboardClient({ initialDetections }: DashboardClientProps) {
         </div>
 
         <div className="mt-6">
-          <PhotoGallery />
+          <PhotoGallery initialDetections={detections} />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
