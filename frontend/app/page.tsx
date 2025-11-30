@@ -1,7 +1,19 @@
 import { supabase } from "@/lib/supabase";
 import { DashboardClient } from "@/components/dashboard/dashboard-client";
 
-export const revalidate = 60; // Revalidate every 60 seconds
+// Cache for 5 minutes, revalidate in background
+export const revalidate = 300;
+
+// Preload link component for images
+function ImagePreloadLinks({ urls }: { urls: string[] }) {
+  return (
+    <>
+      {urls.map((url) => (
+        <link key={url} rel="preload" as="image" href={url} />
+      ))}
+    </>
+  );
+}
 
 interface PersonDetection {
   id: string;
@@ -43,5 +55,16 @@ async function getInitialDetections(): Promise<PersonDetection[]> {
 export default async function Dashboard() {
   const initialDetections = await getInitialDetections();
 
-  return <DashboardClient initialDetections={initialDetections} />;
+  // Get the 5 most recent image URLs for preloading (these will be visible first)
+  const preloadUrls = initialDetections
+    .filter((d) => d.image_url)
+    .slice(0, 5)
+    .map((d) => d.image_url as string);
+
+  return (
+    <>
+      <ImagePreloadLinks urls={preloadUrls} />
+      <DashboardClient initialDetections={initialDetections} />
+    </>
+  );
 }

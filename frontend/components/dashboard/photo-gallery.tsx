@@ -16,6 +16,16 @@ import { toTitleCase } from "@/lib/string-utils";
 // Simple blur placeholder for loading state
 const shimmerPlaceholder = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTgwIiBoZWlnaHQ9IjI0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZTVlN2ViIi8+PC9zdmc+";
 
+// Preload images into browser cache
+function useImagePreloader(urls: string[]) {
+  useEffect(() => {
+    urls.forEach((url) => {
+      const img = new window.Image();
+      img.src = url;
+    });
+  }, [urls]);
+}
+
 interface PersonDetection {
   id: string;
   timestamp: string;
@@ -37,6 +47,16 @@ export function PhotoGallery({ initialDetections }: PhotoGalleryProps) {
     [initialDetections]
   );
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // Preload visible images (last 10) into browser cache immediately
+  const imageUrlsToPreload = useMemo(() => {
+    return detectionsWithImages
+      .slice(0, 10)
+      .map((d) => d.image_url)
+      .filter((url): url is string => url !== null);
+  }, [detectionsWithImages]);
+
+  useImagePreloader(imageUrlsToPreload);
 
   // Auto-scroll to the right (most recent photos) whenever detections update
   useEffect(() => {
