@@ -1,12 +1,19 @@
 # Ghostbusters 👻
 
-Watch for trick-or-treaters, classify their costumes, and show detections on a live dashboard. Built for a Raspberry Pi 5 and DoorBird doorbell on Halloween 2025; now accepts a generic camera stream or USB webcam too.
+Ghostbusters is a small edge inference system to detect & classify trick-or-treaters at your front door. Originally built for Halloween 2025.
 
-YOLO detects people locally, Baseten names their costumes, and Supabase Storage and Realtime feed a live Next.js dashboard. The supported setup path uses all three.
+I built it with a Raspberry Pi and DoorBird doorbell. You can use a Mac or 64-bit Linux computer that runs Python 3.11, OpenCV, and PyTorch, with a USB webcam or an OpenCV-compatible local RTSP/HTTP camera stream. It needs access to the camera and an internet connection for Baseten and Supabase.
 
-## Get started
+YOLO detects people, [Baseten](https://app.baseten.co) classifies costumes, and [Supabase](https://supabase.com/dashboard) powers the live gallery.
 
-You need a camera with a local RTSP/HTTP stream or a USB webcam, a Mac or Linux computer (including a 64-bit Raspberry Pi), a [Baseten account](https://app.baseten.co), and a [Supabase project](https://supabase.com/dashboard). Install Python 3.11, [uv](https://docs.astral.sh/uv/getting-started/installation/), and Node.js 22 for the dashboard.
+## Setup
+
+You'll need:
+
+- A Mac, Linux computer, or 64-bit Raspberry Pi
+- A USB webcam or camera with a local RTSP/HTTP stream ([camera guide](docs/CAMERAS.md))
+- Python 3.11, [uv](https://docs.astral.sh/uv/getting-started/installation/), and Node.js 22
+- Baseten and Supabase accounts
 
 ```sh
 git clone https://github.com/alanagoyal/ghostbusters.git
@@ -15,15 +22,17 @@ uv sync --frozen --python 3.11
 uv run ghostbusters setup
 ```
 
-The wizard asks for your camera, Baseten API key, and Supabase URL and keys. It writes `.env` and `frontend/.env.local`, hides credential input, preserves unrelated settings, and rejects backend keys in browser configuration. Nothing starts during setup. For Baseten it offers the hosted vision Model API, so you don't have to provision a dedicated GPU. See [Baseten setup](docs/BASETEN_SETUP.md) for model access and custom endpoints.
+`setup` asks for your camera and API keys, then writes the backend and dashboard config. It uses [Baseten's hosted API](docs/BASETEN_SETUP.md); no dedicated GPU needed.
 
-**Create the Supabase tables and image bucket:** follow [Supabase setup](docs/SUPABASE_SETUP.md), including the SQL bootstrap and grants. The wizard does not provision accounts or run database SQL. This project uses a public gallery; choose a dedicated project you intend to use for it.
+Next, run the SQL and grants in the [Supabase guide](docs/SUPABASE_SETUP.md) to create the tables and image bucket. Then check your connections:
 
 ```sh
 uv run ghostbusters doctor
 ```
 
-Doctor checks a camera frame, one small billed Baseten vision request using a synthetic blank image, Supabase backend table access, the public storage bucket, and dashboard read access. It saves no camera image or database record. Each failure includes the relevant next step. It does not prove uploads or Realtime delivery; finish with a real walk-through.
+This checks the camera, Baseten, and Supabase. It makes one small billed inference request using a blank image; it doesn't save or upload camera footage.
+
+## Run it
 
 Start the dashboard in a separate terminal:
 
@@ -33,56 +42,46 @@ npm ci
 npm run dev
 ```
 
-Open `http://localhost:3000/ghostbusters`. Setup already created its environment file. See [dashboard hosting](frontend/SETUP.md) to deploy it; set `NEXT_PUBLIC_BASE_PATH=` before building to serve `/` instead.
+Open [localhost:3000/ghostbusters](http://localhost:3000/ghostbusters). To publish it, follow the [hosting guide](frontend/SETUP.md).
 
-Start capture from the repository root:
+From the repo root:
 
 ```sh
+# Linux only: install the service once
+sudo ./setup-service.sh
+
+# Start capture
 uv run ghostbusters start
 uv run ghostbusters status
-# When Halloween is over:
+
+# Done for the night
 uv run ghostbusters stop
 ```
 
-On macOS, `start` installs/enables a launch agent and starts capture, with automatic restart and startup at user login. On Linux, first run `sudo ./setup-service.sh` once; `start` enables/starts that systemd service. `stop` stops the service **and disables automatic startup** until the next `start`. These commands manage the detector, not the dashboard server or your cloud subscriptions. Keep the checkout in place after installation.
+`start` runs in the background and enables startup at login on Mac or boot on Linux. `stop` disables automatic startup too. These commands control capture, not the dashboard or cloud resources.
 
-For a terminal-only rehearsal use `uv run ghostbusters start --foreground` instead; Ctrl+C stops it. `status` and `stop` manage background services only. Do not run foreground and background capture together. Walk in view of the camera for several seconds, then confirm the photo and classification appear in the dashboard.
+Walk in front of the camera for several seconds and check that your photo and classification appear in the gallery. This verifies uploads and live updates beyond what `doctor` checks.
 
-See [command reference](docs/CLI.md), [camera setup](docs/CAMERAS.md), [macOS service details](docs/MACOS_SETUP.md), and [Pi deployment](docs/DEPLOYMENT.md).
+For a foreground run, use `uv run ghostbusters start --foreground` and stop with Ctrl+C. Don't run both modes at once. More: [commands](docs/CLI.md) · [Mac](docs/MACOS_SETUP.md) · [Pi/Linux](docs/DEPLOYMENT.md).
 
-The detector downloads YOLO weights on first use. It samples every 30 frames, requires two consecutive detections, and waits 30 seconds between captures. These are capture counts, not unique visitor counts. Low-frame-rate cameras take longer to trigger. Generic cameras use the full image; legacy DoorBird configuration defaults to the left 70%. Set normalized `ROI_*` bounds in `.env` to adjust the detection area.
+## Before Halloween
 
-## Images and privacy
+- **Framing:** set `ROI_*` in `.env` to choose the detection area. Saved images still include the full frame.
+- **Timing:** detection requires two samples, taken every 30 frames, with a 30-second capture cooldown. Counts aren't unique visitors.
+- **Images:** Baseten receives unblurred person crops. The gallery is public. Saved photos blur detected people, but may still show bystanders or missed detections.
+- **Storage:** failed uploads stay on disk. There's no automatic retry or retention policy.
+- **Credentials:** keep backend keys out of the frontend and redact logs before sharing. Cloud usage may incur charges.
 
-When configured, Baseten receives **unblurred person crops**, including crops of possible inflatable costumes. Local saved images and Supabase images blur the detected person's region, but this is not guaranteed anonymization: missed detections and bystanders can remain visible. The existing dashboard/storage design publishes images. Review your framing and sharing settings before running it around visitors.
-
-Successful uploads remove the local image only after all corresponding records are saved. Failed uploads and local-only captures remain on disk; there is no automatic retry queue or retention policy. Monitor disk usage and delete captures when no longer needed. The camera check reads a frame in memory only, though native camera libraries can include connection details in their error messages; redact logs before sharing.
-
-## Run on a Raspberry Pi
-
-See [deployment and recovery](docs/DEPLOYMENT.md) for SSH checks, systemd installation, logs, and a Halloween rehearsal. Install OpenCV runtime libraries on Raspberry Pi OS if needed:
+## Development
 
 ```sh
-sudo apt update
-sudo apt install -y libgl1 libglib2.0-0 ffmpeg
-```
-
-## Development and tests
-
-```sh
-uv sync --frozen --python 3.11
 uv run python -m unittest discover -s backend/tests/unit -v
-uv run ruff check backend/src/camera.py backend/scripts/check_camera.py backend/tests/unit
 ```
 
-Offline tests use mocks; they do not require a camera, cloud keys, or model weights. The scripts under `backend/tests/integration/` are **manual live checks**, not an offline test suite. Some incur inference charges and write images/rows to the configured database. Use a separate test project and review each script before running it. Fixture images are not bundled; provide your own consented images in the documented fixture folders. To check only Baseten connectivity:
+Unit tests run offline. Integration scripts use live services and may incur charges or create records; use a test project.
 
-```sh
-uv run python -m backend.tests.integration.test_baseten_connection
-```
-
-See [CONTRIBUTING.md](CONTRIBUTING.md), [security reporting](SECURITY.md), and the [roadmap](docs/ROADMAP.md). The [original specification](docs/PROJECT_SPEC.md) and [implementation notes](docs/IMPLEMENTATION_NOTES.md) describe the 2025 build; this README describes current setup.
+[Contributing](CONTRIBUTING.md) · [Security](SECURITY.md) · [Roadmap](docs/ROADMAP.md)
 
 ## License
 
-Original project code is MIT licensed; see [LICENSE](LICENSE). Dependencies and model weights retain their own licenses. In particular, Ultralytics YOLO uses AGPL-3.0 or a commercial license; see [third-party notices](THIRD_PARTY_NOTICES.md) before distributing a combined application.
+[MIT](LICENSE) for original code. Dependencies and model weights have separate terms, including Ultralytics' AGPL/commercial license. See [third-party notices](THIRD_PARTY_NOTICES.md).
