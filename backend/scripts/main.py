@@ -21,6 +21,7 @@ import cv2
 from dotenv import load_dotenv
 from ultralytics import YOLO
 
+from backend.src.camera import camera_source, open_camera, region_of_interest
 from backend.src.clients.baseten_client import BasetenClient
 from backend.src.clients.supabase_client import SupabaseClient
 from backend.src.costume_detector import (
@@ -33,22 +34,11 @@ from backend.src.utils.face_blur import FaceBlurrer
 # Load environment variables
 load_dotenv()
 
-# DoorBird connection details
-DOORBIRD_USER = os.getenv("DOORBIRD_USERNAME")
-DOORBIRD_PASSWORD = os.getenv("DOORBIRD_PASSWORD")
-DOORBIRD_IP = os.getenv("DOORBIRD_IP")
-
-# Check required environment variables
-if not all([DOORBIRD_USER, DOORBIRD_PASSWORD, DOORBIRD_IP]):
-    print("❌ ERROR: Missing required environment variables")
-    print("Please check your .env file")
-    exit(1)
-
-# Construct RTSP URL
-rtsp_url = f"rtsp://{DOORBIRD_USER}:{DOORBIRD_PASSWORD}@{DOORBIRD_IP}/mpeg/media.amp"
-
+# Validate settings before loading models or contacting services.
+rtsp_url = camera_source()
+ROI_X_MIN, ROI_X_MAX, ROI_Y_MIN, ROI_Y_MAX = region_of_interest()
 print("🚀 Starting person detection system...")
-print(f"📹 Connecting to DoorBird at {DOORBIRD_IP}")
+print("📹 Connecting to configured camera")
 
 # Load YOLOv8n model (smallest/fastest)
 print("🤖 Loading YOLOv8n model...")
@@ -84,11 +74,7 @@ CAPTURE_COOLDOWN = 30  # Seconds to wait before next capture
 
 # Region of Interest (ROI) - only detect people in doorstep area
 # Coordinates are normalized (0.0 to 1.0) relative to frame dimensions
-# Based on the camera view: doorstep is roughly the left half of the frame
-ROI_X_MIN = 0.0   # Left edge (0%)
-ROI_X_MAX = 0.7   # Stop at 70% across (excludes street on right)
-ROI_Y_MIN = 0.0   # Start at top of frame
-ROI_Y_MAX = 1.0   # Bottom edge (100%)
+# Configured through ROI_*; legacy DoorBird defaults preserve the original view.
 
 print(f"🎯 Detection: {CONSECUTIVE_FRAMES_REQUIRED} consecutive frames at >{CONFIDENCE_THRESHOLD} confidence")
 print(f"🎈 Dual-pass: Standard people (class 0) + inflatable costumes (classes 2, 14, 16, 17)")
@@ -112,23 +98,16 @@ def is_in_roi(bbox, frame_width, frame_height):
             ROI_Y_MIN <= norm_y <= ROI_Y_MAX)
 
 # Function to connect/reconnect to RTSP stream
-def connect_to_stream(url):
-    """Connect to RTSP stream with optimized settings."""
-    cap = cv2.VideoCapture(url)
-    # Set RTSP transport protocol to TCP (more reliable than UDP)
-    cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)  # Reduce buffer to minimize delay
-    cap.set(cv2.CAP_PROP_OPEN_TIMEOUT_MSEC, 10000)  # 10 second connection timeout
-    cap.set(cv2.CAP_PROP_READ_TIMEOUT_MSEC, 10000)  # 10 second read timeout
-    return cap
+connect_to_stream = open_camera
 
 # Open RTSP stream
 cap = connect_to_stream(rtsp_url)
 
 if not cap.isOpened():
-    print("❌ ERROR: Could not connect to DoorBird RTSP stream")
+    print("❌ ERROR: Could not connect to camera")
     exit(1)
 
-print("✅ Connected to RTSP stream!")
+print("✅ Connected to camera!")
 print()
 print("👁️  Watching for people...")
 print("Press Ctrl+C to stop")
@@ -362,15 +341,17 @@ try:
                     cv2.rectangle(blurred_frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
 
                 # Save blurred frame locally
-                cv2.imwrite(filename, blurred_frame)
+                if not cv2.imwrite(filename, blurred_frame):
+                    raise OSError("Could not save detection image; check disk space")
                 print(f"   🔒 {num_people_blurred} person(s) blurred for privacy")
                 print(f"   Saved locally: {filename}")
 
-                # Upload to Supabase if configured
+                # Retain the file unless every image and record was saved.
+                uploads_succeeded = bool(supabase_client) and bool(detected_people)
                 for person_idx, person in enumerate(detected_people, start=1):
                     if supabase_client:
                         try:
-                            supabase_client.save_detection(
+                            saved = supabase_client.save_detection(
                                 image_path=filename,
                                 timestamp=detection_timestamp,
                                 confidence=person["confidence"],
@@ -379,12 +360,14 @@ try:
                                 costume_description=person.get("costume_description"),
                                 costume_confidence=person.get("costume_confidence"),
                             )
+                            uploads_succeeded = uploads_succeeded and saved
                         except Exception as e:
+                            uploads_succeeded = False
                             print(f"   ⚠️  Supabase upload failed: {e}")
 
                 # Clean up local file after all persons processed and uploaded
                 try:
-                    if supabase_client and os.path.exists(filename):
+                    if uploads_succeeded and os.path.exists(filename):
                         os.remove(filename)
                         print(f"   🗑️  Cleaned up local file: {filename}")
                 except Exception as e:

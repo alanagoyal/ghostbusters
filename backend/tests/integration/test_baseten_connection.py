@@ -34,7 +34,7 @@ def main():
         print("   Please add your Baseten model URL to .env")
         sys.exit(1)
 
-    print(f"✅ API key found: {api_key[:10]}...")
+    print("✅ API key configured")
     print(f"✅ Model URL found: {model_url[:50]}...")
     print()
 

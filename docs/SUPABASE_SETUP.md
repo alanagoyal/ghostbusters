@@ -1,25 +1,23 @@
 # Supabase Setup Guide
 
-Complete guide to configuring Supabase for the Person Detection MVP.
+Configure the database, image storage, and live dashboard for Ghostbusters.
+Run `uv run ghostbusters setup` first to write backend and frontend credentials.
 
 ## Prerequisites
 
-You already have:
-- ✅ Supabase project created (`halloween-pi`)
-- ✅ Environment variables configured in `.env`:
-  - `NEXT_PUBLIC_SUPABASE_URL`
-  - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-  - `SUPABASE_SERVICE_ROLE_KEY`
-  - `HOSTNAME`
+Create a Supabase project, then configure `.env` with the project URL,
+backend service-role key, and `DEVICE_ID`. Put only the project URL and anon
+key in `frontend/.env.local`. This setup intentionally makes detections and
+images public; use a separate test project for integration checks.
 
 ## Setup Steps
 
 ### 1. Run Database Migration
 
-1. Go to your Supabase dashboard: https://supabase.com/dashboard/project/halloween-pi
+1. Go to your Supabase dashboard: https://supabase.com/dashboard
 2. Navigate to **SQL Editor** (in left sidebar)
 3. Click **New Query**
-4. Copy the contents of `supabase_migration.sql` from this repository
+4. Copy the contents of `backend/migrations/supabase_migration.sql` from this repository
 5. Paste into the SQL Editor
 6. Click **Run** (or press Cmd/Ctrl + Enter)
 
@@ -31,10 +29,28 @@ This migration creates:
 
 ### 2. Verify Setup
 
-Run the test suite to verify everything is configured correctly:
+The bootstrap SQL is intended for a fresh project; rerunning it can fail on existing policies or Realtime membership.
+
+After the bootstrap, run these grants in the same SQL Editor. RLS policies alone
+ do not grant table access on newer projects:
+
+```sql
+grant usage on schema public to anon, authenticated, service_role;
+grant select on public.person_detections to anon, authenticated;
+grant select, insert, update, delete on public.person_detections to service_role;
+```
+
+Keep RLS enabled. Ensure `public` is an exposed Data API schema. See
+[Supabase Data API security](https://supabase.com/docs/guides/api/securing-your-api).
+
+Run `uv run ghostbusters doctor` to check backend and browser table access and the
+bucket. This performs no database writes; its Baseten check makes a small billed
+vision request. Finish with a real walk-through to verify uploads and Realtime.
+
+The following manual check writes test records and images. Run against a test project:
 
 ```bash
-uv run python test_supabase_connection.py
+uv run python -m backend.tests.integration.test_supabase_connection
 ```
 
 Expected output:
@@ -53,13 +69,13 @@ Expected output:
 Once tests pass, run the person detection system:
 
 ```bash
-uv run python detect_people.py
+uv run python -m backend.scripts.main
 ```
 
 The system will:
 - Connect to your DoorBird RTSP stream
 - Detect people using YOLOv8
-- Save images locally (backup)
+- Save images locally until uploads succeed
 - Upload images to Supabase Storage
 - Insert detection records to database
 
@@ -108,7 +124,7 @@ https://your-project.supabase.co/storage/v1/object/public/detection-images/{HOST
 
 ### Environment Variables
 
-- `NEXT_PUBLIC_*` variables: Safe to expose in frontend (Next.js)
+- `NEXT_PUBLIC_*` variables: Bundled into browser code; use only public URL/anon key values
 - `SUPABASE_SERVICE_ROLE_KEY`: **NEVER** expose to frontend, only for backend (Raspberry Pi)
 
 ## Useful Queries

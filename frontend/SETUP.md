@@ -4,7 +4,9 @@
 
 1. **Navigate to the dashboard directory:**
 ```bash
-cd dashboard
+cd frontend
+npm ci
+cp .env.example .env.local
 ```
 
 2. **Add your Supabase credentials:**
@@ -23,7 +25,7 @@ npm run dev
 ```
 
 4. **Open the dashboard:**
-   Visit http://localhost:3000 in your browser
+   Visit http://localhost:3000/ghostbusters in your browser
 
 ## What's Included
 

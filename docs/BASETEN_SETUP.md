@@ -2,9 +2,22 @@
 
 This guide explains how to set up and use the Baseten vision model API for costume classification in the Doorstep Costume Classifier system.
 
-## Overview
+## Hosted Model APIs (recommended for a new setup)
 
-The system uses **Gemma vision model** through Baseten's API to classify Halloween costumes from person crops detected by YOLOv8n.
+Use a vision-capable model from [Baseten's current vision catalog](https://docs.baseten.co/inference/model-apis/vision). This avoids managing a dedicated GPU deployment. For example, the following configuration was tested with costume images on October 19, 2026:
+
+```dotenv
+BASETEN_API_KEY=your-key
+BASETEN_MODEL_URL=https://inference.baseten.co/v1/chat/completions
+BASETEN_MODEL=nvidia/NVIDIA-Nemotron-3.5-Super-VL-120B-A12B
+BASETEN_AUTH_SCHEME=Bearer
+```
+
+Run `uv run python -m backend.tests.integration.test_baseten_connection` from the repository root. This small text request checks connectivity; test an image separately to verify vision support. Requests are billed by the provider. Person crops are sent unblurred, as described in the README.
+
+## Dedicated deployments (legacy setup)
+
+The original installation used a dedicated Gemma vision model. Leave `BASETEN_MODEL` and `BASETEN_AUTH_SCHEME` unset for the original defaults (`gemma`, `Api-Key`), or set them to match your deployment. The endpoint must accept chat-completions requests and return `choices[0].message.content` containing the requested JSON. The older instructions below describe that deployment.
 
 ## Architecture
 
@@ -424,3 +437,13 @@ No dashboard code changes needed! The components in `dashboard/components/dashbo
 - **Gemma 3 27B IT on Baseten**: [https://docs.baseten.co/examples/models/gemma/gemma-3-27b-it](https://docs.baseten.co/examples/models/gemma/gemma-3-27b-it)
 - **Gemma Model Family**: [https://ai.google.dev/gemma](https://ai.google.dev/gemma)
 - **Project Spec**: See `PROJECT_SPEC.md` for full system architecture
+
+## Returning after a long break
+
+A HTTP 400 response saying the model version is deactivated means the endpoint
+exists but cannot serve requests. Reactivate that existing deployment in Baseten,
+wait for it to become ready, and rerun the connection check. Activation/inference
+can incur charges. See [deployment activation](https://docs.baseten.co/reference/management-api/deployments/activate/activates-a-deployment).
+
+The client uses 10-second connection and 60-second response timeouts. An initial
+cold start may exceed the response timeout; check deployment health before retrying.

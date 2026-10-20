@@ -96,10 +96,13 @@ class BasetenClient:
 
         # Build session so connections can be re-used across requests
         self.session = requests.Session()
-        self.session.headers.update({"Authorization": f"Api-Key {self.api_key}"})
+        auth_scheme = os.getenv("BASETEN_AUTH_SCHEME", "Api-Key")
+        if auth_scheme not in {"Api-Key", "Bearer"}:
+            raise ValueError("BASETEN_AUTH_SCHEME must be Api-Key or Bearer")
+        self.session.headers.update({"Authorization": f"{auth_scheme} {self.api_key}"})
 
         # Model configuration
-        self.model = "gemma"
+        self.model = os.getenv("BASETEN_MODEL", "gemma")
         self.temperature = 0.5
         self.max_tokens = 512
 
@@ -159,6 +162,7 @@ class BasetenClient:
             # Call Baseten API with Gemma vision model
             response = self.session.post(
                 self.model_url,
+                timeout=(10, 60),
                 json={
                     "model": self.model,
                     "stream": False,
@@ -240,6 +244,7 @@ class BasetenClient:
             # Simple test with a minimal request
             response = self.session.post(
                 self.model_url,
+                timeout=(10, 60),
                 json={
                     "model": self.model,
                     "stream": False,

@@ -13,7 +13,7 @@ A Next.js dashboard with real-time Supabase integration for monitoring person de
 
 1. Install dependencies:
 ```bash
-npm install
+npm ci
 ```
 
 2. Configure environment variables:
@@ -29,7 +29,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
 npm run dev
 ```
 
-4. Open [http://localhost:3000](http://localhost:3000) in your browser
+4. Open [http://localhost:3000/ghostbusters](http://localhost:3000/ghostbusters) in your browser
 
 ## Database Schema
 

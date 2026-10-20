@@ -178,7 +178,7 @@ class SupabaseClient:
             print(f"✅ Detection saved to Supabase (ID: {result['id']})")
             if image_url:
                 print(f"   Image URL: {image_url}")
-            return True
+            return bool(image_url)
         else:
             print("❌ Failed to save detection to Supabase")
             return False

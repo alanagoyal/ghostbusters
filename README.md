@@ -1,416 +1,88 @@
-# Doorstep Costume Classifier
+# Ghostbusters 👻
 
-Raspberry Pi edge computer vision system that watches a DoorBird doorbell camera on Halloween night, detects trick-or-treaters, classifies their costumes using AI, and displays live results on a public dashboard.
+Watch for trick-or-treaters, classify their costumes, and show detections on a live dashboard. Built for a Raspberry Pi 5 and DoorBird doorbell on Halloween 2025; now accepts a generic camera stream or USB webcam too.
 
-## 🎃 Tech Stack
+YOLO detects people locally, Baseten names their costumes, and Supabase Storage and Realtime feed a live Next.js dashboard. The supported setup path uses all three.
 
-- **Edge Compute:** Raspberry Pi 5 (8GB RAM)
-- **Camera:** DoorBird doorbell (RTSP stream)
-- **Person Detection:** YOLOv8n
-- **Costume Classification:** Baseten API (vision-language model)
-- **Database & Storage:** Supabase (with Realtime via WebSocket)
-- **Frontend:** Next.js 16 + React 19 + TypeScript + Tailwind CSS v4
-- **Hosting:** Vercel (dashboard)
-- **Package Manager:** uv (by Astral) for Python, npm for JavaScript
+## Get started
 
-## 📁 Project Structure
+You need a camera with a local RTSP/HTTP stream or a USB webcam, a Mac or Linux computer (including a 64-bit Raspberry Pi), a [Baseten account](https://app.baseten.co), and a [Supabase project](https://supabase.com/dashboard). Install Python 3.11, [uv](https://docs.astral.sh/uv/getting-started/installation/), and Node.js 22 for the dashboard.
 
-```
-ghostbusters/
-├── backend/                    # Python ML backend
-│   ├── src/
-│   │   └── clients/           # External service clients
-│   │       ├── baseten_client.py    # Baseten API client
-│   │       └── supabase_client.py   # Supabase client
-│   ├── scripts/               # Entry point scripts
-│   │   └── main.py            # Live detection script
-│   └── tests/                 # Backend tests
-│       ├── fixtures/          # Test images and data
-│       └── integration/       # Integration tests
-├── frontend/                   # Next.js dashboard
-│   ├── app/                   # Next.js app directory
-│   ├── components/            # React components
-│   └── lib/                   # Frontend utilities
-├── docs/                       # Documentation
-│   ├── BASETEN_SETUP.md      # Vision model API setup
-│   ├── DOORBIRD_SETUP.md     # Camera configuration
-│   ├── SUPABASE_SETUP.md     # Database setup
-│   ├── PROJECT_SPEC.md       # System architecture
-│   └── IMPLEMENTATION_NOTES.md         # Implementation notes
-└── Configuration files         # Root configs (pyproject.toml, etc.)
+```sh
+git clone https://github.com/alanagoyal/ghostbusters.git
+cd ghostbusters
+uv sync --frozen --python 3.11
+uv run ghostbusters setup
 ```
 
-## 🚀 Quick Start
+The wizard asks for your camera, Baseten API key, and Supabase URL and keys. It writes `.env` and `frontend/.env.local`, hides credential input, preserves unrelated settings, and rejects backend keys in browser configuration. Nothing starts during setup. For Baseten it offers the hosted vision Model API, so you don't have to provision a dedicated GPU. See [Baseten setup](docs/BASETEN_SETUP.md) for model access and custom endpoints.
 
-### Prerequisites
+**Create the Supabase tables and image bucket:** follow [Supabase setup](docs/SUPABASE_SETUP.md), including the SQL bootstrap and grants. The wizard does not provision accounts or run database SQL. This project uses a public gallery; choose a dedicated project you intend to use for it.
 
-- Python 3.10+
-- [uv](https://docs.astral.sh/uv/) package manager
-- DoorBird camera on local network
-
-### Installation
-
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/alanagoyal/ghostbusters.git
-   cd ghostbusters
-   ```
-
-2. **Install uv (if not already installed):**
-   ```bash
-   curl -LsSf https://astral.sh/uv/install.sh | sh
-   ```
-
-3. **Install dependencies:**
-   ```bash
-   uv sync
-   ```
-
-4. **Set up environment variables:**
-   ```bash
-   cp .env.example .env
-   # Edit .env with your actual credentials
-   ```
-
-### Testing
-
-**Test Baseten API connection:**
-```bash
-uv run backend/tests/integration/test_baseten_connection.py
+```sh
+uv run ghostbusters doctor
 ```
 
-**Test with single-person costume images:**
-```bash
-uv run backend/tests/integration/test_costume_detection.py
-```
-This processes the test images in `backend/tests/fixtures/`, classifies costumes with Baseten, and uploads to Supabase.
+Doctor checks a camera frame, one small billed Baseten vision request using a synthetic blank image, Supabase backend table access, the public storage bucket, and dashboard read access. It saves no camera image or database record. Each failure includes the relevant next step. It does not prove uploads or Realtime delivery; finish with a real walk-through.
 
-**Test multi-person detection:**
-```bash
-uv run backend/tests/integration/test_multiple_people.py
-```
-This uses YOLOv8n to detect ALL people in each frame (including test-6.png and test-7.png with 3 kids each), processes each person separately, and creates individual database entries. Perfect for testing group scenarios like multiple trick-or-treaters arriving together.
+Start the dashboard in a separate terminal:
 
-**Test inflatable/non-human costume detection:**
-```bash
-uv run backend/tests/integration/test_nonhuman_costume.py
-```
-This tests dual-pass YOLO detection for inflatable costumes (like T-Rex, dinosaurs) that YOLO may misclassify as objects instead of people. Uses Baseten validation to distinguish real costumes from background objects.
-
-**Test DoorBird camera connection:**
-```bash
-uv run backend/tests/integration/test_doorbird_connection.py
+```sh
+cd frontend
+npm ci
+npm run dev
 ```
 
-**Test Supabase integration:**
-```bash
-uv run backend/tests/integration/test_supabase_connection.py
+Open `http://localhost:3000/ghostbusters`. Setup already created its environment file. See [dashboard hosting](frontend/SETUP.md) to deploy it; set `NEXT_PUBLIC_BASE_PATH=` before building to serve `/` instead.
+
+Start capture from the repository root:
+
+```sh
+uv run ghostbusters start
+uv run ghostbusters status
+# When Halloween is over:
+uv run ghostbusters stop
 ```
 
-**Run live person detection (see Production Deployment below for long-running setup):**
-```bash
-uv run backend/scripts/main.py
-```
-Watches the RTSP stream, detects all people in each frame, classifies their costumes, and uploads to Supabase. Handles multiple people in the same frame automatically.
+On macOS, `start` installs/enables a launch agent and starts capture, with automatic restart and startup at user login. On Linux, first run `sudo ./setup-service.sh` once; `start` enables/starts that systemd service. `stop` stops the service **and disables automatic startup** until the next `start`. These commands manage the detector, not the dashboard server or your cloud subscriptions. Keep the checkout in place after installation.
 
-## 🥧 Raspberry Pi Management
+For a terminal-only rehearsal use `uv run ghostbusters start --foreground` instead; Ctrl+C stops it. `status` and `stop` manage background services only. Do not run foreground and background capture together. Walk in view of the camera for several seconds, then confirm the photo and classification appear in the dashboard.
 
-### Connecting to Your Pi
+See [command reference](docs/CLI.md), [camera setup](docs/CAMERAS.md), [macOS service details](docs/MACOS_SETUP.md), and [Pi deployment](docs/DEPLOYMENT.md).
 
-**SSH into the Pi:**
-```bash
-ssh pi@halloween-pi.local
-```
+The detector downloads YOLO weights on first use. It samples every 30 frames, requires two consecutive detections, and waits 30 seconds between captures. These are capture counts, not unique visitor counts. Low-frame-rate cameras take longer to trigger. Generic cameras use the full image; legacy DoorBird configuration defaults to the left 70%. Set normalized `ROI_*` bounds in `.env` to adjust the detection area.
 
-**When you're done working:**
-```bash
-# Simply exit the SSH session
-exit
-# OR press Ctrl+D
-```
+## Images and privacy
 
-### Power Management
+When configured, Baseten receives **unblurred person crops**, including crops of possible inflatable costumes. Local saved images and Supabase images blur the detected person's region, but this is not guaranteed anonymization: missed detections and bystanders can remain visible. The existing dashboard/storage design publishes images. Review your framing and sharing settings before running it around visitors.
 
-**When to shut down:**
-- Not using the Pi for several hours/days
-- Moving the Pi to a different location
-- Before unplugging power
+Successful uploads remove the local image only after all corresponding records are saved. Failed uploads and local-only captures remain on disk; there is no automatic retry queue or retention policy. Monitor disk usage and delete captures when no longer needed. The camera check reads a frame in memory only, though native camera libraries can include connection details in their error messages; redact logs before sharing.
 
-**How to safely shut down:**
-```bash
-# Shut down (safe to unplug after LED stops blinking)
-sudo shutdown -h now
+## Run on a Raspberry Pi
 
-# OR
-sudo poweroff
+See [deployment and recovery](docs/DEPLOYMENT.md) for SSH checks, systemd installation, logs, and a Halloween rehearsal. Install OpenCV runtime libraries on Raspberry Pi OS if needed:
+
+```sh
+sudo apt update
+sudo apt install -y libgl1 libglib2.0-0 ffmpeg
 ```
 
-**How to reboot:**
-```bash
-sudo reboot
+## Development and tests
+
+```sh
+uv sync --frozen --python 3.11
+uv run python -m unittest discover -s backend/tests/unit -v
+uv run ruff check backend/src/camera.py backend/scripts/check_camera.py backend/tests/unit
 ```
 
-**Leaving the Pi running:**
-- ✅ Safe to leave running 24/7 (designed for it)
-- ✅ Uses ~3-5W of power when idle
-- ✅ SSH sessions can be closed without affecting the Pi
-- ✅ Good practice if you'll use it again within a few hours
+Offline tests use mocks; they do not require a camera, cloud keys, or model weights. The scripts under `backend/tests/integration/` are **manual live checks**, not an offline test suite. Some incur inference charges and write images/rows to the configured database. Use a separate test project and review each script before running it. Fixture images are not bundled; provide your own consented images in the documented fixture folders. To check only Baseten connectivity:
 
-**Best practice:**
-- Exit SSH when done (keeps connection clean)
-- Leave Pi powered on if using it regularly
-- Only shut down if not using for extended periods or moving hardware
-
-### Monitoring Pi Health
-
-**Check temperature:**
-```bash
-vcgencmd measure_temp
-# Normal: 40-60°C idle, up to 70°C under load
-# Warning: 80°C+ (check cooling)
+```sh
+uv run python -m backend.tests.integration.test_baseten_connection
 ```
 
-**Check disk space:**
-```bash
-df -h
-```
+See [CONTRIBUTING.md](CONTRIBUTING.md), [security reporting](SECURITY.md), and the [roadmap](docs/ROADMAP.md). The [original specification](docs/PROJECT_SPEC.md) and [implementation notes](docs/IMPLEMENTATION_NOTES.md) describe the 2025 build; this README describes current setup.
 
-**Update system packages:**
-```bash
-sudo apt update && sudo apt upgrade -y
-```
+## License
 
-## 🎃 Production Deployment (Halloween Night)
-
-For long-running detection (6+ hours), the system includes production-ready features:
-
-### Production Features
-
-- **Auto-reconnection:** RTSP stream reconnects automatically on failure
-- **Periodic reconnection:** Full reconnect every hour to prevent memory leaks
-- **Disk management:** Local images auto-deleted after Supabase upload
-- **Health monitoring:** Stats printed every 5 minutes (uptime, detections, failures)
-- **Systemd service:** Auto-restart on crash, survives SSH disconnection
-
-### Option 1: Run Manually (Testing/Development)
-
-```bash
-ssh pi@halloween-pi
-cd ~/projects/ghostbusters
-uv run backend/scripts/main.py
-```
-
-This will show live output with:
-- Detection notifications
-- Health checks every 5 minutes
-- Reconnection status
-- Costume classifications
-
-Press `Ctrl+C` to stop.
-
-### Option 2: Run as Service (Production/Halloween Night)
-
-**Setup (one-time):**
-```bash
-ssh pi@halloween-pi
-cd ~/projects/ghostbusters
-sudo ./setup-service.sh
-```
-
-**Start the service:**
-```bash
-sudo systemctl start costume-detector
-```
-
-**Monitor live activity:**
-```bash
-# Watch main log (detections, health checks)
-tail -f ~/costume-detector.log
-
-# Watch error log
-tail -f ~/costume-detector-error.log
-```
-
-**Control the service:**
-```bash
-# Stop the service
-sudo systemctl stop costume-detector
-
-# Restart the service
-sudo systemctl restart costume-detector
-
-# Check status
-sudo systemctl status costume-detector
-
-# Disable auto-start on boot
-sudo systemctl disable costume-detector
-```
-
-### Service Benefits
-
-✅ Runs in background (SSH can disconnect)
-✅ Auto-restarts if it crashes
-✅ Starts automatically on Pi reboot
-✅ Logs saved to files for review
-
-### Monitoring During Halloween
-
-**Check if running:**
-```bash
-sudo systemctl status costume-detector
-```
-
-**See recent activity:**
-```bash
-tail -20 ~/costume-detector.log
-```
-
-**Monitor live:**
-```bash
-tail -f ~/costume-detector.log
-```
-
-**Health check output (every 5 minutes):**
-```
-📊 Health Check (Uptime: 125.3 min)
-   Frames processed: 225450
-   Detections: 47
-   Failed frames: 3
-```
-
-**See all detections today:**
-```bash
-grep "person(s) detected" ~/costume-detector.log
-```
-
-### Troubleshooting
-
-**Service fails to start (exit code 127):**
-```bash
-sudo systemctl status costume-detector
-# Shows: "Main process exited, code=exited, status=127"
-```
-
-**Problem:** systemd can't find `uv` command
-
-**Solution:** The service file needs the full path to uv:
-1. Find where uv is installed: `which uv` or `ls ~/.local/bin/uv`
-2. Service file should use: `ExecStart=/home/pi/.local/bin/uv run backend/scripts/main.py`
-3. And set PATH: `Environment="PATH=/home/pi/.local/bin:/usr/local/sbin:..."`
-
-**No output in logs:**
-
-**Problem:** Python buffers output when not running in a terminal
-
-**Solution:** Service file needs: `Environment="PYTHONUNBUFFERED=1"`
-
-**Service running but failing:**
-```bash
-# Check error log
-cat ~/costume-detector-error.log
-
-# Check system journal
-sudo journalctl -u costume-detector -n 50
-```
-
-**Stop endless restart loop:**
-```bash
-# If service is crashing and restarting constantly
-sudo systemctl stop costume-detector
-sudo systemctl disable costume-detector  # Prevents auto-start on boot
-```
-
-## 📖 Documentation
-
-- [Baseten Setup Guide](docs/BASETEN_SETUP.md) - Vision model API configuration for costume classification
-- [DoorBird Setup Guide](docs/DOORBIRD_SETUP.md) - Camera configuration and RTSP setup
-- [Supabase Setup Guide](docs/SUPABASE_SETUP.md) - Database and storage configuration
-- [Project Specification](docs/PROJECT_SPEC.md) - Complete system architecture
-- [Implementation Notes](docs/IMPLEMENTATION_NOTES.md) - Implementation journey and decisions
-
-## 📊 Dashboard
-
-The project includes a real-time Next.js dashboard for monitoring detections live.
-
-### Dashboard Setup
-
-1. **Navigate to frontend directory:**
-   ```bash
-   cd frontend
-   ```
-
-2. **Install dependencies:**
-   ```bash
-   npm install
-   ```
-
-3. **Configure environment:**
-   ```bash
-   cp .env.example .env.local
-   # Add your Supabase credentials
-   ```
-
-4. **Run development server:**
-   ```bash
-   npm run dev
-   ```
-
-5. **Open dashboard:**
-   Visit [http://localhost:3000](http://localhost:3000)
-
-### How Realtime Works
-
-The dashboard uses Supabase Realtime to show new detections instantly:
-
-1. **Enable Realtime** for the `person_detections` table (run in Supabase SQL Editor):
-   ```sql
-   alter publication supabase_realtime add table person_detections;
-   ```
-
-2. The dashboard subscribes to changes via WebSocket
-3. New detections appear immediately without page refresh
-4. Sub-second latency from detection to display
-
-See [frontend/SETUP.md](frontend/SETUP.md) for detailed instructions.
-
-## 🛠️ Development
-
-This project uses modern Python tooling from [Astral](https://astral.sh/):
-- **uv** - Fast, reliable package management
-- **ruff** - Lightning-fast linting and formatting
-
-### Package Management
-
-```bash
-# Install dependencies
-uv sync
-
-# Add a new dependency
-uv add package-name
-
-# Add a dev dependency
-uv add --dev package-name
-
-# Run a script
-uv run python script.py
-```
-
-### Code Quality
-
-```bash
-# Check code with linter
-uv run ruff check .
-
-# Auto-fix linting issues
-uv run ruff check . --fix
-
-# Format code
-uv run ruff format .
-
-# Run both linting and formatting
-uv run ruff check . --fix && uv run ruff format .
-```
-
-## 📝 License
-
-MIT
+Original project code is MIT licensed; see [LICENSE](LICENSE). Dependencies and model weights retain their own licenses. In particular, Ultralytics YOLO uses AGPL-3.0 or a commercial license; see [third-party notices](THIRD_PARTY_NOTICES.md) before distributing a combined application.

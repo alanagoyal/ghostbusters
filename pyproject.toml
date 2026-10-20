@@ -11,6 +11,9 @@ dependencies = [
     "ultralytics>=8.3.63",
 ]
 
+[project.scripts]
+ghostbusters = "backend.scripts.cli:main"
+
 [tool.uv]
 package = true
 
