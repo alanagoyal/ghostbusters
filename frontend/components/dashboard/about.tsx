@@ -1,25 +1,4 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-
-const linkClassName = "relative text-muted-foreground font-medium after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-0 after:bg-muted-foreground after:transition-all after:duration-300 hover:after:w-full";
-
 export function About() {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>About</CardTitle>
-        <CardDescription>How this works</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <p className="text-sm text-muted-foreground leading-relaxed">
-          This is a live feed from my front door in San Francisco, CA that detects and classifies the costumes of trick-or-treaters in real time. The video stream is sent over{' '}
-          <a href="https://en.wikipedia.org/wiki/Real_Streaming_Protocol" target="_blank" rel="noopener noreferrer" className={linkClassName}>RTSP</a> to a{' '}
-          <a href="https://www.raspberrypi.org/" target="_blank" rel="noopener noreferrer" className={linkClassName}>Raspberry Pi</a>, which runs{' '}
-          <a href="https://github.com/ultralytics/ultralytics" target="_blank" rel="noopener noreferrer" className={linkClassName}>YOLOv8</a> to detect people. The frames are then classified for costumes using{' '}
-          <a href="https://baseten.co/" target="_blank" rel="noopener noreferrer" className={linkClassName}>Baseten</a>, the detections are stored in{' '}
-          <a href="https://supabase.com/" target="_blank" rel="noopener noreferrer" className={linkClassName}>Supabase</a>, and this <a href="https://nextjs.org/" target="_blank" rel="noopener noreferrer" className={linkClassName}>Next.js</a> dashboard displays the results in real time. It's fully open-source and the code is on{' '}
-          <a href="https://github.com/alanagoyal/ghostbusters" target="_blank" rel="noopener noreferrer" className={linkClassName}>GitHub</a>.
-        </p>
-      </CardContent>
-    </Card>
-  )
+  return <Card><CardHeader><CardTitle>About Ghostbusters</CardTitle><CardDescription>Camera detections and costume guesses</CardDescription></CardHeader><CardContent><p className="text-sm text-muted-foreground">YOLO detects people and possible inflatable costumes. The configured vision model guesses costumes and can make mistakes. This cloud gallery uses Supabase; cloud inference and storage are explicit alternatives to the private local installation. Counts describe detections, not unique visitors.</p></CardContent></Card>
 }

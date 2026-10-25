@@ -1,7 +1,13 @@
-# Security
+# Security and privacy
 
-Do not post credentials, private images, or exploit details in a public issue. Use the repository's GitHub **Security → Report a vulnerability** option if enabled; otherwise contact the maintainer through the contact channel on their GitHub profile. This is a hobby project without a guaranteed response time.
+Do not post credentials, private images or exploit details in a public issue. Use GitHub **Security → Report a vulnerability** if enabled; otherwise use the maintainer's GitHub profile contact channel. This hobby project has no guaranteed response time.
 
-Keep camera and service-role credentials on the backend. Never expose the Pi's SSH/RTSP ports directly to the internet. Treat camera library logs as potentially credential-bearing. The optional dashboard is designed to show public detections; review storage and database policies before using it.
+## Default local installation
 
-See the README's image/privacy description before deployment. Blurring detected people is not guaranteed anonymization.
+Camera credentials, SQLite records and unblurred person crops stay on the computer under `.ghostbusters/`. The server binds to loopback; its API, images and live events require the private gallery token. Treat the full gallery link as a password. Keep runtime files private and out of version control. Photos expire under the configured retention and disk limits; downloaded models are separate from that budget.
+
+Local inference does not upload camera images to a model provider. A browser viewing the gallery receives those images; sharing the gallery allows that viewer to see them. Do not expose it through an unauthenticated proxy or forward camera ports to the internet. Camera-library logs can contain credential-bearing URLs.
+
+## Existing cloud installations
+
+The optional Baseten path sends unblurred person crops to the inference provider. The legacy Supabase gallery and image bucket are publicly readable. The saved full-scene image uses face blurring, which is not guaranteed anonymization. Backend secret/service-role keys must never be put in frontend configuration. Review your capture area, access policies and retention before enabling this path.

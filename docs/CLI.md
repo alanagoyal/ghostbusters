@@ -1,4 +1,8 @@
-# Setup and seasonal operation
+# Optional cloud setup and seasonal operation
+
+New clones default local: follow [LOCAL_SETUP.md](LOCAL_SETUP.md). This page applies
+to explicitly selected cloud inference/Supabase installations. Bare `setup` on a
+fresh clone uses the local workflow; select a provider explicitly for manual cloud setup.
 
 Run commands from your clone after `uv sync --frozen --python 3.11`.
 The CLI supports macOS and Linux. It is currently distributed through the checkout,
@@ -6,7 +10,7 @@ not a standalone PyPI installation.
 
 | Command | Behavior |
 | --- | --- |
-| `uv run ghostbusters setup` | Interactive camera, Baseten, Supabase and dashboard configuration; never starts capture |
+| `uv run ghostbusters setup --provider baseten` | Interactive camera, inference, Supabase and dashboard configuration; preserves existing provider, explicitly selects Baseten |
 | `uv run ghostbusters doctor` | Connection checks; one small billed vision request, no database writes |
 | `uv run ghostbusters doctor --skip-camera` | Checks cloud/config without opening a camera already in use |
 | `uv run ghostbusters start` | Starts detector service and enables startup at login (Mac) or boot (Linux) |
@@ -14,16 +18,15 @@ not a standalone PyPI installation.
 | `uv run ghostbusters stop` | Stops service and disables automatic startup |
 | `uv run ghostbusters start --foreground` | Runs in this terminal; Ctrl+C stops; don't combine with a background service |
 
-## First run
+## Manual first run
 
 1. Create accounts at [Baseten](https://app.baseten.co) and
    [Supabase](https://supabase.com/dashboard). Create a Supabase project.
-2. Run `setup` in a terminal. Secret inputs do not echo. Enter keeps existing
+2. Run `uv run ghostbusters setup --provider baseten` in a terminal. Secret inputs do not echo. Enter keeps existing
    settings/defaults. Ctrl+C cancels before saving. Re-running preserves unrelated
    environment settings and comments. Back up config before changing projects.
-3. Run the [Supabase bootstrap](SUPABASE_SETUP.md) in SQL Editor, including table
-   grants. Setup cannot run SQL with a normal Supabase API key.
-4. Run `doctor`. Baseten receives a generated blank image, not a camera frame.
+3. Run the [Supabase bootstrap](SUPABASE_SETUP.md) and its table grants in SQL Editor. A normal Supabase API key cannot run SQL.
+4. Run `doctor`. The selected inference provider receives a generated blank image, not a camera frame.
    Failed checks return exit code 1. Raw SDK errors are suppressed to avoid leaking
    credentials. HTTP failures include a status code: 401/403 usually indicate keys
    or access; 404 may indicate the endpoint or missing schema.

@@ -1,4 +1,6 @@
-# Run on a Mac
+# Legacy cloud service on macOS
+
+For account-free local inference, use [LOCAL_SETUP.md](LOCAL_SETUP.md). The commands below manage the older Baseten/Supabase service, not the local supervisor. Do not use its dependency sync command in a local-vision installation.
 
 A Mac can run the same backend as the Raspberry Pi. Keep it on a network that can reach the camera. Install Python dependencies from the repository root:
 
@@ -10,7 +12,7 @@ uv run python -m backend.scripts.check_camera
 uv run python -m backend.scripts.main
 ```
 
-Stop the foreground detector with Ctrl+C before installing the service. Also stop any detector on a Pi or other machine using the same camera to avoid duplicate captures.
+Stop the foreground detector with Ctrl+C before installing the service. Preserve other installations; investigate camera stream limits if simultaneous capture fails.
 
 ## Automatic startup and restart
 

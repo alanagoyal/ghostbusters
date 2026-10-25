@@ -4,16 +4,7 @@ import { GeistMono } from 'geist/font/mono'
 
 export const metadata: Metadata = {
   title: 'Ghostbusters',
-  description: 'A live feed of trick-or-treaters in San Francisco',
-  openGraph: {
-    images: [
-      {
-        url: `${process.env.NEXT_PUBLIC_BASE_PATH ?? '/ghostbusters'}/og.png`,
-        width: 1200,
-        height: 630,
-      },
-    ],
-  },
+  description: 'Camera detections and Halloween costume guesses',
 }
 
 export default function RootLayout({

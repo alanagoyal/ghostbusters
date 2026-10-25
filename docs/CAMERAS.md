@@ -1,4 +1,6 @@
-# Bring your own camera
+# Camera sources for the legacy cloud backend
+
+For local DoorBird discovery, USB or ONVIF setup, follow [LOCAL_SETUP.md](LOCAL_SETUP.md). The `.env` and ROI behavior below applies only to the older Baseten/Supabase runner.
 
 The backend needs frames readable by OpenCV on the machine running it. Set `CAMERA_SOURCE` in `.env`; this takes precedence over DoorBird variables. Start with `uv run python -m backend.scripts.check_camera` from the repository root.
 

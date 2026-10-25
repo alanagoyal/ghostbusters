@@ -3,27 +3,25 @@ on: [push, pull_request]
 permissions:
   contents: read
 jobs:
-  backend:
+  checks:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
         with:
           python-version: '3.11'
-      - run: uv sync --frozen
-      - run: uv run python -m unittest discover -s backend/tests/unit -v
-      - run: uv run ruff check backend/src/camera.py backend/scripts/check_camera.py backend/scripts/cli.py backend/scripts/service_runner.py scripts/setup_macos_service.py backend/tests/unit
-  frontend:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: frontend
-    steps:
-      - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-      - run: npm ci
-      - run: npm run typecheck
+      - run: uv sync --frozen
+      - run: npm --prefix frontend ci
+      - run: uv run --no-sync python -m unittest discover -s backend/tests/unit -v
+      - run: uv run --no-sync ruff check backend/src/local backend/src/camera.py backend/scripts/check_camera.py backend/scripts/cli.py backend/scripts/service_runner.py scripts/setup_macos_service.py backend/tests/unit backend/tests/local_e2e.py
+      - run: npm --prefix frontend run typecheck
+      - run: npm --prefix frontend run build
+        env:
+          NEXT_PUBLIC_STORAGE_PROVIDER: local
+          NEXT_PUBLIC_BASE_PATH: ''
+          NEXT_TELEMETRY_DISABLED: '1'

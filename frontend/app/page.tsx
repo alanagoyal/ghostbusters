@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { LocalGallery } from "@/components/local-gallery";
 import { DashboardClient } from "@/components/dashboard/dashboard-client";
 
 export const revalidate = 60; // Revalidate every 60 seconds
@@ -22,6 +22,7 @@ async function getInitialDetections(): Promise<PersonDetection[]> {
   }
 
   try {
+    const { supabase } = await import("@/lib/supabase");
     const { data, error } = await supabase
       .from("person_detections")
       .select("*")
@@ -41,6 +42,7 @@ async function getInitialDetections(): Promise<PersonDetection[]> {
 }
 
 export default async function Dashboard() {
+  if (process.env.NEXT_PUBLIC_STORAGE_PROVIDER === "local" || !process.env.NEXT_PUBLIC_SUPABASE_URL) return <LocalGallery />;
   const initialDetections = await getInitialDetections();
 
   return <DashboardClient initialDetections={initialDetections} />;

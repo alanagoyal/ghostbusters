@@ -376,10 +376,38 @@ def service(action):
 
 
 def main(argv=None):
+    argv = list(sys.argv[1:] if argv is None else argv)
+    # Explicit local commands never load legacy cloud .env credentials.
+    if argv and argv[0] == "local":
+        from backend.src.local.cli import main as local_main
+
+        return local_main(argv[1:])
+    # Fresh clones default local; existing configured cloud installs keep behavior.
+    legacy = {**dotenv_values(ROOT / ".env"), **os.environ}
+    local_selected = legacy.get("STORAGE_PROVIDER") == "local"
+    cloud_selected = legacy.get("STORAGE_PROVIDER") == "supabase" or any(
+        legacy.get(k) for k in ("BASETEN_API_KEY", "SUPABASE_SERVICE_ROLE_KEY")
+    )
+    if (
+        argv
+        and argv[0] in {"setup", "up", "start", "status", "stop", "doctor"}
+        and not any(
+            arg == "--provider" or arg.startswith("--provider=") for arg in argv
+        )
+        and (local_selected or not cloud_selected)
+    ):
+        from backend.src.local.cli import main as local_main
+
+        return local_main(argv)
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
-    commands.add_parser(
+    setup_parser = commands.add_parser(
         "setup", help="Configure camera, Baseten and Supabase interactively"
+    )
+    setup_parser.add_argument(
+        "--provider",
+        choices=("baseten",),
+        help="Explicitly select legacy Baseten setup",
     )
     doctor_parser = commands.add_parser(
         "doctor", help="Check camera/cloud; one small billed request"

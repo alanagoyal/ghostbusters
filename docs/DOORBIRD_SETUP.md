@@ -1,4 +1,6 @@
-# DoorBird setup
+# Legacy DoorBird RTSP setup
+
+New local installs discover DoorBird automatically and use its MJPEG API; follow [LOCAL_SETUP.md](LOCAL_SETUP.md), without looking up an IP. These instructions preserve the older cloud runner.
 
 The original deployment used a DoorBird D1101KV-F-V2A. Other models need a compatible RTSP live stream.
 

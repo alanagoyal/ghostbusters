@@ -2,6 +2,7 @@
 .env
 .env.local
 .env.*.local
+.ghostbusters/
 
 # Python
 __pycache__/
@@ -35,10 +36,9 @@ build/
 # Test outputs
 backend/tests/test_detections/
 
-# Keep test images but ignore detection outputs
+# Camera images and detection outputs
 *.jpg
 *.png
-!test_images/*.png
 
 # Model files
 *.pt
@@ -56,3 +56,7 @@ Thumbs.db
 # Local service logs
 logs/
 *.log
+
+# Isolated local tooling and runtime
+.local-tools/
+!backend/tests/fixtures/local/*.jpg

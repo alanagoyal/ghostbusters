@@ -1,59 +1,7 @@
-# Person Detection Dashboard
+# Ghostbusters gallery
 
-A Next.js dashboard with real-time Supabase integration for monitoring person detections.
+The default local gallery is a static Next.js build served by the Python local service. Follow [local setup](../docs/LOCAL_SETUP.md); `ghostbusters local build` installs frontend dependencies and builds it, and `ghostbusters local up` serves its authenticated API, images and live events. It needs no Supabase configuration or separate Next.js server.
 
-## Features
+Run `npm ci` and `npm run typecheck` here for frontend development. Use the local build command from the repository root to verify the static output.
 
-- Real-time updates using Supabase subscriptions
-- Displays person detection data from your detection system
-- Shows confidence scores, timestamps, device IDs, and costume classifications
-- Clean, responsive UI with Tailwind CSS
-
-## Setup
-
-1. Install dependencies:
-```bash
-npm ci
-```
-
-2. Configure environment variables:
-   - Copy `.env.example` to `.env.local`
-   - Add your Supabase URL and anon key:
-```
-NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
-```
-
-3. Run the development server:
-```bash
-npm run dev
-```
-
-4. Open [http://localhost:3000/ghostbusters](http://localhost:3000/ghostbusters) in your browser
-
-## Database Schema
-
-The app expects a `person_detections` table with the following columns:
-- `id` (uuid)
-- `timestamp` (timestamptz)
-- `confidence` (float4)
-- `bounding_box` (jsonb)
-- `image_url` (text)
-- `device_id` (text)
-- `costume_classification` (text, nullable)
-- `costume_confidence` (float4, nullable)
-
-## Testing Real-time Updates
-
-To test the real-time functionality:
-
-1. Open the dashboard in your browser
-2. Insert a new row into the `person_detections` table in Supabase
-3. The new detection should appear immediately in the dashboard
-
-## Building for Production
-
-```bash
-npm run build
-npm start
-```
+The existing cloud branch uses Supabase and the `/ghostbusters` base path. Its development and hosting instructions are in [SETUP.md](SETUP.md).

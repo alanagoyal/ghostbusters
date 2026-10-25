@@ -34,6 +34,7 @@ export function DashboardClient({ initialDetections }: DashboardClientProps) {
   const [detections, setDetections] =
     useState<PersonDetection[]>(initialDetections);
 
+  const [connected,setConnected] = useState(false);
   // Subscribe to real-time updates
   useEffect(() => {
     const channel = supabase
@@ -46,7 +47,7 @@ export function DashboardClient({ initialDetections }: DashboardClientProps) {
           setDetections((prev) => [newDetection, ...prev.slice(0, 199)]);
         }
       )
-      .subscribe();
+      .subscribe((status) => setConnected(status === "SUBSCRIBED"));
 
     return () => {
       supabase.removeChannel(channel);
@@ -175,16 +176,16 @@ export function DashboardClient({ initialDetections }: DashboardClientProps) {
                 <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
                 <div className="absolute inset-0 w-3 h-3 bg-green-500 rounded-full animate-ping opacity-75"></div>
               </div>
-              <span className="text-sm font-medium text-green-600">LIVE</span>
+              <span className="text-sm font-medium text-green-600">{connected ? "Connected" : "Connecting / offline"}</span>
             </div>
           </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatsCard
-            title="Total Visitors"
+            title="Recent Detections"
             value={detections.length}
-            description="All-time trick-or-treaters"
+            description="Latest 200 records"
             icon={Users}
             trend={{
               value: activityTrend,
@@ -198,7 +199,7 @@ export function DashboardClient({ initialDetections }: DashboardClientProps) {
             icon={Shirt}
           />
           <StatsCard
-            title="Active Now"
+            title="Recent Activity"
             value={
               detections.filter(
                 (d) =>

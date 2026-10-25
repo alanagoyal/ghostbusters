@@ -135,7 +135,7 @@ export function ActivityTimeline({ detections }: ActivityTimelineProps) {
   }, [isReady])
 
   const maxCount = timeSlotData.length > 0 ? Math.max(...timeSlotData.map(h => h.count), 1) : 1
-  const peakSlot = timeSlotData.length > 0 ? timeSlotData.reduce((max, h) => h.count > max.count ? h : max, timeSlotData[0]) : null
+  const peakSlot = detections.length > 0 && timeSlotData.length > 0 ? timeSlotData.reduce((max, h) => h.count > max.count ? h : max, timeSlotData[0]) : null
 
   // Calculate a nice y-axis scale based on the max count
   const calculateYAxisScale = (max: number): number => {

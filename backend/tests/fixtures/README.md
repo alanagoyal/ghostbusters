@@ -1,142 +1,19 @@
-# Test Images
+# Test fixtures
 
-This directory contains sample Halloween costume images for testing the Baseten costume classification system and multi-person detection.
+The tracked, redistributable local release fixtures are in [local/](local/README.md).
+They are public licensed photographs, not owner doorstep footage. All five JPEGs
+are explicitly included by .gitignore and survive a source clone.
 
-## Image Organization
+After downloading the local model and building the frontend, run the real offline
+pipeline test from the repo root:
 
-Test images are organized into three subdirectories based on their testing purpose:
-
-### Single Person Images (`single/`)
-
-Images containing one person for single-person detection testing:
-
-- Location: `backend/tests/fixtures/single/`
-- These images should feature one person in a Halloween costume
-- Used to test basic costume classification
-
-### Multi-Person Images (`multiple/`)
-
-Images containing multiple people for multi-person detection testing:
-
-- Location: `backend/tests/fixtures/multiple/`
-- These images should feature 2 or more people in Halloween costumes
-- Used to test YOLO detection and separate classification for each person
-
-### Non-Human Costume Images (`nonhuman/`)
-
-Images containing inflatable or non-human-shaped costumes for dual-pass detection testing:
-
-- Location: `backend/tests/fixtures/nonhuman/`
-- These images should feature people in bulky inflatable costumes (T-Rex, dinosaurs, etc.)
-- Used to test dual-pass YOLO detection that validates non-person classes as costumes
-- Tests the validation logic that filters out false positives (actual cars/objects)
-
-## Image Format
-
-- All images are PNG format
-- Dimensions: ~1280x720 to 1920x1080 (captured from doorbell camera)
-- No pre-existing bounding boxes (YOLO generates them)
-- Show full doorstep scene with people centered
-
-## Usage
-
-### Single Person Detection Test
-
-Run the original test script to process all images in the `single/` folder:
-
-```bash
-uv run test_costume_detection.py
+```sh
+uv run --no-sync python -m backend.tests.local_e2e --model .ghostbusters/models/vision-qwen3 --report /private/path/e2e.json
 ```
 
-This will:
-1. Load all images from `backend/tests/fixtures/single/`
-2. Classify the costume using Baseten API
-3. Upload results to Supabase database
-4. Save annotated images to `backend/tests/test_detections/`
+This creates and removes a disposable fixture-video installation, runs actual YOLO
+and local vision, verifies SQLite/images/live events and restart persistence, and
+never reads cloud configuration or opens the household camera. Metal GPU access
+and the supported Mac hardware are required. Unit tests remain offline and mocked.
 
-### Multi-Person Detection Test
-
-Run the multi-person test script to detect all people in each image in the `multiple/` folder:
-
-```bash
-uv run test_multiple_people.py
-```
-
-This will:
-1. Load all images from `backend/tests/fixtures/multiple/`
-2. Use YOLOv8n to detect ALL people in the frame
-3. Process each detected person separately
-4. Classify each person's costume using Baseten API
-5. Create separate database entries for each person
-6. Upload all detections to Supabase database
-7. Save annotated frames with all bounding boxes drawn
-8. Save individual person crops to `backend/tests/test_detections/`
-
-### Non-Human Costume Detection Test
-
-Run the non-human costume test script to test dual-pass detection for images in the `nonhuman/` folder:
-
-```bash
-uv run test_nonhuman_costume.py
-```
-
-This will:
-1. Load all images from `backend/tests/fixtures/nonhuman/`
-2. **PASS 1**: Detect standard people (YOLO class 0)
-3. **PASS 2**: Detect potential inflatable costumes (YOLO classes 2=car, 14=bird, 16=dog, 17=cat)
-4. Validate inflatable detections with Baseten costume classifier
-5. **Reject** detections that return "No costume" (filtering out actual cars/objects)
-6. Create database entries only for validated costume detections
-7. Upload validated detections to Supabase database
-8. Save annotated frames with different colored boxes (green=person, magenta=validated inflatable)
-
-## Expected Results
-
-### Single Person Images
-
-The Baseten vision model should identify common costume types such as:
-- Animals: "tiger", "cat", "dog", etc.
-- Characters: "princess", "superhero", "witch", etc.
-- Creatures: "vampire", "ghost", "monster", etc.
-
-### Multi-Person Images
-
-When multiple people are detected in an image:
-- Each person gets a separate detection and classification
-- YOLO confidence scores for person detection
-- Individual costume classifications for each person
-- Separate database entries for accurate counting
-
-All results include:
-- **classification**: Short costume type (e.g., "tiger", "princess", "witch")
-- **confidence**: 0.0-1.0 score
-- **description**: Detailed description (e.g., "child in orange pumpkin costume with jack-o-lantern face")
-
-### Multi-Person Detection Highlights
-
-When running `test_multiple_people.py`:
-- **One database entry per person** (not per image)
-- Each person gets individual costume classification
-- Accurate visitor counting (groups counted separately)
-- No data loss when groups arrive together
-
-### Non-Human Costume Detection Highlights
-
-When running `test_nonhuman_costume.py`:
-- **Dual-pass detection** catches both regular people and inflatable costumes
-- YOLO may misclassify bulky inflatables as cars/animals (class 2, 14, 16, 17)
-- Baseten validation ensures only actual costumes are saved
-- False positives (real cars, objects) are filtered out
-- Green boxes = standard person detection
-- Magenta boxes = validated inflatable costume detection
-
-## Notes
-
-- Images in `single/` folder are for single-person detection testing
-- Images in `multiple/` folder demonstrate multi-person scenarios (groups of trick-or-treaters)
-- Images in `nonhuman/` folder test inflatable/bulky costumes that YOLO may misclassify
-- YOLO runs on each frame to detect people and generate bounding boxes
-- Dual-pass detection validates non-person YOLO classes through costume classification
-- In production, the system processes all detected people separately
-- Images are used for development and testing only
-- Add new test images by placing them in the appropriate folder: `single/`, `multiple/`, or `nonhuman/`
+Private owner photographs are not distributed. Do not copy camera captures into this collection. The public stills allow model testing before camera setup; they do not prove detection quality on a real doorstep.

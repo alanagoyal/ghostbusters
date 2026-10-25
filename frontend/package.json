@@ -13,8 +13,6 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@radix-ui/react-separator": "^1.1.7",
-    "@radix-ui/react-slot": "^1.2.3",
     "@supabase/supabase-js": "^2.76.1",
     "@tailwindcss/postcss": "^4.1.16",
     "@types/node": "^24.9.1",

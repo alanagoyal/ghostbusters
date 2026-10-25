@@ -1,24 +1,26 @@
 # Contributing
 
-Small, focused fixes and reproducible camera setup reports are welcome. Open an issue before a large integration so we can agree on scope.
+Focused fixes and reproducible camera setup reports are welcome. Read [AGENTS.md](AGENTS.md) and [local setup](docs/LOCAL_SETUP.md) first. Open an issue before a large integration.
 
-## Local checks
+## Checks
 
-Use Python 3.11, `uv sync --frozen`, and run:
+On an Apple Silicon Mac with 16 GB RAM, use Python 3.11:
 
 ```sh
-uv run python -m unittest discover -s backend/tests/unit -v
-uv run ruff check backend/src/camera.py backend/scripts/check_camera.py backend/tests/unit
-cd frontend
-npm ci
-npm run typecheck
-npm run build
+uv sync --frozen --python 3.11 --extra local
+uv run --no-sync python -m unittest discover -s backend/tests/unit -v
+uv run --no-sync ruff check backend/src/local backend/src/camera.py backend/scripts/check_camera.py backend/scripts/cli.py backend/scripts/service_runner.py scripts/setup_macos_service.py backend/tests/unit backend/tests/local_e2e.py
+npm --prefix frontend ci
+npm --prefix frontend run typecheck
+uv run --no-sync ghostbusters local build
 ```
 
-The legacy backend has existing lint debt; keep new modules clean. Add offline regression tests for behavior changes. Do not make CI depend on live cameras, cloud credentials, paid inference, or a production database. Manual integration scripts may upload images and create records; use a separate test project.
+On Linux CI or a cloud-only installation, omit `--extra local`; unit tests do not need Metal, cameras or downloaded models. On a local installation, retain `--extra local` when syncing and use `--no-sync` when running commands so uv does not remove optional runtime packages.
+
+The [licensed fixture test](backend/tests/fixtures/README.md) exercises real local inference separately. Keep CI offline: no camera credentials, paid inference or database writes. The optional Supabase integration script writes records; use a disposable project.
 
 ## Pull requests
 
-Explain the problem, behavior change, and validation. For camera support, include model, firmware, OS, transport/codec, and whether a full detection was tested. Redact credentials, IPs, tokens, and private footage. Use synthetic or explicitly consented fixtures, and record their source/license. Do not contribute identifiable visitor images.
+Describe the behavior change and verification. For camera support, include model, firmware, OS, transport and whether a real detection was tested. Document failures as well as successes. Redact credentials, addresses, tokens and private footage.
 
-Keep `.env`, captures, model weights, and local tooling files out of commits. Follow the existing Python/TypeScript style. Treat contributors respectfully and focus feedback on the code. Contributions of original code are under the project's MIT license; third-party dependencies retain their licenses.
+Keep runtime files, model weights and private camera images out of commits. Include source, author, license and modifications for every public fixture. Third-party images retain their own licenses; original contributions use the repository's MIT license. See [third-party notices](THIRD_PARTY_NOTICES.md).

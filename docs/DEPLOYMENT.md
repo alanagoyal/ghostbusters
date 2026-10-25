@@ -1,4 +1,6 @@
-# Raspberry Pi deployment and recovery
+# Legacy cloud deployment on Linux / Raspberry Pi
+
+This is the Baseten/Supabase path, not local vision. Full local classification requires a supported Mac; see [LOCAL_SETUP.md](LOCAL_SETUP.md).
 
 ## Recover an existing installation
 
@@ -37,7 +39,7 @@ sudo systemctl status costume-detector --no-pager
 sudo journalctl -u costume-detector -f
 ```
 
-The installer generates the service using your current checkout and invoking user. It enables startup on boot but does not start the detector. The checked-in `.service` file is a reference for the original deployment; the installer does not copy its hard-coded paths.
+The installer generates the service using your current checkout and invoking user. It enables startup on boot but does not start the detector.
 
 ```sh
 sudo systemctl stop costume-detector
