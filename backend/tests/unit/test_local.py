@@ -340,6 +340,9 @@ class SetupRegressionTests(unittest.TestCase):
             )
             with (
                 patch.object(cli, "checks", return_value=[]),
+                patch.object(cli.platform, "system", return_value="Darwin"),
+                patch.object(cli.platform, "machine", return_value="arm64"),
+                patch("psutil.virtual_memory", return_value=Mock(total=16_000_000_000)),
                 patch("backend.src.local.lifecycle.alive", return_value=False),
                 contextlib.redirect_stdout(io.StringIO()),
             ):
