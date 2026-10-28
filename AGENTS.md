@@ -27,3 +27,23 @@ Never commit credentials, runtime files, models or private camera images.
   cloud integration tests write records. Use disposable resources for new tests.
 - Preserve `.env`, `frontend/.env.local`, camera settings,
   existing services and resources. Local lifecycle tracks only its installation.
+
+## Optional Stripe Projects cloud installation
+
+When the user explicitly selects Stripe Projects/cloud, follow
+[docs/STRIPE_PROJECTS.md](docs/STRIPE_PROJECTS.md), including its agent runbook.
+Provision supported accounts/resources through Stripe Projects and provider CLIs;
+ask the owner only for concrete browser approvals, inaccessible secrets, camera
+permission/device selection or a budget decision. Use a separate checkout for an
+existing install. Keep Stripe's generated credentials in the ignored provisioning
+directory; import via `ghostbusters projects configure`, then apply the rerunnable
+schema with `ghostbusters projects bootstrap`. Verify model access, uploads and
+Realtime separately from provisioning; do not claim live success from unit tests.
+
+New Projects installs use private buckets and explicit `gallery_viewers` access.
+Follow [cloud privacy](docs/CLOUD_PRIVACY.md); never relax bucket/RLS access to fix
+sign-in. Create owner access with `projects add-viewer`, configure Auth redirects,
+and have the owner complete email sign-in. Require explicit model selection and
+keep OpenRouter no-data-collection/ZDR routing enabled. NVIDIA free endpoints and
+automatic/free routers are blocked for camera footage. Synthetic success does not
+establish provider permission to process faces.

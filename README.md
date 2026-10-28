@@ -39,8 +39,46 @@ only this install. Photos stay private and unblurred locally, are deleted under 
 retention/disk policy, and require the private gallery access link. Costume guesses
 can be wrong, and counts represent detections rather than unique visitors.
 
+## Optional cloud version with Stripe Projects
+
+For cloud vision and a private, sign-in-protected gallery, ask your agent to follow
+[the Stripe Projects setup guide](docs/STRIPE_PROJECTS.md). The agent provisions
+Supabase/OpenRouter and optionally Vercel using their CLIs, imports credentials,
+and bootstraps the database. The guide spells out browser approvals and the
+Supabase backend-key fallback. Capture still runs on a computer at home.
+Use a separate checkout to keep an existing local installation alongside cloud.
+
+**Plan for a few owner steps:**
+
+1. Sign in to Stripe Projects and approve the requested provider association (Supabase in our test).
+2. If credentials are missing, approve Supabase CLI access **or** use the existing dashboard key route below. Both are not inherently required.
+3. If automatic retrieval is unavailable, supply the new project's Supabase backend secret through a secure form. With your authorization, an agent with access to your signed-in browser can copy an **existing** key directly into secure configuration instead; never put it in chat.
+
+Agents should first reuse credentials returned by provisioning, before requesting
+another login. Vercel needed no separate authorization in our test. You still
+handle account selection, password/MFA/CAPTCHA challenges and required permission
+consent. Camera credentials/streaming permission, a real walkthrough, and a
+free-tier capacity or budget decision may also need you. With the private cloud
+gallery, you also click an email sign-in link; the agent creates your viewer account
+and access list. [Privacy, model selection and migration](docs/CLOUD_PRIVACY.md).
+
+**Verified cloud test:** DoorBird capture → classification → storage → live hosted
+gallery worked on October 28, 2026. The test used
+`nvidia/nemotron-3.5-super-vl:free` at $0 inference pricing. However, its
+[current provider notice](https://openrouter.ai/nvidia/nemotron-3.5-super-vl:free)
+says not to submit personal data such as faces: **do not use that free endpoint
+for real camera footage**. It is not a recommended production default. Choose a
+vision endpoint with suitable data-use terms and explicit pricing, or use local
+mode. Free inference also has quotas and variable availability.
+
 Existing Baseten/Supabase installs keep their configured behavior.
 Manual cloud setup is explicit: `uv run --no-sync ghostbusters setup --provider baseten`.
 See [legacy cloud CLI operation](docs/CLI.md).
 
 [Test stills and camera-free verification](backend/tests/fixtures/README.md) · [Contributing](CONTRIBUTING.md) · [Privacy](SECURITY.md)
+
+## License
+
+The combined application is distributed under [AGPL-3.0](LICENSE). Original MIT
+notices are preserved in [third-party notices](THIRD_PARTY_NOTICES.md). Hosted forks
+must offer corresponding source; set `NEXT_PUBLIC_SOURCE_URL` to the deployed source.

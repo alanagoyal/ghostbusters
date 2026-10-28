@@ -22,8 +22,8 @@ from dotenv import load_dotenv
 from ultralytics import YOLO
 
 from backend.src.camera import camera_source, open_camera, region_of_interest
-from backend.src.clients.baseten_client import BasetenClient
 from backend.src.clients.supabase_client import SupabaseClient
+from backend.src.clients.vision import create_vision_client, vision_settings
 from backend.src.costume_detector import (
     INFLATABLE_CLASSES,
     PERSON_CLASS,
@@ -35,6 +35,7 @@ from backend.src.utils.face_blur import FaceBlurrer
 load_dotenv()
 
 # Validate settings before loading models or contacting services.
+vision_settings()
 rtsp_url = camera_source()
 ROI_X_MIN, ROI_X_MAX, ROI_Y_MIN, ROI_Y_MAX = region_of_interest()
 print("🚀 Starting person detection system...")
@@ -50,17 +51,17 @@ supabase_client = None
 try:
     supabase_client = SupabaseClient()
     print(f"✅ Connected to Supabase (Device: {supabase_client.device_id})")
-except Exception as e:
-    print(f"⚠️  Supabase not configured: {e}")
+except Exception:
+    print("⚠️  Supabase not configured")
     print("   Detections will only be saved locally")
 
 # Initialize Baseten client for costume classification (optional)
 baseten_client = None
 try:
-    baseten_client = BasetenClient()
-    print(f"✅ Connected to Baseten (Model: {baseten_client.model})")
-except Exception as e:
-    print(f"⚠️  Baseten not configured: {e}")
+    baseten_client = create_vision_client()
+    print(f"✅ Cloud vision configured (Model: {baseten_client.model})")
+except Exception:
+    print("Cloud vision is not configured")
     print("   Costume classification will be skipped")
 
 # Initialize face blurrer for privacy protection
@@ -77,7 +78,7 @@ CAPTURE_COOLDOWN = 30  # Seconds to wait before next capture
 # Configured through ROI_*; legacy DoorBird defaults preserve the original view.
 
 print(f"🎯 Detection: {CONSECUTIVE_FRAMES_REQUIRED} consecutive frames at >{CONFIDENCE_THRESHOLD} confidence")
-print(f"🎈 Dual-pass: Standard people (class 0) + inflatable costumes (classes 2, 14, 16, 17)")
+print("🎈 Dual-pass: Standard people (class 0) + inflatable costumes (classes 2, 14, 16, 17)")
 print(f"📍 ROI: Doorstep area only (x: {ROI_X_MIN}-{ROI_X_MAX}, y: {ROI_Y_MIN}-{ROI_Y_MAX})")
 print(f"⏱️  Cooldown: {CAPTURE_COOLDOWN}s between captures")
 
@@ -280,7 +281,7 @@ try:
 
                     if baseten_client:
                         try:
-                            print(f"   🎭 Classifying costume...")
+                            print("   🎭 Classifying costume...")
                             # Extract person crop from ORIGINAL frame (not blurred)
                             x1, y1, x2, y2 = (
                                 person_box["x1"],
@@ -308,8 +309,8 @@ try:
                                 print(f"      {costume_description}")
                             else:
                                 print("   ⚠️  Could not classify costume")
-                        except Exception as e:
-                            print(f"   ⚠️  Costume classification failed: {e}")
+                        except Exception:
+                            print("   ⚠️  Costume classification failed")
 
                     # Store classification results for later use
                     person["costume_classification"] = costume_classification
@@ -361,17 +362,17 @@ try:
                                 costume_confidence=person.get("costume_confidence"),
                             )
                             uploads_succeeded = uploads_succeeded and saved
-                        except Exception as e:
+                        except Exception:
                             uploads_succeeded = False
-                            print(f"   ⚠️  Supabase upload failed: {e}")
+                            print("   ⚠️  Supabase upload failed")
 
                 # Clean up local file after all persons processed and uploaded
                 try:
                     if uploads_succeeded and os.path.exists(filename):
                         os.remove(filename)
                         print(f"   🗑️  Cleaned up local file: {filename}")
-                except Exception as e:
-                    print(f"   ⚠️  Failed to cleanup local file: {e}")
+                except Exception:
+                    print("   ⚠️  Failed to cleanup local file")
         else:
             # No person detected - reset consecutive counter
             if consecutive_detections > 0:

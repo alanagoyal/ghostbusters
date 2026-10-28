@@ -37,19 +37,20 @@ export function DashboardClient({ initialDetections }: DashboardClientProps) {
   const [connected,setConnected] = useState(false);
   // Subscribe to real-time updates
   useEffect(() => {
-    const channel = supabase
-      .channel("person_detections")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "person_detections" },
-        (payload) => {
-          const newDetection = payload.new as PersonDetection;
-          setDetections((prev) => [newDetection, ...prev.slice(0, 199)]);
-        }
-      )
+    let active = true;
+    const refresh = async () => {
+      const { data, error } = await supabase.from("person_detections").select("*")
+        .order("timestamp", { ascending: false }).limit(200);
+      if (active) setDetections(error ? [] : data || []);
+    };
+    void refresh();
+    const channel = supabase.channel("person_detections")
+      .on("postgres_changes", { event: "*", schema: "public", table: "person_detections" },
+        () => { void refresh(); })
       .subscribe((status) => setConnected(status === "SUBSCRIBED"));
-
+    const timer = setInterval(refresh, 60_000);
     return () => {
+      active = false; clearInterval(timer);
       supabase.removeChannel(channel);
     };
   }, []);

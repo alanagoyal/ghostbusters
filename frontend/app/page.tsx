@@ -1,3 +1,4 @@
+import { PrivateGallery } from "@/components/private-gallery";
 import { LocalGallery } from "@/components/local-gallery";
 import { DashboardClient } from "@/components/dashboard/dashboard-client";
 
@@ -30,19 +31,20 @@ async function getInitialDetections(): Promise<PersonDetection[]> {
       .limit(200);
 
     if (error) {
-      console.error("Error fetching detections:", error);
+      console.error("Could not fetch detections");
       return [];
     }
 
     return data || [];
   } catch (err) {
-    console.error("Error fetching detections:", err);
+    console.error("Could not fetch detections");
     return [];
   }
 }
 
 export default async function Dashboard() {
   if (process.env.NEXT_PUBLIC_STORAGE_PROVIDER === "local" || !process.env.NEXT_PUBLIC_SUPABASE_URL) return <LocalGallery />;
+  if (process.env.NEXT_PUBLIC_GALLERY_ACCESS === "private") return <PrivateGallery />;
   const initialDetections = await getInitialDetections();
 
   return <DashboardClient initialDetections={initialDetections} />;

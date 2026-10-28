@@ -7,7 +7,6 @@ Uses Gemma vision model with structured outputs.
 import base64
 import json
 import os
-from typing import Optional, Tuple
 
 import requests
 
@@ -79,15 +78,15 @@ ALLOWED_CATEGORIES = [
 class BasetenClient:
     """Client for Baseten vision model API"""
 
-    def __init__(self):
+    def __init__(self, *, api_key=None, model_url=None, model=None, auth_scheme=None, request_options=None):
         """
         Initialize Baseten client with API key and model URL.
 
         Raises:
             ValueError: If BASETEN_API_KEY or BASETEN_MODEL_URL is not set
         """
-        self.api_key = os.getenv("BASETEN_API_KEY")
-        self.model_url = os.getenv("BASETEN_MODEL_URL")
+        self.api_key = api_key if auth_scheme else os.getenv("BASETEN_API_KEY")
+        self.model_url = model_url if auth_scheme else os.getenv("BASETEN_MODEL_URL")
 
         if not self.api_key:
             raise ValueError("BASETEN_API_KEY environment variable not set")
@@ -96,19 +95,20 @@ class BasetenClient:
 
         # Build session so connections can be re-used across requests
         self.session = requests.Session()
-        auth_scheme = os.getenv("BASETEN_AUTH_SCHEME", "Api-Key")
+        auth_scheme = auth_scheme or os.getenv("BASETEN_AUTH_SCHEME", "Api-Key")
         if auth_scheme not in {"Api-Key", "Bearer"}:
             raise ValueError("BASETEN_AUTH_SCHEME must be Api-Key or Bearer")
         self.session.headers.update({"Authorization": f"{auth_scheme} {self.api_key}"})
 
         # Model configuration
-        self.model = os.getenv("BASETEN_MODEL", "gemma")
+        self.model = model or os.getenv("BASETEN_MODEL", "gemma")
         self.temperature = 0.5
         self.max_tokens = 512
+        self.request_options = request_options or {}
 
     def classify_costume(
-        self, image_bytes: bytes, custom_prompt: Optional[str] = None
-    ) -> Tuple[Optional[str], Optional[float], Optional[str]]:
+        self, image_bytes: bytes, custom_prompt: str | None = None
+    ) -> tuple[str | None, float | None, str | None]:
         """
         Classify a Halloween costume from an image using Gemma vision model.
 
@@ -164,6 +164,7 @@ class BasetenClient:
                 self.model_url,
                 timeout=(10, 60),
                 json={
+                    **self.request_options,
                     "model": self.model,
                     "stream": False,
                     "messages": [
@@ -190,7 +191,7 @@ class BasetenClient:
             if "choices" in result and len(result["choices"]) > 0:
                 content = result["choices"][0].get("message", {}).get("content", "")
             else:
-                print(f"⚠️  Unexpected response format: {result}")
+                print("Vision response missing completion")
                 return None, None, None
 
             if not content:
@@ -222,15 +223,14 @@ class BasetenClient:
 
             return classification, confidence, description
 
-        except requests.exceptions.RequestException as e:
-            print(f"⚠️  Baseten API request error: {e}")
+        except requests.exceptions.RequestException:
+            print("Vision request failed; check model access, credits and connectivity")
             return None, None, None
-        except json.JSONDecodeError as e:
-            print(f"⚠️  Failed to parse JSON response: {e}")
-            print(f"   Raw content: {content if 'content' in locals() else 'N/A'}")
+        except json.JSONDecodeError:
+            print("Vision response was not valid JSON")
             return None, None, None
-        except Exception as e:
-            print(f"⚠️  Baseten API error: {e}")
+        except Exception:
+            print("Vision classification failed")
             return None, None, None
 
     def test_connection(self) -> bool:
@@ -246,6 +246,7 @@ class BasetenClient:
                 self.model_url,
                 timeout=(10, 60),
                 json={
+                    **self.request_options,
                     "model": self.model,
                     "stream": False,
                     "messages": [
@@ -257,6 +258,6 @@ class BasetenClient:
             response.raise_for_status()
             result = response.json()
             return "choices" in result
-        except Exception as e:
-            print(f"❌ Connection test failed: {e}")
+        except Exception:
+            print("Vision connection test failed")
             return False

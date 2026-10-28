@@ -12,17 +12,23 @@ from pathlib import Path
 
 def redact(message):
     """Native video backends may include credential-bearing URLs in errors."""
-    return re.sub(r"(rtsps?|https?)://[^\s/]*@", r"\1://[redacted]@", message)
+    message = re.sub(r"(?:rtsps?|https?)://[^\s]+", "[redacted-url]", message)
+    return re.sub(
+        r"(?:sb_secret_|sk-or-v1-|eyJ)[A-Za-z0-9_.-]+", "[redacted-key]", message
+    )
 
 
-def main():
-    log_dir = Path(os.environ.get("GHOSTBUSTERS_LOG_DIR", "logs"))
-    log_dir.mkdir(parents=True, exist_ok=True)
+def main(foreground=False):
     logger = logging.getLogger("ghostbusters")
     logger.setLevel(logging.INFO)
-    handler = RotatingFileHandler(
-        log_dir / "detector.log", maxBytes=10_000_000, backupCount=5
-    )
+    if foreground:
+        handler = logging.StreamHandler(sys.stdout)
+    else:
+        log_dir = Path(os.environ.get("GHOSTBUSTERS_LOG_DIR", "logs"))
+        log_dir.mkdir(parents=True, exist_ok=True)
+        handler = RotatingFileHandler(
+            log_dir / "detector.log", maxBytes=10_000_000, backupCount=5
+        )
     handler.setFormatter(logging.Formatter("%(asctime)s %(message)s"))
     logger.addHandler(handler)
     child = subprocess.Popen(
@@ -64,8 +70,9 @@ def main():
         if inhibitor:
             inhibitor.terminate()
             inhibitor.wait()
+        logger.removeHandler(handler)
         handler.close()
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(main(foreground="--foreground" in sys.argv))

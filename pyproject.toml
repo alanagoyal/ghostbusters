@@ -3,6 +3,8 @@ name = "ghostbusters"
 version = "0.1.0"
 description = "Local-first doorstep costume gallery"
 requires-python = ">=3.11"
+license = "AGPL-3.0-only"
+license-files = ["LICENSE", "LICENSES/MIT-original.txt", "THIRD_PARTY_NOTICES.md"]
 dependencies = [
     "opencv-python>=4.12.0.88",
     "python-dotenv>=1.1.1",

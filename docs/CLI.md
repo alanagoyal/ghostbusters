@@ -1,5 +1,8 @@
 # Optional cloud setup and seasonal operation
 
+For agent-provisioned OpenRouter/Supabase and optional Vercel hosting, use
+[Stripe Projects setup](STRIPE_PROJECTS.md). Existing Baseten setups remain supported.
+
 New clones default local: follow [LOCAL_SETUP.md](LOCAL_SETUP.md). This page applies
 to explicitly selected cloud inference/Supabase installations. Bare `setup` on a
 fresh clone uses the local workflow; select a provider explicitly for manual cloud setup.

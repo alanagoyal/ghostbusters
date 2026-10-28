@@ -14,6 +14,7 @@ from urllib.parse import urlparse
 from dotenv import dotenv_values, load_dotenv, set_key
 
 from backend.src.camera import camera_source, region_of_interest
+from backend.src.clients.vision import request_options, vision_settings
 
 ROOT = Path(__file__).resolve().parents[2]
 LABEL = "com.ghostbusters.detector"
@@ -73,7 +74,7 @@ def setup():
     print("Images/costume crops go to Baseten; the Supabase gallery is public.")
     print("Camera help: docs/CAMERAS.md")
     kind = input("Camera: [1] USB/RTSP/HTTP [2] DoorBird (default 1): ").strip()
-    values = {}
+    values = {"INFERENCE_PROVIDER": "baseten", "STORAGE_PROVIDER": "supabase"}
     if kind == "2":
         values["CAMERA_SOURCE"] = ""
         for key in ("DOORBIRD_IP", "DOORBIRD_USERNAME", "DOORBIRD_PASSWORD"):
@@ -157,13 +158,14 @@ def doctor(skip_camera=False):
 
     env = os.environ
     results = []
+    api_key, endpoint, model, auth = vision_settings(env)
 
     def config():
+        if not api_key or not endpoint or not model:
+            raise ValueError("Missing vision configuration")
         camera_source()
         region_of_interest()
         for key in (
-            "BASETEN_API_KEY",
-            "BASETEN_MODEL_URL",
             "SUPABASE_SERVICE_ROLE_KEY",
             "NEXT_PUBLIC_SUPABASE_URL",
         ):
@@ -192,7 +194,7 @@ def doctor(skip_camera=False):
             )
         )
 
-    def baseten():
+    def vision():
         # Synthetic image exercises vision without sending a household image.
         import cv2
         import numpy as np
@@ -200,13 +202,11 @@ def doctor(skip_camera=False):
         _, image = cv2.imencode(".jpg", np.zeros((64, 64, 3), dtype=np.uint8))
         data = base64.b64encode(image).decode()
         response = requests.post(
-            env["BASETEN_MODEL_URL"],
-            headers={
-                "Authorization": f"{env.get('BASETEN_AUTH_SCHEME', 'Api-Key')} "
-                f"{env['BASETEN_API_KEY']}"
-            },
+            endpoint,
+            headers={"Authorization": f"{auth} {api_key}"},
             json={
-                "model": env.get("BASETEN_MODEL", "gemma"),
+                **request_options(env),
+                "model": model,
                 "max_tokens": 16,
                 "messages": [
                     {
@@ -227,13 +227,15 @@ def doctor(skip_camera=False):
         if not response.json().get("choices"):
             raise ValueError("No completion")
 
-    print("Baseten check makes one small billed vision request using a blank image.")
+    print(
+        "Cloud vision check makes one small billed vision request using a blank image."
+    )
     results.append(
         check(
-            "Baseten vision inference",
-            baseten,
+            "Cloud vision inference",
+            vision,
             "Check API key, model access, credits, URL and auth scheme; "
-            "see docs/BASETEN_SETUP.md.",
+            "see docs/STRIPE_PROJECTS.md or docs/BASETEN_SETUP.md.",
         )
     )
 
@@ -269,12 +271,13 @@ def doctor(skip_camera=False):
 
     def bucket():
         info = request("/storage/v1/bucket/detection-images", key)
-        if not info.get("public"):
-            raise ValueError("Public gallery requires public bucket")
+        expected_public = env.get("GALLERY_ACCESS") != "private"
+        if info.get("public") != expected_public:
+            raise ValueError("Bucket visibility does not match gallery configuration")
 
     results.append(
         check(
-            "Supabase public image bucket",
+            "Supabase image bucket visibility",
             bucket,
             "Create detection-images using the Supabase setup SQL.",
         )
@@ -287,13 +290,23 @@ def doctor(skip_camera=False):
             raise ValueError("Project mismatch")
         if not public_key(browser_key):
             raise ValueError("Not a public key")
+        if env.get("GALLERY_ACCESS") == "private":
+            if front.get("NEXT_PUBLIC_GALLERY_ACCESS") != "private":
+                raise ValueError("Private gallery requires matching frontend config")
+            try:
+                request(table_path, browser_key)
+            except requests.HTTPError as error:
+                if error.response.status_code in (401, 403):
+                    return
+                raise
+            raise ValueError("Anonymous table access must be denied")
         request(table_path, browser_key)
 
     results.append(
         check(
-            "Dashboard public table access",
+            "Dashboard access policy",
             frontend,
-            "Run setup; check public SELECT grant/RLS in Supabase.",
+            "Check gallery mode, matching frontend settings and Supabase grants/RLS.",
         )
     )
     print(
@@ -377,6 +390,10 @@ def service(action):
 
 def main(argv=None):
     argv = list(sys.argv[1:] if argv is None else argv)
+    if argv and argv[0] == "projects":
+        from backend.scripts.projects import main as projects_main
+
+        return projects_main(argv[1:])
     # Explicit local commands never load legacy cloud .env credentials.
     if argv and argv[0] == "local":
         from backend.src.local.cli import main as local_main
@@ -441,17 +458,20 @@ def main(argv=None):
             camera_source()
             region_of_interest()
             required = (
-                "BASETEN_API_KEY",
-                "BASETEN_MODEL_URL",
                 "SUPABASE_SERVICE_ROLE_KEY",
                 "NEXT_PUBLIC_SUPABASE_URL",
             )
-            if any(not os.environ.get(key) for key in required):
+            key, endpoint, model, _ = vision_settings()
+            if not all((key, endpoint, model)) or any(
+                not os.environ.get(key) for key in required
+            ):
                 print("Complete setup first: uv run ghostbusters setup")
                 return 1
         if args.command == "start" and args.foreground:
             print("Foreground mode: Ctrl+C stops. Stop any background service first.")
-            return subprocess.call([sys.executable, "-m", "backend.scripts.main"])
+            return subprocess.call(
+                [sys.executable, "-m", "backend.scripts.service_runner", "--foreground"]
+            )
         return service(args.command)
     except (KeyboardInterrupt, EOFError):
         print("\nCancelled.")

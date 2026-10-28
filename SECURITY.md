@@ -11,3 +11,12 @@ Local inference does not upload camera images to a model provider. A browser vie
 ## Existing cloud installations
 
 The optional Baseten path sends unblurred person crops to the inference provider. The legacy Supabase gallery and image bucket are publicly readable. The saved full-scene image uses face blurring, which is not guaranteed anonymization. Backend secret/service-role keys must never be put in frontend configuration. Review your capture area, access policies and retention before enabling this path.
+
+## New Stripe Projects cloud installs
+
+New Projects setup uses private buckets, explicit viewer membership, and signed
+photo links. Read [cloud privacy](docs/CLOUD_PRIVACY.md) for sign-in, model routing,
+revocation, retention and migration. Older public installations require an explicit
+migration; updating code does not retroactively protect their hosted resources.
+Report security issues privately through GitHub's private vulnerability reporting
+when enabled; do not put credentials or private images into public issues.

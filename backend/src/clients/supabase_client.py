@@ -6,8 +6,6 @@ Handles database operations and storage uploads.
 
 import os
 from datetime import datetime
-from pathlib import Path
-from typing import Optional
 
 from dotenv import load_dotenv
 from supabase import Client, create_client
@@ -35,10 +33,11 @@ class SupabaseClient:
 
         self.client: Client = create_client(self.url, self.key)
         self.bucket_name = "detection-images"
+        self.private_gallery = os.getenv("GALLERY_ACCESS") == "private"
 
     def upload_detection_image(
         self, image_path: str, timestamp: datetime
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         Upload detection image to Supabase storage.
 
@@ -47,7 +46,7 @@ class SupabaseClient:
             timestamp: Timestamp of detection
 
         Returns:
-            Public URL of uploaded image, or None if upload fails
+            Object path (private) or legacy public URL; None if upload fails
         """
         try:
             # Generate storage path: device_id/YYYYMMDD_HHMMSS.jpg
@@ -65,6 +64,10 @@ class SupabaseClient:
                 file_options={"content-type": "image/jpeg", "upsert": "true"},
             )
 
+            if self.private_gallery:
+                return storage_path
+
+            # Legacy installations retain their public URL format.
             # Get public URL
             public_url = self.client.storage.from_(self.bucket_name).get_public_url(
                 storage_path
@@ -72,8 +75,8 @@ class SupabaseClient:
 
             return public_url
 
-        except Exception as e:
-            print(f"❌ Error uploading image: {e}")
+        except Exception:
+            print("❌ Error uploading image")
             return None
 
     def insert_detection(
@@ -81,11 +84,11 @@ class SupabaseClient:
         timestamp: datetime,
         confidence: float,
         bounding_box: dict,
-        image_url: Optional[str] = None,
-        costume_classification: Optional[str] = None,
-        costume_description: Optional[str] = None,
-        costume_confidence: Optional[float] = None,
-    ) -> Optional[dict]:
+        image_url: str | None = None,
+        costume_classification: str | None = None,
+        costume_description: str | None = None,
+        costume_confidence: float | None = None,
+    ) -> dict | None:
         """
         Insert person detection record into database.
 
@@ -93,7 +96,7 @@ class SupabaseClient:
             timestamp: When person was detected
             confidence: YOLO confidence score (0.0-1.0)
             bounding_box: Dict with x1, y1, x2, y2 coordinates
-            image_url: URL to uploaded image (optional)
+            image_url: Storage object path or legacy public URL (optional)
             costume_classification: AI costume type (e.g., "witch", "skeleton") (optional)
             costume_description: Detailed costume description (optional)
             costume_confidence: AI classification confidence (optional)
@@ -128,8 +131,8 @@ class SupabaseClient:
                 return response.data[0]
             return None
 
-        except Exception as e:
-            print(f"❌ Error inserting detection: {e}")
+        except Exception:
+            print("❌ Error inserting detection")
             return None
 
     def save_detection(
@@ -138,9 +141,9 @@ class SupabaseClient:
         timestamp: datetime,
         confidence: float,
         bounding_box: dict,
-        costume_classification: Optional[str] = None,
-        costume_description: Optional[str] = None,
-        costume_confidence: Optional[float] = None,
+        costume_classification: str | None = None,
+        costume_description: str | None = None,
+        costume_confidence: float | None = None,
     ) -> bool:
         """
         Complete workflow: upload image and insert detection record.
@@ -176,8 +179,6 @@ class SupabaseClient:
 
         if result:
             print(f"✅ Detection saved to Supabase (ID: {result['id']})")
-            if image_url:
-                print(f"   Image URL: {image_url}")
             return bool(image_url)
         else:
             print("❌ Failed to save detection to Supabase")
@@ -202,8 +203,8 @@ class SupabaseClient:
                 .execute()
             )
             return response.data
-        except Exception as e:
-            print(f"❌ Error retrieving detections: {e}")
+        except Exception:
+            print("❌ Error retrieving detections")
             return []
 
     def update_costume_classification(
@@ -239,8 +240,8 @@ class SupabaseClient:
                 .execute()
             )
             return bool(response.data)
-        except Exception as e:
-            print(f"❌ Error updating costume classification: {e}")
+        except Exception:
+            print("❌ Error updating costume classification")
             return False
 
 
@@ -255,7 +256,7 @@ if __name__ == "__main__":
 
     print("🧪 Testing Supabase client...")
     print(f"   Device ID: {client.device_id}")
-    print(f"   Supabase URL: {client.url}")
+    print("   Supabase configured")
     print()
 
     # Insert test detection (without image)

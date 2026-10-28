@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Camera } from "lucide-react";
+import { galleryImages, privateGallery } from "@/lib/gallery-images";
 import { supabase } from "@/lib/supabase";
 import { toTitleCase } from "@/lib/string-utils";
 
@@ -30,18 +31,22 @@ export function PhotoGallery() {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    let active = true;
+    let generation = 0;
     // Fetch initial detections with images
     const fetchDetections = async () => {
+      const current = ++generation;
       const { data, error } = await supabase
         .from("person_detections")
         .select("*")
         .not("image_url", "is", null)
-        .order("timestamp", { ascending: false });
+        .order("timestamp", { ascending: false }).limit(200);
 
-      if (data && !error) {
-        setDetections(data);
+      const images = data && !error ? await galleryImages(data) : [];
+      if (active && current === generation) {
+        setDetections(images);
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
 
     fetchDetections();
@@ -52,20 +57,18 @@ export function PhotoGallery() {
       .on(
         "postgres_changes",
         {
-          event: "INSERT",
+          event: "*",
           schema: "public",
           table: "person_detections",
         },
-        (payload) => {
-          const newDetection = payload.new as PersonDetection;
-          if (newDetection.image_url) {
-            setDetections((prev) => [newDetection, ...prev]);
-          }
-        }
+        () => { void fetchDetections(); }
       )
       .subscribe();
 
+    // Refresh signed links before their two-minute expiry, also reconcile deletes.
+    const timer = setInterval(fetchDetections, 60_000);
     return () => {
+      active = false; clearInterval(timer);
       supabase.removeChannel(channel);
     };
   }, []);
@@ -132,6 +135,8 @@ export function PhotoGallery() {
                       {detection.image_url && (
                         <Image
                           src={detection.image_url}
+                          unoptimized={privateGallery}
+                          referrerPolicy="no-referrer"
                           alt={detection.costume_classification || "Detection"}
                           fill
                           className="object-cover transition-transform duration-500 group-hover:scale-110"

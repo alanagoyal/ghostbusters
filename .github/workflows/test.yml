@@ -18,10 +18,46 @@ jobs:
       - run: uv sync --frozen
       - run: npm --prefix frontend ci
       - run: uv run --no-sync python -m unittest discover -s backend/tests/unit -v
-      - run: uv run --no-sync ruff check backend/src/local backend/src/camera.py backend/scripts/check_camera.py backend/scripts/cli.py backend/scripts/service_runner.py scripts/setup_macos_service.py backend/tests/unit backend/tests/local_e2e.py
+      - run: uv run --no-sync ruff check backend/src/local backend/src/camera.py backend/scripts/check_camera.py backend/scripts/cli.py backend/scripts/service_runner.py backend/scripts/projects.py backend/src/clients/vision.py backend/tests/integration/private_gallery_sql.py scripts/setup_macos_service.py backend/tests/unit backend/tests/local_e2e.py
       - run: npm --prefix frontend run typecheck
+      - run: npm --prefix frontend run test:privacy
       - run: npm --prefix frontend run build
         env:
           NEXT_PUBLIC_STORAGE_PROVIDER: local
           NEXT_PUBLIC_BASE_PATH: ''
           NEXT_TELEMETRY_DISABLED: '1'
+
+  private-gallery-policies:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: test-only
+          POSTGRES_DB: ghostbusters_privacy_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 backend/tests/integration/private_gallery_sql.py -v
+        env:
+          PGHOST: localhost
+          PGPORT: '5432'
+          PGUSER: postgres
+          PGPASSWORD: test-only
+          PGDATABASE: ghostbusters_privacy_test
+  secret-history:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify and run pinned Gitleaks
+        shell: bash
+        run: |
+          curl --fail --silent --show-error --location https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz -o /tmp/gitleaks.tar.gz
+          echo '551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb  /tmp/gitleaks.tar.gz' | sha256sum --check
+          tar -xzf /tmp/gitleaks.tar.gz -C /tmp gitleaks
+          /tmp/gitleaks git --redact --log-opts=--all .
