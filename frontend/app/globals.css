@@ -27,7 +27,6 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --color-signal: var(--signal);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
@@ -55,9 +54,6 @@
   --border: #e6bfc566;
   --input: #e6bfc580;
   --ring: #f4efec;
-  /* Detector readouts: live dot, detection quality and activity. */
-  --signal: var(--primary);
-  --live: #8edb8e;
   --chart-1: #f4efec;
   --chart-2: #ffb3c1;
   --chart-3: #ff8fa3;
@@ -191,7 +187,7 @@ html { scroll-behavior: smooth; }
 .gallery-status, .gallery-status > span { display: flex; align-items: center; gap: 8px; font-size: 10px; color: var(--muted-foreground); }
 .gallery-status { flex-direction: column; align-items: flex-end; }
 .gallery-status i { width: 6px; height: 6px; background: transparent; border: 1px solid currentColor; border-radius: 50%; }
-.gallery-status .is-connected { background: var(--live); border-color: var(--live); color: var(--live); }
+.gallery-status .is-connected { background: #8edb8e; border-color: #8edb8e; }
 .instrument-card { box-shadow: none; }
 .instrument-title { font-size: 12px; font-weight: 500; }
 .stat-value { font-size: 38px; line-height: 1.2; font-weight: 400; letter-spacing: -.06em; color: var(--foreground); }
@@ -261,8 +257,8 @@ html { scroll-behavior: smooth; }
 .gallery-status .status-pill { gap: 7px; padding: 5px 11px 5px 9px; border: 1px solid var(--border); border-radius: 999px; white-space: nowrap; line-height: 1; }
 .gallery-status .status-sep { opacity: .5; }
 .gallery-status .status-return { color: var(--foreground); }
-.gallery-status .is-connected { animation: status-pulse 2.4s ease-out infinite; }
-@keyframes status-pulse { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, currentColor 60%, transparent); } 70%, 100% { box-shadow: 0 0 0 5px transparent; } }
+.gallery-status .is-connected { box-shadow: 0 0 0 0 #8edb8e99; animation: status-pulse 2.4s ease-out infinite; }
+@keyframes status-pulse { 0% { box-shadow: 0 0 0 0 #8edb8e99; } 70%, 100% { box-shadow: 0 0 0 5px #8edb8e00; } }
 @media (max-width: 600px) {
   .gallery-header { flex-direction: column; align-items: flex-start; gap: 14px; }
   .gallery-status { order: -1; padding-top: 0; }
@@ -290,7 +286,6 @@ html[data-theme="pumpkin"] {
   --primary: #ff7a1a; --primary-foreground: #14110f; --secondary: #241d18; --secondary-foreground: #f3e9dc;
   --muted: #241d18; --muted-foreground: #a39585; --accent: #241d18; --accent-foreground: #f3e9dc;
   --border: #f3e9dc26; --input: #f3e9dc40; --ring: #ff7a1a;
-  --signal: #00ff00; --live: #00ff00;
   --chart-1: #ff7a1a; --chart-2: #ffa25c; --chart-3: #ffc799; --chart-4: #c75a0e; --chart-5: #8a3d08;
 }
 html[data-theme="witching"] {
