@@ -1,9 +1,9 @@
 const steps = [
-  ["Capture", "A doorbell camera streams video. About one frame per second is checked."],
-  ["Detect", "YOLOv8n looks for people and for shapes that might be inflatable costumes."],
-  ["Filter", "A person must be on the doorstep in two frames in a row. After each capture, the camera waits 30 seconds."],
-  ["Classify", "Nemotron 3.5 Super VL guesses the costume and writes a short description."],
-  ["Publish", "The person is blurred and the photo appears here."],
+  ["Capture", "A DoorBird doorbell streams 30 fps video over RTSP. Every 30th frame is checked, about one per second."],
+  ["Detect", "YOLOv8n, a 6 MB model, finds people. It also keeps cars, dogs, cats and birds, since that is how it often labels inflatable costumes."],
+  ["Filter", "A detection needs over 70% confidence, a center on the doorstep and two frames in a row. After a capture, the camera waits 30 seconds."],
+  ["Classify", "The crop is sent to Nemotron 3.5 Super VL on Baseten. It returns a costume, a confidence and a one-line description. Inflatables it can’t confirm are dropped."],
+  ["Publish", "Each person is blurred, the record is saved to Supabase, and Realtime adds it to this page."],
 ]
 
 export function About() {
