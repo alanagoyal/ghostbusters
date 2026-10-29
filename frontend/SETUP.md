@@ -12,6 +12,12 @@ npm --prefix frontend run dev
 
 Open `http://localhost:3000/ghostbusters`. For a production Next.js server, use `npm --prefix frontend run build` then `npm --prefix frontend start`. A hosted deployment needs the same two public settings at build time. Do not set `NEXT_PUBLIC_STORAGE_PROVIDER=local` for the cloud build.
 
+The public gallery renders its initial photos on the server. One shared client
+subscription applies live row changes to photos, statistics and the feed;
+reconnects and minute-long reconciliation repair missed events. New captures
+serve prebuilt thumbnails directly from Storage. See [gallery thumbnails](../docs/CLOUD_PRIVACY.md#gallery-thumbnails)
+to backfill existing records. Run `npm test` for gallery state and image-access tests.
+
 For legacy Baseten installations, the schema, public SELECT policy and Realtime publication must match [Supabase setup](../docs/SUPABASE_SETUP.md). The gallery is publicly readable by design. Verify real inserts arrive without reloading; a successful page render alone does not verify capture or Realtime.
 
 ## Private Stripe Projects gallery

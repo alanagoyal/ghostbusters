@@ -5,12 +5,47 @@ private detection records. Only Supabase Auth users in `public.gallery_viewers`
 can read them. Signup alone never grants access; browser clients cannot write
 photos/events or add viewers. The backend secret stays on the capture computer.
 
-The frontend signs photo links for 120 seconds and refreshes them every minute.
+The frontend batch-signs photo links for 120 seconds and reconciles every minute,
+reusing links within one mounted viewer until renewal is needed. Link caches are
+discarded on sign-out/unmount and are never shared across viewers.
 Links are bearer credentials: anyone holding a still-valid link can view that
 photo. Revoking membership immediately blocks new database reads and new links;
 previously issued links may remain valid until expiry. A viewer can save copies.
 The UI clears revoked access on its next membership check (within a minute while
 active). Signed links bypass Next.js image optimization to avoid a public cache.
+New private variants use zero browser cache TTL so cached responses do not extend
+access; public legacy variants use a one-hour TTL.
+
+## Gallery thumbnails
+
+Cloud capture generates a 360-pixel WebP thumbnail from the saved, already
+privacy-processed scene, plus a tiny blur placeholder. It uploads the thumbnail
+and original before inserting a detection. Immutable `gallery-v1/<digest>/` object
+paths identify the exact bytes; retries never replace another image. Gallery
+cards request thumbnails directly and request originals only when opened.
+
+The additive migration in `supabase/migrations/*_gallery_thumbnails.sql` adds
+nullable thumbnail, dimension and placeholder fields without changing policies
+or bucket visibility. Updated private bootstrap and legacy setup SQL include the
+same columns. Existing schemas work without this migration: the frontend derives
+the thumbnail path from the versioned original path, and the backend omits only
+unavailable metadata columns. Blur placeholders and recorded dimensions become
+available once the migration is applied.
+
+To upgrade existing records using the configured backend account:
+
+```sh
+uv run --no-sync python -m backend.scripts.gallery --dry-run
+uv run --no-sync python -m backend.scripts.gallery --limit 200
+```
+
+Backfill is bounded and rerunnable. It downloads only this project's bucket
+objects into memory, preserves the old objects, and updates a row only if its
+image reference has not changed concurrently. Output contains counts, never
+photo URLs or image data. It does not invoke a model or write test detections.
+When deleting a detection, delete its thumbnail and original along with any
+legacy object retained by backfill. Shared scene objects may serve several
+person records, so check remaining references before deletion.
 
 ## Owner and viewers
 

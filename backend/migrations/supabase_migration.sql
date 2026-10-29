@@ -21,6 +21,12 @@ create table if not exists person_detections (
 comment on table person_detections is
   'Stores person detection events from YOLOv8 with optional costume classification';
 
+alter table public.person_detections
+  add column if not exists thumbnail_url text,
+  add column if not exists image_width integer,
+  add column if not exists image_height integer,
+  add column if not exists image_placeholder text;
+
 -- ============================================================================
 -- 2. Create indexes for performance
 -- ============================================================================
