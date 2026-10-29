@@ -13,7 +13,10 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: `try{var t=new URLSearchParams(location.search).get("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}` }} />
+      </head>
       <body className={GeistMono.className}>{children}
         <footer className="p-4 text-center text-xs text-muted-foreground">
           <a href={process.env.NEXT_PUBLIC_SOURCE_URL || "https://github.com/alanagoyal/ghostbusters"}
