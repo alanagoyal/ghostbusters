@@ -15,6 +15,7 @@ DUAL-PASS DETECTION:
 import os
 import time
 from datetime import datetime
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import cv2
@@ -29,6 +30,7 @@ from backend.src.costume_detector import (
     PERSON_CLASS,
     detect_people_and_costumes,
 )
+from backend.src.publishing import publishing_enabled
 
 # Load environment variables
 load_dotenv()
@@ -241,6 +243,9 @@ try:
                 detection_timestamp = datetime.now(ZoneInfo("America/Los_Angeles"))
                 timestamp_str = detection_timestamp.strftime("%Y%m%d_%H%M%S")
                 filename = f"detection_{timestamp_str}.jpg"
+                publish_capture = publishing_enabled(
+                    Path(__file__).resolve().parents[2] / ".env"
+                )
 
                 # DUAL-PASS DETECTION: Collect ALL detections using shared detector
                 all_detections = detect_people_and_costumes(
@@ -382,9 +387,13 @@ try:
                 print(f"   Saved locally: {filename}")
 
                 # Retain the file unless every image and record was saved.
-                uploads_succeeded = bool(supabase_client) and bool(detected_people)
+                uploads_succeeded = (
+                    publish_capture and bool(supabase_client) and bool(detected_people)
+                )
+                if not publish_capture:
+                    print("   Publishing disabled; rehearsal photo retained locally")
                 for person in detected_people:
-                    if supabase_client:
+                    if supabase_client and publish_capture:
                         try:
                             saved = supabase_client.save_detection(
                                 image_path=filename,
