@@ -177,6 +177,8 @@ try:
 
         # Run YOLO detection
         results = model(frame, verbose=False)
+        if supabase_client:
+            supabase_client.report_detector_running()
 
         # Get frame dimensions for ROI checking
         frame_height, frame_width = frame.shape[:2]
@@ -385,5 +387,7 @@ except KeyboardInterrupt:
     print(f"📊 Total detections: {detection_count}")
 
 finally:
+    if supabase_client:
+        supabase_client.report_detector_running(False)
     cap.release()
     print("✅ Cleanup complete!")

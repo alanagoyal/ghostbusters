@@ -41,6 +41,17 @@ not a standalone PyPI installation.
    `http://localhost:3000/ghostbusters`. This verifies uploads and live delivery,
    which the read-only Supabase doctor checks cannot establish.
 
+## Dashboard running light
+
+Apply `supabase/migrations/20261029020000_detector_heartbeat.sql` once in the
+Supabase SQL Editor for existing installs (Projects bootstrap includes it). Deploy
+the updated dashboard and use the updated detector checkout. The light is green
+only after successful YOLO inference refreshes a heartbeat, including empty scenes.
+It polls every 10 seconds and shows gray **Offline** when stopped, unreachable, or
+no successful inference has occurred for 45 seconds. A crash or camera failure can
+take up to about 55 seconds to appear offline. Missing schema also shows Offline.
+Gallery history and its Realtime connection do not affect this indicator.
+
 ## Halloween
 
 Run `doctor`, `start`, then do a walk-through before visitors arrive. When finished,

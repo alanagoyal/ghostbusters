@@ -94,7 +94,7 @@ export function DashboardClient({ initialDetections }: DashboardClientProps) {
     <div className="min-h-screen bg-background pt-10 sm:pt-20">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 pb-6 space-y-6">
         <div className="mb-8">
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
             <h1
               className="text-4xl sm:text-5xl font-bold tracking-tight bg-gradient-to-r from-zinc-100 via-white to-zinc-100 text-zinc-900 px-6 py-6 shadow-lg relative overflow-hidden w-fit title-banner cursor-default"
               style={{
@@ -139,12 +139,20 @@ export function DashboardClient({ initialDetections }: DashboardClientProps) {
                 }}
               />
             </h1>
-            <div className="flex items-center gap-2">
-              <div className="relative">
-                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                <div className="absolute inset-0 w-3 h-3 bg-green-500 rounded-full animate-ping opacity-75"></div>
+            <div className="flex flex-col items-start gap-2 sm:items-end">
+              <div className="flex items-center gap-2">
+                <div className="relative">
+                  <div className={`w-3 h-3 rounded-full ${connected ? "bg-green-500 animate-pulse" : "border-2 border-foreground/70"}`}></div>
+                  {connected && <div className="absolute inset-0 w-3 h-3 bg-green-500 rounded-full animate-ping opacity-75"></div>}
+                </div>
+                <span className={`text-sm font-medium ${connected ? "text-green-600" : "text-foreground/80"}`}>{connected ? "Connected" : "Offline"}</span>
               </div>
-              <span className="text-sm font-medium text-green-600">{connected ? "Connected" : "Connecting / offline"}</span>
+              {!connected && (
+                <p className="max-w-64 text-left sm:text-right text-xs leading-relaxed text-foreground/80">
+                  Ghostbusters is currently offline.<br />
+                  Check back October 31st at 3pm.
+                </p>
+              )}
             </div>
           </div>
         </div>

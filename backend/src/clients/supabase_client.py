@@ -5,6 +5,9 @@ Handles database operations and storage uploads.
 """
 
 import os
+import time
+import uuid
+from contextlib import suppress
 from datetime import datetime
 from pathlib import Path
 
@@ -40,8 +43,22 @@ class SupabaseClient:
             )
 
         self.client: Client = create_client(self.url, self.key)
+        self.detector_session = str(uuid.uuid4())
+        self.last_detector_heartbeat = float("-inf")
         self.bucket_name = "detection-images"
         self.private_gallery = os.getenv("GALLERY_ACCESS") == "private"
+
+    def report_detector_running(self, running: bool = True) -> None:
+        """Refresh the inference lease without letting reporting stop capture."""
+        now = time.monotonic()
+        if running and now - self.last_detector_heartbeat < 10:
+            return
+        self.last_detector_heartbeat = now
+        # Missing migrations/network outages fail closed on the dashboard.
+        with suppress(Exception):
+            self.client.rpc("report_detector_heartbeat", {
+                "session_id": self.detector_session, "running": running,
+            }).execute()
 
     def upload_detection_image(
         self, image_path: str, timestamp: datetime

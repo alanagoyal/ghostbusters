@@ -19,3 +19,8 @@ The backend uses `SUPABASE_SERVICE_ROLE_KEY` (also accepts a modern secret key) 
 Run `uv run --no-sync ghostbusters doctor --skip-camera` for read checks and a small billed Baseten request. A manual write/upload check is available with `uv run --no-sync python -m backend.tests.integration.test_supabase_connection`; it writes records and images, so use disposable resources and clean up its output. Confirm actual browser updates with a walkthrough before relying on the installation.
 
 The cloud path has no automatic cloud retention policy. Stop capture after use and manage retained records/images explicitly. See [frontend setup](../frontend/SETUP.md).
+
+For the dashboard running light, also apply
+[`detector_heartbeat.sql`](../supabase/migrations/20261029020000_detector_heartbeat.sql).
+This adds a service-only heartbeat writer and a public aggregate running boolean;
+it does not change gallery access policies.
