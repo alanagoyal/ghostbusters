@@ -263,3 +263,19 @@ html { scroll-behavior: smooth; }
   .gallery-header { flex-direction: column; align-items: flex-start; gap: 14px; }
   .gallery-status { order: -1; padding-top: 0; }
 }
+
+.about-section { border-top: 1px solid var(--border); padding-top: 28px; margin-top: 8px; }
+.about-steps { display: grid; grid-template-columns: repeat(5, 1fr); margin-top: 24px; }
+.about-steps li { padding: 0 20px; border-left: 1px solid var(--border); }
+.about-steps li:first-child { padding-left: 0; border-left: 0; }
+.about-index { font-size: 10px; color: var(--muted-foreground); }
+.about-steps h3 { font-size: 12px; font-weight: 500; margin: 6px 0 10px; }
+.about-steps p, .about-notes { font-size: 11px; line-height: 1.7; color: var(--muted-foreground); }
+.about-notes { max-width: 720px; margin-top: 32px; padding-top: 16px; border-top: 1px dashed var(--border); }
+@media (max-width: 1023px) {
+  .about-steps { grid-template-columns: 1fr; row-gap: 20px; }
+  .about-steps li { display: grid; grid-template-columns: 32px 1fr; padding: 0; border-left: 0; }
+  .about-steps li > * { grid-column: 2; }
+  .about-steps .about-index { grid-column: 1; grid-row: 1; padding-top: 1px; }
+  .about-steps h3 { margin: 0 0 6px; }
+}
