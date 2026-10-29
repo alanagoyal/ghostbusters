@@ -8,8 +8,10 @@ export function GalleryHeader({ online, local = false }: { online: boolean; loca
     </div>
     <div className="gallery-status">
       {local && <span>Local gallery</span>}
-      <span role="status"><i className={online ? 'is-connected' : ''} />{online ? "Live" : "Offline"}</span>
-      <span className="offline-note" style={{ visibility: online ? "hidden" : "visible" }} aria-hidden={online}>Ghostbusters is currently offline.<br />Check back October 31 at 3pm PT.</span>
+      <span role="status" className="status-pill" title={online ? undefined : "Ghostbusters is currently offline. Check back October 31 at 3pm PT."}>
+        <i className={online ? 'is-connected' : ''} />
+        {online ? "Live" : <>Offline<span className="status-sep" aria-hidden>·</span><span className="status-return">Back Oct 31, 3pm PT</span></>}
+      </span>
     </div>
   </header>;
 }
