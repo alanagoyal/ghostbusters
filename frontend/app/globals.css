@@ -259,3 +259,7 @@ html { scroll-behavior: smooth; }
 .gallery-status .status-return { color: var(--foreground); }
 .gallery-status .is-connected { box-shadow: 0 0 0 0 #8edb8e99; animation: status-pulse 2.4s ease-out infinite; }
 @keyframes status-pulse { 0% { box-shadow: 0 0 0 0 #8edb8e99; } 70%, 100% { box-shadow: 0 0 0 5px #8edb8e00; } }
+@media (max-width: 600px) {
+  .gallery-header { flex-direction: column; align-items: flex-start; gap: 14px; }
+  .gallery-status { order: -1; padding-top: 0; }
+}
