@@ -8,7 +8,7 @@ const steps = [
 
 export function About() {
   return <section className="about-section" aria-labelledby="about-title">
-    <h2 id="about-title" className="instrument-title">About Ghostbusters</h2>
+    <h2 id="about-title" className="instrument-title">How This Works</h2>
     <ol className="about-steps">
       {steps.map(([name, body], i) => <li key={name}>
         <span className="about-index">{String(i + 1).padStart(2, "0")}</span>
