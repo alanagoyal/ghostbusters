@@ -6,8 +6,13 @@ Handles database operations and storage uploads.
 
 import os
 from datetime import datetime
+from pathlib import Path
 
 from dotenv import load_dotenv
+from postgrest.exceptions import APIError
+from storage3.exceptions import StorageApiError
+
+from backend.src.gallery_media import prepare_gallery_media
 from supabase import Client, create_client
 
 # Load environment variables
@@ -24,11 +29,14 @@ class SupabaseClient:
         # Use service role key for backend operations (full access)
         self.key = os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("SUPABASE_KEY")
         # Use existing HOSTNAME variable, fall back to DEVICE_ID for compatibility
-        self.device_id = os.getenv("HOSTNAME") or os.getenv("DEVICE_ID", "unknown-device")
+        self.device_id = os.getenv("HOSTNAME") or os.getenv(
+            "DEVICE_ID", "unknown-device"
+        )
 
         if not self.url or not self.key:
             raise ValueError(
-                "Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY environment variables"
+                "Missing NEXT_PUBLIC_SUPABASE_URL or "
+                "SUPABASE_SERVICE_ROLE_KEY environment variables"
             )
 
         self.client: Client = create_client(self.url, self.key)
@@ -48,35 +56,62 @@ class SupabaseClient:
         Returns:
             Object path (private) or legacy public URL; None if upload fails
         """
+        media = self.upload_detection_media(image_path)
+        return media["image_url"] if media else None
+
+    def upload_detection_media(self, image_path: str) -> dict | None:
+        """Upload immutable variants before publishing the detection record.
+
+        Input is the saved, privacy-processed scene, never the classification crop.
+        Content-addressed names also make retries and multi-person scenes idempotent.
+        """
         try:
-            # Generate storage path: device_id/YYYYMMDD_HHMMSS.jpg
-            filename = timestamp.strftime("%Y%m%d_%H%M%S.jpg")
-            storage_path = f"{self.device_id}/{filename}"
+            return self.upload_detection_bytes(Path(image_path).read_bytes())
+        except OSError:
+            print("❌ Could not read saved detection image")
+            return None
 
-            # Read image file
-            with open(image_path, "rb") as f:
-                image_data = f.read()
-
-            # Upload to Supabase storage (upsert to handle duplicates)
-            self.client.storage.from_(self.bucket_name).upload(
-                path=storage_path,
-                file=image_data,
-                file_options={"content-type": "image/jpeg", "upsert": "true"},
-            )
-
-            if self.private_gallery:
-                return storage_path
-
-            # Legacy installations retain their public URL format.
-            # Get public URL
-            public_url = self.client.storage.from_(self.bucket_name).get_public_url(
-                storage_path
-            )
-
-            return public_url
-
+    def upload_detection_bytes(self, image: bytes) -> dict | None:
+        """Upload an existing processed scene without creating a temporary photo."""
+        try:
+            media = prepare_gallery_media(image)
+            prefix = f"{self.device_id}/gallery-v1/{media.digest}"
+            bucket = self.client.storage.from_(self.bucket_name)
+            references = {}
+            for field, name, content, kind in (
+                ("thumbnail_url", "thumbnail.webp", media.thumbnail, "image/webp"),
+                ("image_url", "original.jpg", media.original, "image/jpeg"),
+            ):
+                path = f"{prefix}/{name}"
+                try:
+                    bucket.upload(
+                        path=path,
+                        file=content,
+                        file_options={
+                            "content-type": kind,
+                            # Private responses must not outlive signed links.
+                            "cache-control": "0" if self.private_gallery else "3600",
+                            "upsert": "false",
+                        },
+                    )
+                except StorageApiError as error:
+                    # Identical content already uploaded by a retry or another person.
+                    if error.status != 409 and error.code not in (
+                        "Duplicate",
+                        "ResourceAlreadyExists",
+                    ):
+                        raise
+                references[field] = (
+                    path if self.private_gallery else bucket.get_public_url(path)
+                )
+            return {
+                **references,
+                "image_width": media.width,
+                "image_height": media.height,
+                "image_placeholder": media.placeholder,
+            }
         except Exception:
-            print("❌ Error uploading image")
+            print("❌ Could not prepare or upload gallery images")
             return None
 
     def insert_detection(
@@ -88,6 +123,7 @@ class SupabaseClient:
         costume_classification: str | None = None,
         costume_description: str | None = None,
         costume_confidence: float | None = None,
+        media: dict | None = None,
     ) -> dict | None:
         """
         Insert person detection record into database.
@@ -97,7 +133,7 @@ class SupabaseClient:
             confidence: YOLO confidence score (0.0-1.0)
             bounding_box: Dict with x1, y1, x2, y2 coordinates
             image_url: Storage object path or legacy public URL (optional)
-            costume_classification: AI costume type (e.g., "witch", "skeleton") (optional)
+            costume_classification: Optional AI costume type
             costume_description: Detailed costume description (optional)
             costume_confidence: AI classification confidence (optional)
 
@@ -122,9 +158,10 @@ class SupabaseClient:
             if costume_confidence is not None:
                 data["costume_confidence"] = costume_confidence
 
-            # Insert into database
-            response = (
-                self.client.table("person_detections").insert(data).execute()
+            response = self._write_gallery_record(
+                data,
+                media,
+                lambda values: self.client.table("person_detections").insert(values),
             )
 
             if response.data:
@@ -134,6 +171,49 @@ class SupabaseClient:
         except Exception:
             print("❌ Error inserting detection")
             return None
+
+    def _write_gallery_record(self, data, media, write):
+        fields = {
+            key: value
+            for key, value in (media or {}).items()
+            if key
+            in (
+                "thumbnail_url",
+                "image_width",
+                "image_height",
+                "image_placeholder",
+            )
+        }
+        if fields and getattr(self, "_media_columns", True):
+            try:
+                return write({**data, **fields}).execute()
+            except APIError as error:
+                # Legacy databases can derive gallery-v1 thumbnail paths until the
+                # additive migration is applied. Never retry an authorization failure.
+                if error.code not in ("PGRST204", "42703") or not any(
+                    key in error.message for key in fields
+                ):
+                    raise
+                self._media_columns = False
+        return write(data).execute()
+
+    def update_detection_media(
+        self, detection_id: str, expected_url: str, media: dict
+    ) -> bool:
+        """Backfill only if this row still references the scene we downloaded."""
+        try:
+            response = self._write_gallery_record(
+                {"image_url": media["image_url"]},
+                media,
+                lambda values: self.client.table("person_detections")
+                .update(values)
+                .eq("id", detection_id)
+                .eq("image_url", expected_url),
+            )
+            return bool(response.data)
+        except Exception:
+            print("❌ Could not update gallery image metadata")
+            return False
 
     def save_detection(
         self,
@@ -153,7 +233,7 @@ class SupabaseClient:
             timestamp: When person was detected
             confidence: YOLO confidence score
             bounding_box: Dict with x1, y1, x2, y2 coordinates
-            costume_classification: AI costume type (e.g., "witch", "skeleton") (optional)
+            costume_classification: Optional AI costume type
             costume_description: Detailed costume description (optional)
             costume_confidence: AI classification confidence (optional)
 
@@ -161,7 +241,8 @@ class SupabaseClient:
             True if successful, False otherwise
         """
         # Upload image
-        image_url = self.upload_detection_image(image_path, timestamp)
+        media = self.upload_detection_media(image_path)
+        image_url = media["image_url"] if media else None
 
         if not image_url:
             print("⚠️  Image upload failed, saving detection without image URL")
@@ -175,6 +256,7 @@ class SupabaseClient:
             costume_classification=costume_classification,
             costume_description=costume_description,
             costume_confidence=costume_confidence,
+            media=media,
         )
 
         if result:

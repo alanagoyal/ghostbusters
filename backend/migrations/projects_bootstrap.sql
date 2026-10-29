@@ -14,6 +14,12 @@ create table if not exists public.person_detections (
   costume_confidence float4,
   created_at timestamptz default now()
 );
+alter table public.person_detections
+  add column if not exists thumbnail_url text,
+  add column if not exists image_width integer,
+  add column if not exists image_height integer,
+  add column if not exists image_placeholder text;
+
 create index if not exists idx_person_detections_timestamp
   on public.person_detections(timestamp desc);
 create index if not exists idx_person_detections_device

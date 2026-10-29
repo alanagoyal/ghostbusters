@@ -7,6 +7,8 @@ from datetime import datetime
 from pathlib import Path
 from unittest.mock import Mock, patch
 
+import cv2
+import numpy as np
 import requests
 
 from backend.scripts import projects
@@ -65,9 +67,11 @@ class CloudPrivacyTests(unittest.TestCase):
         client.client = Mock()
         with tempfile.TemporaryDirectory() as folder:
             path = Path(folder) / "synthetic.jpg"
-            path.write_bytes(b"synthetic")
+            path.write_bytes(
+                cv2.imencode(".jpg", np.zeros((16, 16, 3), dtype=np.uint8))[1].tobytes()
+            )
             result = client.upload_detection_image(str(path), datetime(2026, 10, 28))
-        self.assertEqual(result, "test/20261028_000000.jpg")
+        self.assertRegex(result, r"^test/gallery-v1/[a-f0-9]{64}/original\.jpg$")
         client.client.storage.from_.return_value.get_public_url.assert_not_called()
 
     def test_grant_viewer_uuid_validation_and_no_secret_arguments(self):

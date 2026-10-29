@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
-import { supabase } from "@/lib/supabase";
+import { useMemo } from "react";
+import type { PersonDetection } from "@/lib/detections";
+import { useDetections } from "@/lib/use-detections";
 import { Users, Shirt, Activity } from "lucide-react";
 import { truncateString, toTitleCase } from "@/lib/string-utils";
 import { StatsCard } from "@/components/dashboard/stats-card";
@@ -14,46 +15,12 @@ import { About } from "@/components/dashboard/about";
 
 const DASHBOARD_TITLE = "Ghostbusters";
 
-interface PersonDetection {
-  id: string;
-  timestamp: string;
-  confidence: number;
-  bounding_box: any;
-  image_url: string | null;
-  device_id: string;
-  costume_classification: string | null;
-  costume_confidence: number | null;
-  costume_description: string | null;
-}
-
 interface DashboardClientProps {
   initialDetections: PersonDetection[];
 }
 
 export function DashboardClient({ initialDetections }: DashboardClientProps) {
-  const [detections, setDetections] =
-    useState<PersonDetection[]>(initialDetections);
-
-  const [connected,setConnected] = useState(false);
-  // Subscribe to real-time updates
-  useEffect(() => {
-    let active = true;
-    const refresh = async () => {
-      const { data, error } = await supabase.from("person_detections").select("*")
-        .order("timestamp", { ascending: false }).limit(200);
-      if (active) setDetections(error ? [] : data || []);
-    };
-    void refresh();
-    const channel = supabase.channel("person_detections")
-      .on("postgres_changes", { event: "*", schema: "public", table: "person_detections" },
-        () => { void refresh(); })
-      .subscribe((status) => setConnected(status === "SUBSCRIBED"));
-    const timer = setInterval(refresh, 60_000);
-    return () => {
-      active = false; clearInterval(timer);
-      supabase.removeChannel(channel);
-    };
-  }, []);
+  const { detections, photos, connected, loading, newIds, originalImage } = useDetections(initialDetections);
 
   // Calculate costume statistics
   const costumeStats = useMemo(() => {
@@ -214,7 +181,7 @@ export function DashboardClient({ initialDetections }: DashboardClientProps) {
         </div>
 
         <div className="mt-6">
-          <PhotoGallery />
+          <PhotoGallery detections={photos} isLoading={loading} newIds={newIds} originalImage={originalImage} />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
