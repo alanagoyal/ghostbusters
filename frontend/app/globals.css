@@ -181,7 +181,7 @@
 html { scroll-behavior: smooth; }
 ::selection { background: #f4efec; color: #9d152b; }
 :focus-visible { outline: 2px solid var(--primary); outline-offset: 4px; }
-.observatory { max-width: 1320px; margin: auto; padding: 0 40px 40px; }
+.observatory { width: 100%; margin: auto; padding: 0 24px 40px; }
 .gallery-header { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 32px 0 24px; }
 .gallery-header h1 { font-family: Arial, Helvetica, sans-serif; font-size: 38px; line-height: 1.1; font-weight: 600; letter-spacing: -.055em; }
 .gallery-status, .gallery-status > span { display: flex; align-items: center; gap: 8px; font-size: 10px; color: var(--muted-foreground); }
@@ -198,9 +198,9 @@ html { scroll-behavior: smooth; }
 .local-totals > div { padding: 24px; }
 .local-totals > div + div { border-left: 1px solid var(--border); }
 .local-totals p { font-size: 10px; color: var(--muted-foreground); margin-top: 8px; }
-@media (max-width: 900px) { .observatory { padding: 0 24px 32px; } }
+@media (max-width: 900px) { .observatory { padding: 0 20px 32px; } }
 @media (max-width: 600px) {
-  .observatory { padding: 0 16px 24px; }
+  .observatory { padding: 0 12px 24px; }
   .gallery-header { align-items: flex-start; padding: 32px 0 28px; gap: 12px; }
   .gallery-header h1 { font-size: 30px; }
   .gallery-status { padding-top: 6px; font-size: 9px; }
