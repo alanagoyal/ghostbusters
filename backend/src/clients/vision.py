@@ -53,7 +53,9 @@ def vision_settings(env=None):
 def create_vision_client():
     key, endpoint, model, auth = vision_settings()
     if not model or not model.strip():
-        raise ValueError("Set the cloud vision model explicitly (BASETEN_MODEL or OPENROUTER_MODEL)")
+        raise ValueError(
+            "Set the cloud vision model explicitly (BASETEN_MODEL or OPENROUTER_MODEL)"
+        )
     if not all((key, endpoint, model)):
         raise ValueError("Missing cloud vision configuration")
     return BasetenClient(
