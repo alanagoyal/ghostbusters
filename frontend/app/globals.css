@@ -57,6 +57,8 @@
   --input: #e6bfc580;
   --ring: #f4efec;
   --tag: var(--primary);
+  /* Polaroid paper matches the text white on dark palettes */
+  --paper: var(--foreground);
   --tag-foreground: var(--primary-foreground);
   --chart-1: #f4efec;
   --chart-2: #ffb3c1;
@@ -196,7 +198,7 @@ html { scroll-behavior: smooth; }
 .instrument-title { font-size: 12px; font-weight: 500; }
 .stat-value { font-size: 38px; line-height: 1.2; font-weight: 400; letter-spacing: -.06em; color: var(--foreground); }
 .archive-card { background: transparent; }
-.archive-photo { background: #fffefa; padding: 12px 12px 16px; box-shadow: 0 4px 10px #38071330; color: #3f3f46; }
+.archive-photo { background: var(--paper); padding: 12px 12px 16px; box-shadow: 0 4px 10px #38071330; color: #3f3f46; }
 .local-health > div, .local-photo { border-radius: 0; background: var(--card); }
 .local-totals { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid var(--border); }
 .local-totals > div { padding: 24px; }
@@ -302,6 +304,7 @@ html[data-theme="witching"] {
 }
 html[data-theme="candycorn"] {
   --background: #f5eee1; --foreground: #1d1712; --card-foreground: #1d1712; --popover: #ece3d2; --popover-foreground: #1d1712;
+  --paper: #fffaf2;
   --primary: #e2560c; --primary-foreground: #fffaf2; --secondary: #ebe1cf; --secondary-foreground: #1d1712;
   --muted: #ebe1cf; --muted-foreground: #776655; --accent: #ebe1cf; --accent-foreground: #1d1712;
   --border: #1d171226; --input: #1d171240; --ring: #e2560c;
