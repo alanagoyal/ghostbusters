@@ -44,8 +44,10 @@ export function CostumeDistribution({ costumes }: CostumeDistributionProps) {
                 key={costume.fullName}
                 className="space-y-2"
               >
-                <div
-                  className="flex items-center justify-between cursor-pointer hover:bg-accent/50 p-2 rounded-lg transition-colors"
+                <button
+                  type="button"
+                  aria-expanded={expandedCostume === costume.fullName}
+                  className="w-full text-left flex items-center justify-between cursor-pointer hover:bg-accent/50 p-2 rounded-lg transition-colors"
                   onClick={() => toggleExpanded(costume.fullName)}
                 >
                   <div className="flex items-center gap-2">
@@ -66,7 +68,7 @@ export function CostumeDistribution({ costumes }: CostumeDistributionProps) {
                   <span className="text-sm text-muted-foreground">
                     {costume.percentage.toFixed(1)}%
                   </span>
-                </div>
+                </button>
                 <div className="h-2 rounded-full bg-secondary overflow-hidden">
                   <div
                     className="h-full bg-primary transition-all duration-500 animate-grow-width"

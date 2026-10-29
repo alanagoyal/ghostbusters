@@ -152,13 +152,13 @@ export function ActivityTimeline({ detections }: ActivityTimelineProps) {
   const yAxisTicks = Array.from({ length: 6 }, (_, i) => Math.round((yAxisMax / 5) * i))
 
   return (
-    <Card className="col-span-2">
+    <Card className="min-w-0">
         <CardHeader>
         <div className="space-y-1">
           <CardTitle>Activity Timeline</CardTitle>
           <CardDescription>
             {peakSlot ? (
-              <>Peak activity around {peakSlot.label} {peakSlot.time.getHours() >= 12 ? 'PM' : 'AM'} with {peakSlot.count} visitor{peakSlot.count !== 1 ? 's' : ''}</>
+              <>Peak activity around {peakSlot.label} {peakSlot.time.getHours() >= 12 ? 'PM' : 'AM'} with {peakSlot.count} detection{peakSlot.count !== 1 ? 's' : ''}</>
             ) : (
               <>No activity data available</>
             )}
@@ -231,7 +231,7 @@ export function ActivityTimeline({ detections }: ActivityTimelineProps) {
                           height: `${Math.max(heightPercent, 0)}%`,
                           minHeight: slot.count > 0 ? '4px' : '0',
                         }}
-                        title={`${slot.count} visitor${slot.count !== 1 ? 's' : ''} around ${slot.label} ${ampm}`}
+                        title={`${slot.count} detection${slot.count !== 1 ? 's' : ''} around ${slot.label} ${ampm}`}
                       />
                     </div>
                   )
