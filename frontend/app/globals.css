@@ -250,3 +250,6 @@ html { scroll-behavior: smooth; }
   margin-left: calc(50% - 50vw);
   margin-right: calc(50% - 50vw);
 }
+
+.gallery-header p { color: var(--muted-foreground); font-size: 12px; line-height: 1.6; margin-top: 10px; max-width: 640px; }
+@media (max-width: 600px) { .gallery-header p { font-size: 11px; } }

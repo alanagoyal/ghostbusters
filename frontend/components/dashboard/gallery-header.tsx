@@ -2,6 +2,9 @@ export function GalleryHeader({ connected, status, local = false }: { connected:
   return <header className="gallery-header">
     <div>
       <h1>Ghostbusters</h1>
+      <p>{local
+        ? "A live feed of trick-or-treaters’ costumes, classified locally."
+        : "A live feed of trick-or-treaters’ costumes, classified by Gemma on Baseten."}</p>
     </div>
     <div className="gallery-status">
       {local && <span>Local gallery</span>}
