@@ -1,4 +1,4 @@
-export function GalleryHeader({ connected, status, local = false }: { connected: boolean; status?: string; local?: boolean }) {
+export function GalleryHeader({ online, local = false }: { online: boolean; local?: boolean }) {
   return <header className="gallery-header">
     <div>
       <h1>Ghostbusters</h1>
@@ -8,7 +8,8 @@ export function GalleryHeader({ connected, status, local = false }: { connected:
     </div>
     <div className="gallery-status">
       {local && <span>Local gallery</span>}
-      <span role="status"><i className={connected ? 'is-connected' : ''} />{status || (connected ? 'Connected' : 'Connecting / offline')}</span>
+      <span role="status"><i className={online ? 'is-connected' : ''} />{online ? "Live" : "Offline"}</span>
+      {!online && <span className="offline-note">Ghostbusters is currently offline.<br />Check back October 31 at 3pm PT.</span>}
     </div>
   </header>;
 }

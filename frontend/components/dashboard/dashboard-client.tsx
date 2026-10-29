@@ -20,7 +20,7 @@ interface DashboardClientProps {
 }
 
 export function DashboardClient({ initialDetections }: DashboardClientProps) {
-  const { detections, photos, connected, loading, newIds, originalImage } = useDetections(initialDetections);
+  const { detections, photos, connected: detectorOnline, loading, newIds, originalImage } = useDetections(initialDetections);
 
   // Calculate costume statistics
   const costumeStats = useMemo(() => {
@@ -84,7 +84,7 @@ export function DashboardClient({ initialDetections }: DashboardClientProps) {
 
   return (
     <main className="observatory">
-      <GalleryHeader connected={connected} />
+      <GalleryHeader online={detectorOnline} />
       <div className="space-y-8">
         <div id="costume-archive" className="scroll-mt-6">
           <PhotoGallery detections={photos} isLoading={loading} newIds={newIds} originalImage={originalImage} />
