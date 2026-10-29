@@ -4,6 +4,23 @@ Focused fixes and reproducible camera setup reports are welcome. Read [AGENTS.md
 
 ## Checks
 
+Install the Git hooks once per clone (linked worktrees share the hooks):
+
+```sh
+uv tool run --from pre-commit==4.3.0 pre-commit install
+```
+
+Each commit runs Ruff on staged Python files, fixes imports and formats code.
+If a hook changes a file, review and stage the changes, then commit again.
+Remaining lint errors must be fixed before committing. Existing hooks are retained
+by pre-commit's default migration mode. Keep the Ruff hook version aligned with
+`uv.lock`. Hooks must be installed again for each new clone; they are not installed
+automatically by Git. Do not bypass them with `--no-verify` or `SKIP`.
+
+Pull requests into `main` must pass all three Offline checks jobs: `checks`,
+`private-gallery-policies`, and `secret-history`. Local hooks catch Python style
+errors early; CI also verifies tests, types, builds, database policies and secrets.
+
 On an Apple Silicon Mac with 16 GB RAM, use Python 3.11:
 
 ```sh
