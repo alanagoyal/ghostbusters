@@ -45,7 +45,7 @@ export function LiveFeed({ detections, limit = 5 }: LiveFeedProps) {
                   <div className="flex flex-col gap-1.5">
                     <div className="flex items-center justify-between gap-2">
                       {detection.costume_classification && (
-                        <Badge variant="default" className="bg-tag text-tag-foreground hover:bg-tag/80 text-xs max-w-[180px] sm:max-w-[220px] truncate" title={toTitleCase(detection.costume_classification) || ''}>
+                        <Badge variant="default" className="bg-foreground text-background hover:bg-foreground/80 text-xs max-w-[180px] sm:max-w-[220px] truncate" title={toTitleCase(detection.costume_classification) || ''}>
                           {truncateString(toTitleCase(detection.costume_classification), 25)}
                         </Badge>
                       )}
