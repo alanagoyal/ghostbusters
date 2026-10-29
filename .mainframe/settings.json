@@ -1,5 +1,5 @@
 {
-  "setup": "npm --prefix frontend ci",
+  "setup": "npm --prefix frontend ci && uv tool run --from pre-commit==4.3.0 pre-commit install",
   "run": {
     "web": {
       "command": "NEXT_PUBLIC_BASE_PATH= npm run dev -- --hostname 0.0.0.0 --port $MAINFRAME_PORT",
