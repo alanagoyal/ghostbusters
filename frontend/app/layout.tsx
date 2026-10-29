@@ -15,7 +15,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: `try{var t=new URLSearchParams(location.search).get("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}` }} />
+        <script dangerouslySetInnerHTML={{ __html: `try{var t=new URLSearchParams(location.search).get("theme")||(location.pathname.match(/\\/theme\\/([a-z]+)/)||[])[1];if(t)document.documentElement.dataset.theme=t}catch(e){}` }} />
       </head>
       <body className={GeistMono.className}>{children}
         <footer className="p-4 text-center text-xs text-muted-foreground">
