@@ -17,6 +17,10 @@ Never commit credentials, runtime files, models or private camera images.
 
 ## Development
 
+- Install commit hooks once per clone with
+  `uv tool run --from pre-commit==4.3.0 pre-commit install`.
+  Review and re-stage automatic fixes; never bypass hooks. Use a pull request for
+  `main` and wait for all required CI checks before merging or reporting success.
 - `uv sync --frozen --python 3.11 --extra local` on supported local Macs;
   omit `--extra local` for existing cloud-only platforms.
 - `uv run --no-sync python -m unittest discover -s backend/tests/unit -v`
