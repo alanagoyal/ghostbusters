@@ -263,6 +263,7 @@ def run_sql(source, sql_file=None, statement=None):
 
 def bootstrap(source):
     run_sql(source, ROOT / "backend/migrations/projects_bootstrap.sql")
+    run_sql(source, ROOT / "supabase/migrations/20261029020000_detector_heartbeat.sql")
     return {
         "status": "schema_ready",
         "next": "Create owner Auth user and grant-viewer; run doctor",

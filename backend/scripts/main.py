@@ -29,7 +29,6 @@ from backend.src.costume_detector import (
     PERSON_CLASS,
     detect_people_and_costumes,
 )
-from backend.src.utils.face_blur import FaceBlurrer
 
 # Load environment variables
 load_dotenv()
@@ -64,10 +63,6 @@ except Exception:
     print("Cloud vision is not configured")
     print("   Costume classification will be skipped")
 
-# Initialize face blurrer for privacy protection
-face_blurrer = FaceBlurrer(blur_strength=51)
-print("✅ Face blurrer initialized (privacy protection enabled)")
-
 # Detection parameters
 CONFIDENCE_THRESHOLD = 0.7  # Minimum confidence for person detection
 CONSECUTIVE_FRAMES_REQUIRED = 2  # Number of consecutive detections before capture
@@ -77,10 +72,20 @@ CAPTURE_COOLDOWN = 30  # Seconds to wait before next capture
 # Coordinates are normalized (0.0 to 1.0) relative to frame dimensions
 # Configured through ROI_*; legacy DoorBird defaults preserve the original view.
 
-print(f"🎯 Detection: {CONSECUTIVE_FRAMES_REQUIRED} consecutive frames at >{CONFIDENCE_THRESHOLD} confidence")
-print("🎈 Dual-pass: Standard people (class 0) + inflatable costumes (classes 2, 14, 16, 17)")
-print(f"📍 ROI: Doorstep area only (x: {ROI_X_MIN}-{ROI_X_MAX}, y: {ROI_Y_MIN}-{ROI_Y_MAX})")
+print(
+    f"🎯 Detection: {CONSECUTIVE_FRAMES_REQUIRED} consecutive frames at "
+    f">{CONFIDENCE_THRESHOLD} confidence"
+)
+print(
+    "🎈 Dual-pass: Standard people (class 0) + inflatable costumes (classes 2, 14, 16, "
+    "17)"
+)
+print(
+    f"📍 ROI: Doorstep area only (x: {ROI_X_MIN}-{ROI_X_MAX}, y: "
+    f"{ROI_Y_MIN}-{ROI_Y_MAX})"
+)
 print(f"⏱️  Cooldown: {CAPTURE_COOLDOWN}s between captures")
+
 
 # Function to check if a bounding box is within the region of interest
 def is_in_roi(bbox, frame_width, frame_height):
@@ -95,8 +100,8 @@ def is_in_roi(bbox, frame_width, frame_height):
     norm_y = center_y / frame_height
 
     # Check if center is within ROI bounds
-    return (ROI_X_MIN <= norm_x <= ROI_X_MAX and
-            ROI_Y_MIN <= norm_y <= ROI_Y_MAX)
+    return ROI_X_MIN <= norm_x <= ROI_X_MAX and ROI_Y_MIN <= norm_y <= ROI_Y_MAX
+
 
 # Function to connect/reconnect to RTSP stream
 connect_to_stream = open_camera
@@ -177,6 +182,8 @@ try:
 
         # Run YOLO detection
         results = model(frame, verbose=False)
+        if supabase_client:
+            supabase_client.report_detector_running()
 
         # Get frame dimensions for ROI checking
         frame_height, frame_width = frame.shape[:2]
@@ -217,12 +224,18 @@ try:
         # Track consecutive detections
         if people_detected:
             consecutive_detections += 1
-            print(f"👁️  Person detected ({consecutive_detections}/{CONSECUTIVE_FRAMES_REQUIRED})")
+            print(
+                f"👁️  Person detected "
+                f"({consecutive_detections}/{CONSECUTIVE_FRAMES_REQUIRED})"
+            )
 
             # Check if we have enough consecutive detections to capture
             if consecutive_detections >= CONSECUTIVE_FRAMES_REQUIRED:
                 # Person detected in required consecutive frames - capture!
-                print(f"📸 Capturing still ({CONSECUTIVE_FRAMES_REQUIRED} consecutive detections)...")
+                print(
+                    f"📸 Capturing still ({CONSECUTIVE_FRAMES_REQUIRED} consecutive "
+                    f"detections)..."
+                )
 
                 detection_count += 1
                 detection_timestamp = datetime.now(ZoneInfo("America/Los_Angeles"))
@@ -240,41 +253,60 @@ try:
 
                 # Filter detections to only include those in the doorstep ROI
                 detected_people = [
-                    person for person in all_detections
+                    person
+                    for person in all_detections
                     if is_in_roi(
-                        [person["bounding_box"]["x1"], person["bounding_box"]["y1"],
-                         person["bounding_box"]["x2"], person["bounding_box"]["y2"]],
+                        [
+                            person["bounding_box"]["x1"],
+                            person["bounding_box"]["y1"],
+                            person["bounding_box"]["x2"],
+                            person["bounding_box"]["y2"],
+                        ],
                         frame_width,
-                        frame_height
+                        frame_height,
                     )
                 ]
 
                 num_people = len(detected_people)
-                print(f"👤 {num_people} person(s) detected! (Detection #{detection_count})")
+                print(
+                    f"👤 {num_people} person(s) detected! "
+                    f"(Detection #{detection_count})"
+                )
 
-                # Start cooldown period immediately after detection (before Baseten call)
+                # Start cooldown period immediately after detection (before Baseten
+                # call)
                 last_capture_time = current_time
                 in_cooldown = True
                 consecutive_detections = 0
                 print(f"⏸️  Starting {CAPTURE_COOLDOWN}s cooldown period...")
                 print()
 
-                # Process each detected person separately for costume classification (on UNBLURRED frame)
-                # Note: Validated inflatables already have costume data from validation step
+                # Process each detected person separately for costume classification (on
+                # UNBLURRED frame)
+                # Note: Validated inflatables already have costume data from validation
+                # step
                 for person_idx, person in enumerate(detected_people, start=1):
                     person_conf = person["confidence"]
                     person_box = person["bounding_box"]
                     detection_type = person.get("detection_type", "person")
 
                     if num_people > 1:
-                        print(f"   Processing {detection_type} {person_idx}/{num_people} (confidence: {person_conf:.2f})")
+                        print(
+                            f"   Processing {detection_type} {person_idx}/{num_people} "
+                            f"(confidence: {person_conf:.2f})"
+                        )
 
-                    # Skip costume classification if already done during inflatable validation
+                    # Skip costume classification if already done during inflatable
+                    # validation
                     if person.get("costume_classification"):
-                        print(f"   ✓ Costume already classified: {person['costume_classification']}")
+                        print(
+                            f"   ✓ Costume already classified: "
+                            f"{person['costume_classification']}"
+                        )
                         continue
 
-                    # Classify costume using Baseten if configured (using original unblurred frame)
+                    # Classify costume using Baseten if configured (using original
+                    # unblurred frame)
                     costume_classification = None
                     costume_confidence = None
                     costume_description = None
@@ -304,7 +336,8 @@ try:
 
                             if costume_classification:
                                 print(
-                                    f"   👗 Costume: {costume_classification} ({costume_confidence:.2f})"
+                                    f"   👗 Costume: {costume_classification} "
+                                    f"({costume_confidence:.2f})"
                                 )
                                 print(f"      {costume_description}")
                             else:
@@ -329,7 +362,8 @@ try:
                     person_region = blurred_frame[y1:y2, x1:x2]
 
                     # Apply moderate Gaussian blur (kernel size 33)
-                    # This obscures facial features while keeping costume colors/shapes visible
+                    # This obscures facial features while keeping costume colors/shapes
+                    # visible
                     if person_region.size > 0:  # Ensure region is valid
                         blurred_person = cv2.GaussianBlur(person_region, (33, 33), 0)
                         blurred_frame[y1:y2, x1:x2] = blurred_person
@@ -349,7 +383,7 @@ try:
 
                 # Retain the file unless every image and record was saved.
                 uploads_succeeded = bool(supabase_client) and bool(detected_people)
-                for person_idx, person in enumerate(detected_people, start=1):
+                for person in detected_people:
                     if supabase_client:
                         try:
                             saved = supabase_client.save_detection(
@@ -357,7 +391,9 @@ try:
                                 timestamp=detection_timestamp,
                                 confidence=person["confidence"],
                                 bounding_box=person["bounding_box"],
-                                costume_classification=person.get("costume_classification"),
+                                costume_classification=person.get(
+                                    "costume_classification"
+                                ),
                                 costume_description=person.get("costume_description"),
                                 costume_confidence=person.get("costume_confidence"),
                             )
@@ -376,7 +412,10 @@ try:
         else:
             # No person detected - reset consecutive counter
             if consecutive_detections > 0:
-                print(f"👋 Person left frame - resetting counter (was at {consecutive_detections})")
+                print(
+                    f"👋 Person left frame - resetting counter (was at "
+                    f"{consecutive_detections})"
+                )
             consecutive_detections = 0
 
 except KeyboardInterrupt:
@@ -385,5 +424,7 @@ except KeyboardInterrupt:
     print(f"📊 Total detections: {detection_count}")
 
 finally:
+    if supabase_client:
+        supabase_client.report_detector_running(False)
     cap.release()
     print("✅ Cleanup complete!")

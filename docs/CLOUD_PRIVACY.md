@@ -90,13 +90,14 @@ Review custom policies before migrating; do not apply it to a shared database.
 Previously public photos may already have been downloaded or cached. Privacy
 changes cannot revoke those copies. Verify anonymous reads fail, an unlisted
 account sees nothing, and an approved viewer sees a synthetic image and live update
-before restarting camera capture. Hosted services paused for testing remain paused
-until explicitly resumed.
+before restarting camera capture.
 
 ## Cloud inference
 
 Cloud classification sends an **unblurred person crop** to the selected endpoint.
-The saved scene is blurred on a best-effort basis; that is not anonymization.
+The saved scene blurs detected person regions, including faces within those
+regions, on a best-effort basis. Missed people may remain visible; this is not
+anonymization.
 Local mode avoids the model upload. Review your capture area and provider terms.
 
 The application requires an explicit OpenRouter model and sends
@@ -110,24 +111,14 @@ Do not enable provider prompt/completion logging or opt into training.
 
 **Do not use NVIDIA free trial endpoints for camera images.** The
 [Nemotron free endpoint notice](https://openrouter.ai/nvidia/nemotron-3.5-super-vl:free)
-prohibits personal data such as faces. The original October 28 walkthrough used
-this endpoint before the restriction was identified. Runtime setup now rejects
-NVIDIA `:free` models and automatic/free routers. Blocking known unsuitable models
-does not certify other models: review the chosen endpoint's terms and image support.
+prohibits personal data such as faces. Runtime setup rejects NVIDIA `:free`
+models and automatic/free routers. Blocking known unsuitable models does not
+certify other models: review the chosen endpoint's terms and image support.
 
-Synthetic checks on October 28, 2026 (no camera images, no new credits purchased):
-
-| Candidate | Result with required privacy routing |
-| --- | --- |
-| `google/gemini-2.5-flash` | HTTP 404; no usable route in this test |
-| `openai/gpt-4.1-mini` | HTTP 402; this account requires credits before inference |
-
-Neither check produced a successful paid classification. Do not claim a verified
-replacement model yet. The GPT-4.1 mini catalog quoted $0.40/M input tokens and
-$1.60/M output tokens; actual cost depends on image tokenization and routing.
-Check the [current catalog](https://openrouter.ai/openai/gpt-4.1-mini), account
-credit and terms, get a budget, and verify a synthetic classification first.
-Free provider plans are separate from inference credit and provider hosting quotas.
+A suitable replacement for the blocked model used in the original walkthrough
+has not yet passed verification. Check current model availability, pricing and
+account credit, approve a budget, and verify a synthetic classification before
+camera use. Free provider plans are separate from inference credit and hosting quotas.
 
 ## Retention and deletion
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useDetectorStatus } from "@/lib/use-detector-status";
 import { supabase } from "@/lib/supabase";
 import { applyDetectionChange, type DetectionChange, type PersonDetection } from "@/lib/detections";
 import { galleryImages, privateGallery, publicGalleryImages, type SignedImageCache } from "@/lib/gallery-images";
@@ -10,7 +11,7 @@ export function useDetections(initialDetections: PersonDetection[]) {
   const links = useRef<SignedImageCache>(new Map());
   const [detections, setDetections] = useState(initialDetections);
   const [photos, setPhotos] = useState(() => privateGallery ? [] : publicGalleryImages(initialDetections));
-  const [connected, setConnected] = useState(false);
+  const connected = useDetectorStatus();
   const [loading, setLoading] = useState(privateGallery);
   const [newIds, setNewIds] = useState<Set<string>>(new Set());
 
@@ -73,7 +74,6 @@ export function useDetections(initialDetections: PersonDetection[]) {
       })
       .subscribe(status => {
         if (!active) return;
-        setConnected(status === "SUBSCRIBED");
         // Close the server-render-to-subscription gap, and reconcile after reconnects.
         if (status === "SUBSCRIBED") void reconcile();
       });

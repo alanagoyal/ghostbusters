@@ -12,7 +12,7 @@ BASETEN_MODEL=nvidia/NVIDIA-Nemotron-3.5-Super-VL-120B-A12B
 BASETEN_AUTH_SCHEME=Bearer
 ```
 
-Supply `BASETEN_API_KEY` privately. For an existing dedicated Gemma deployment, preserve its endpoint and the original defaults `gemma` / `Api-Key`. Availability and billing depend on your provider account; consult the [Baseten vision documentation](https://docs.baseten.co/inference/model-apis/vision).
+Supply `BASETEN_API_KEY` privately. The model must be configured explicitly; there is no implicit model fallback. For an existing dedicated Gemma deployment, preserve its endpoint and explicitly set `BASETEN_MODEL=gemma` and `BASETEN_AUTH_SCHEME=Api-Key`. Availability and billing depend on your provider account; consult the [Baseten vision documentation](https://docs.baseten.co/inference/model-apis/vision).
 
 `uv run --no-sync ghostbusters doctor --skip-camera` makes a small billed vision request using a generated blank image and checks Supabase access. It does not prove capture, uploads or live gallery delivery; verify those with a deliberate walkthrough. Errors can reflect credentials, model access, credits, endpoint format or auth scheme.
 

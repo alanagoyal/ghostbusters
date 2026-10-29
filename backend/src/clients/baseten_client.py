@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Baseten API client for costume classification using vision models.
-Uses Gemma vision model with structured outputs.
+Uses an explicitly configured vision model with structured outputs.
 """
 
 import base64
@@ -83,7 +83,7 @@ class BasetenClient:
         Initialize Baseten client with API key and model URL.
 
         Raises:
-            ValueError: If BASETEN_API_KEY or BASETEN_MODEL_URL is not set
+            ValueError: If BASETEN_API_KEY, BASETEN_MODEL_URL or the model is not set
         """
         self.api_key = api_key if auth_scheme else os.getenv("BASETEN_API_KEY")
         self.model_url = model_url if auth_scheme else os.getenv("BASETEN_MODEL_URL")
@@ -101,7 +101,9 @@ class BasetenClient:
         self.session.headers.update({"Authorization": f"{auth_scheme} {self.api_key}"})
 
         # Model configuration
-        self.model = model or os.getenv("BASETEN_MODEL", "gemma")
+        self.model = model if model is not None else os.getenv("BASETEN_MODEL")
+        if not self.model or not self.model.strip():
+            raise ValueError("Set BASETEN_MODEL explicitly or pass a model")
         self.temperature = 0.5
         self.max_tokens = 512
         self.request_options = request_options or {}
@@ -110,7 +112,7 @@ class BasetenClient:
         self, image_bytes: bytes, custom_prompt: str | None = None
     ) -> tuple[str | None, float | None, str | None]:
         """
-        Classify a Halloween costume from an image using Gemma vision model.
+        Classify a Halloween costume from an image using the configured vision model.
 
         Args:
             image_bytes: Image data as bytes (JPEG/PNG format)
@@ -159,7 +161,7 @@ class BasetenClient:
                 "- Output ONLY the JSON object, nothing else"
             )
 
-            # Call Baseten API with Gemma vision model
+            # Call Baseten API with the configured vision model
             response = self.session.post(
                 self.model_url,
                 timeout=(10, 60),

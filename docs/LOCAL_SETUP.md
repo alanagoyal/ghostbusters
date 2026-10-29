@@ -44,6 +44,6 @@ Maintenance is periodic; allow transient image-budget overshoot between sweeps. 
 
 Offline: `uv run --no-sync python -m unittest discover -s backend/tests/unit -v`; `npm --prefix frontend run typecheck`; `ghostbusters local build`.
 
-Licensed fixture sources and expected visual content: `backend/tests/fixtures/local/README.md`. Live model tests are separate from offline unit tests. See `docs/LOCAL_BENCHMARK.md` for measured model quality/limits. Current release evidence is maintained by the implementing agent; do not promote untested adapters/platforms as tested.
+Licensed fixture sources and expected visual content: `backend/tests/fixtures/local/README.md`. Live model tests are separate from offline unit tests. See `docs/LOCAL_BENCHMARK.md` for measured model quality/limits.
 
 Existing cloud installs: [Baseten](BASETEN_SETUP.md), [Supabase](SUPABASE_SETUP.md), and [CLI](CLI.md). Existing Baseten installs stay Baseten unless explicitly switched. Do not commit `.env`, `.ghostbusters`, models or camera footage.

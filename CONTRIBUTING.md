@@ -4,6 +4,35 @@ Focused fixes and reproducible camera setup reports are welcome. Read [AGENTS.md
 
 ## Checks
 
+Install both Git hooks once per clone (linked worktrees share the hooks).
+Rerun this after pulling changes to hook installation settings:
+
+```sh
+uv tool run --from pre-commit==4.3.0 pre-commit install
+```
+
+Each commit runs Ruff on staged Python files, fixes imports and formats code.
+If a hook changes a file, review and stage the changes, then commit again.
+Remaining lint errors must be fixed before committing. Existing hooks are retained
+by pre-commit's default migration mode. Keep the Ruff hook version aligned with
+`uv.lock`. Hooks must be installed again for each new clone; they are not installed
+automatically by Git. Do not bypass them with `--no-verify` or `SKIP`.
+
+Each push runs frontend types, tests, and the local static production build using
+`bash scripts/check_frontend.sh`, the same command CI runs. It checks the pushed
+commit in a temporary directory without changing dev-server output, dependencies,
+or local environment files. Run it manually after committing; it checks `HEAD`,
+not uncommitted edits. Use Node 22 and npm. The build needs no camera or cloud access.
+Dynamic routes must enumerate their exportable pages with `generateStaticParams`;
+a working dev preview or passing TypeScript check does not establish exportability.
+
+Bring `main` into existing feature branches to pick up hook/config changes. Hooks
+are local safeguards, not a guarantee that every push from every clone is checked.
+
+Pull requests into `main` must pass all three Offline checks jobs: `checks`,
+`private-gallery-policies`, and `secret-history`. Local hooks catch Python style
+errors early; CI also verifies tests, types, builds, database policies and secrets.
+
 On an Apple Silicon Mac with 16 GB RAM, use Python 3.11:
 
 ```sh
@@ -18,7 +47,7 @@ uv run --no-sync ghostbusters local build
 
 On Linux CI or a cloud-only installation, omit `--extra local`; unit tests do not need Metal, cameras or downloaded models. On a local installation, retain `--extra local` when syncing and use `--no-sync` when running commands so uv does not remove optional runtime packages.
 
-The [licensed fixture test](backend/tests/fixtures/README.md) exercises real local inference separately. Keep CI offline: no camera credentials, paid inference or database writes. The optional Supabase integration script writes records; use a disposable project.
+The [licensed fixture test](backend/tests/fixtures/README.md) exercises real local inference separately. Keep CI offline: no camera credentials, paid inference or database writes. For live cloud verification, use a disposable project and remove test records and uploaded objects afterward.
 
 ## Pull requests
 

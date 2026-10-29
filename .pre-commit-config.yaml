@@ -1,0 +1,20 @@
+default_install_hook_types: [pre-commit, pre-push]
+default_stages: [pre-commit]
+
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    # Keep this aligned with Ruff in uv.lock.
+    rev: v0.14.2
+    hooks:
+      - id: ruff-check
+        args: [--fix]
+      - id: ruff-format
+  - repo: local
+    hooks:
+      - id: frontend-ci
+        name: Frontend types, tests, and static production build
+        entry: bash scripts/check_frontend.sh
+        language: system
+        stages: [pre-push]
+        always_run: true
+        pass_filenames: false
