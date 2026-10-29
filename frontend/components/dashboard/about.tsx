@@ -1,5 +1,5 @@
 const steps = [
-  ["Capture", "A DoorBird doorbell streams 30 fps video over RTSP. Every 30th frame is checked, about one per second."],
+  ["Capture", "A DoorBird doorbell streams video over RTSP. Every 30th frame is checked."],
   ["Detect", "YOLOv8n, a 6 MB model, finds people. It also keeps cars, dogs, cats and birds, since that is how it often labels inflatable costumes."],
   ["Filter", "A detection needs over 70% confidence, a center on the doorstep and two frames in a row. After a capture, the camera waits 30 seconds."],
   ["Classify", "The crop is sent to Nemotron 3.5 Super VL on Baseten. It returns a costume, a confidence and a one-line description. Inflatables it can’t confirm are dropped."],
