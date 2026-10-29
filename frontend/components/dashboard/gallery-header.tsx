@@ -2,7 +2,6 @@ export function GalleryHeader({ connected, status, local = false }: { connected:
   return <header className="gallery-header">
     <div>
       <h1>Ghostbusters</h1>
-      <p>Halloween costumes, captured at the door.</p>
     </div>
     <div className="gallery-status">
       {local && <span>Local gallery</span>}

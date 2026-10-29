@@ -35,30 +35,30 @@
 }
 
 :root {
-  --background: #141513;
-  --foreground: #ebe9dd;
-  --card: #191a17;
-  --card-foreground: #ebe9dd;
-  --popover: #22251f;
-  --popover-foreground: #ebe9dd;
-  --primary: #cf8855;
-  --primary-foreground: #171916;
-  --secondary: #2c3027;
-  --secondary-foreground: #d4d8bc;
-  --muted: #282c25;
-  --muted-foreground: #a4aa99;
-  --accent: #333a2d;
-  --accent-foreground: #ebe9dd;
-  --destructive: #f08066;
-  --destructive-foreground: #171916;
-  --border: #30332b;
-  --input: #454c3c;
-  --ring: #f58b47;
-  --chart-1: #f58b47;
-  --chart-2: #c3cb94;
-  --chart-3: #d4bc88;
-  --chart-4: #81946c;
-  --chart-5: #b39cba;
+  --background: #9d152b;
+  --foreground: #f4efec;
+  --card: transparent;
+  --card-foreground: #f4efec;
+  --popover: #851124;
+  --popover-foreground: #f4efec;
+  --primary: #f4efec;
+  --primary-foreground: #9d152b;
+  --secondary: #7a1021;
+  --secondary-foreground: #f4efec;
+  --muted: #ac1d35;
+  --muted-foreground: #e6bfc5;
+  --accent: #7a1021;
+  --accent-foreground: #f4efec;
+  --destructive: #ffb3c1;
+  --destructive-foreground: #7a1021;
+  --border: #e6bfc566;
+  --input: #e6bfc580;
+  --ring: #f4efec;
+  --chart-1: #f4efec;
+  --chart-2: #ffb3c1;
+  --chart-3: #ff8fa3;
+  --chart-4: #ff758f;
+  --chart-5: #ff4d6d;
   --font-sans: Geist Mono, monospace;
   --radius: 0rem;
 }
@@ -179,12 +179,11 @@
 
 
 html { scroll-behavior: smooth; }
-::selection { background: #c97f48; color: #121310; }
+::selection { background: #f4efec; color: #9d152b; }
 :focus-visible { outline: 2px solid var(--primary); outline-offset: 4px; }
 .observatory { max-width: 1320px; margin: auto; padding: 0 40px 40px; }
 .gallery-header { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 54px 0 36px; }
 .gallery-header h1 { font-family: Arial, Helvetica, sans-serif; font-size: 38px; line-height: 1.1; font-weight: 600; letter-spacing: -.055em; }
-.gallery-header p { color: var(--muted-foreground); font-size: 12px; margin-top: 12px; }
 .gallery-status, .gallery-status > span { display: flex; align-items: center; gap: 8px; font-size: 10px; color: var(--muted-foreground); }
 .gallery-status { flex-direction: column; align-items: flex-end; }
 .gallery-status i { width: 5px; height: 5px; background: #777b70; border-radius: 50%; }
@@ -193,11 +192,7 @@ html { scroll-behavior: smooth; }
 .instrument-title { font-size: 12px; font-weight: 500; }
 .stat-value { font-size: 38px; line-height: 1.2; font-weight: 400; letter-spacing: -.06em; color: var(--foreground); }
 .archive-card { background: transparent; }
-.archive-photo { color: var(--foreground); }
-.archive-search { display: flex; align-items: center; justify-content: flex-end; padding-bottom: 8px; font-size: 11px; }
-.archive-search span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
-.archive-search input { width: 220px; max-width: 100%; background: transparent; border: 1px solid var(--border); color: var(--foreground); padding: 9px 12px; font: inherit; }
-.archive-search input::placeholder { color: var(--muted-foreground); }
+.archive-photo { background: #fffefa; padding: 12px 12px 16px; box-shadow: 0 4px 10px #38071330; color: #3f3f46; }
 .local-health > div, .local-photo { border-radius: 0; background: var(--card); }
 .local-totals { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid var(--border); }
 .local-totals > div { padding: 24px; }
@@ -208,7 +203,6 @@ html { scroll-behavior: smooth; }
   .observatory { padding: 0 16px 24px; }
   .gallery-header { align-items: flex-start; padding: 32px 0 28px; gap: 12px; }
   .gallery-header h1 { font-size: 30px; }
-  .gallery-header p { font-size: 11px; max-width: 210px; line-height: 1.6; }
   .gallery-status { padding-top: 6px; font-size: 9px; }
   .local-totals > div { padding: 14px; } .local-totals strong { font-size: 25px; }
 }

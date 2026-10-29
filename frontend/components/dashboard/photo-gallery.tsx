@@ -17,11 +17,7 @@ interface PhotoGalleryProps {
 }
 
 export function PhotoGallery({ detections, isLoading, newIds, originalImage }: PhotoGalleryProps) {
-  const [filter, setFilter] = useState("");
-  const allPhotos = detections.filter(detection => detection.image_url);
-  const photos = allPhotos.filter(detection =>
-    `${detection.costume_classification || ""} ${detection.costume_description || ""}`.toLowerCase().includes(filter.toLowerCase())
-  );
+  const photos = detections.filter(detection => detection.image_url);
   const [selected, setSelected] = useState<PersonDetection | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
@@ -74,15 +70,11 @@ export function PhotoGallery({ detections, isLoading, newIds, originalImage }: P
           </div>
         </CardHeader>
         <CardContent>
-          <label className="archive-search">
-            <span>Search costumes</span>
-            <input type="search" value={filter} onChange={event => setFilter(event.target.value)} placeholder="Search costumes…" />
-          </label>
           {/* RTL scroll origin puts the newest photos on screen before hydration. */}
           <div ref={scrollContainer} dir="rtl"
             onScroll={event => { followNewest.current = Math.abs(event.currentTarget.scrollLeft) < 80; }}
             className={"overflow-x-auto overflow-y-hidden py-4 " + (photos.length ? "min-h-[280px]" : "")}>
-            <div dir="ltr" className="flex w-max min-w-full justify-end gap-4">
+            <div dir="ltr" className="flex w-max min-w-full justify-end gap-6 px-2">
               {[...photos].reverse().map((detection, index) => {
 
                 const recent = index >= photos.length - 8;
@@ -92,7 +84,7 @@ export function PhotoGallery({ detections, isLoading, newIds, originalImage }: P
                   <div key={detection.id}
                     className={"flex-shrink-0 group " + (newIds.has(detection.id) ? "motion-safe:animate-[slideInFromBottom_200ms_ease-out]" : "")}>
                     <div className="archive-photo"
-                      style={{ width: "200px" }}>
+                      style={{ width: "200px", transform: `rotate(${index % 3 === 0 ? -2 : index % 3 === 1 ? 2 : 0}deg)` }}>
                       <button type="button" onClick={() => { void openPhoto(detection); }}
                         aria-label={"Open " + (detection.costume_classification || "detection") + " photo"}
                         className="block w-full relative aspect-[3/4] overflow-hidden bg-gray-100 cursor-zoom-in focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current">
@@ -103,13 +95,13 @@ export function PhotoGallery({ detections, isLoading, newIds, originalImage }: P
                           placeholder={blur ? "blur" : "empty"} blurDataURL={blur}
                           referrerPolicy="no-referrer"
                           alt={detection.costume_classification || "Detection"}
-                          fill className="object-cover transition-transform duration-500 group-hover:scale-105" sizes="200px" />
+                          fill className="object-cover transition-transform duration-500 group-hover:scale-105" sizes="176px" />
                       </button>
                       <div className="pt-2 flex items-center justify-between gap-2 min-h-[32px]">
-                        <div className="text-xs text-foreground truncate flex-1">
+                        <div className="text-xs font-medium text-zinc-700 truncate flex-1">
                           {detection.costume_classification ? toTitleCase(detection.costume_classification) : ""}
                         </div>
-                        <time dateTime={detection.timestamp} suppressHydrationWarning className="text-[10px] text-muted-foreground whitespace-nowrap">
+                        <time dateTime={detection.timestamp} suppressHydrationWarning className="text-[10px] text-zinc-500 whitespace-nowrap">
                           {new Date(detection.timestamp).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })}
                         </time>
                       </div>
@@ -122,7 +114,7 @@ export function PhotoGallery({ detections, isLoading, newIds, originalImage }: P
           {!isLoading && photos.length === 0 && (
             <div className="text-center py-12 text-muted-foreground">
               <Camera className="h-12 w-12 mx-auto mb-4 opacity-20" />
-              <p>{filter ? "No costumes match your search" : "No photos captured yet"}</p>
+              <p>No photos captured yet</p>
             </div>
           )}
         </CardContent>
