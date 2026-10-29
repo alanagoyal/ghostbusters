@@ -78,7 +78,7 @@ export function PhotoGallery({ detections, isLoading, newIds, originalImage }: P
           {/* RTL scroll origin puts the newest photos on screen before hydration. */}
           <div ref={scrollContainer} dir="rtl"
             onScroll={event => { followNewest.current = Math.abs(event.currentTarget.scrollLeft) < 80; }}
-            className={"overflow-x-auto overflow-y-hidden py-4 " + (photos.length ? "min-h-[280px]" : "")}>
+            className={"polaroid-strip overflow-x-auto overflow-y-hidden py-4 " + (photos.length ? "min-h-[280px]" : "")}>
             <div dir="ltr" className="flex w-max min-w-full justify-end gap-6 px-2">
               {[...photos].reverse().map((detection, index) => {
 

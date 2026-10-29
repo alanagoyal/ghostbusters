@@ -243,3 +243,10 @@ html { scroll-behavior: smooth; }
   .archive-card .text-sm { font-size: 11px; max-width: 160px; }
   .summary-strip > .instrument-card { padding-right: 8px; padding-left: 16px; }
 }
+
+/* Let the photographs span the viewport independently of the reading column. */
+.polaroid-strip {
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+}
