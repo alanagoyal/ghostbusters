@@ -3,8 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Camera, X } from "lucide-react";
+import { Camera, X, ArrowLeft, ArrowRight } from "lucide-react";
 import type { PersonDetection } from "@/lib/detections";
 import type { GalleryImage } from "@/lib/gallery-images";
 import { toTitleCase } from "@/lib/string-utils";
@@ -64,9 +63,15 @@ export function PhotoGallery({ detections, isLoading, newIds, originalImage }: P
           <div className="flex items-center justify-between">
             <div>
               <CardTitle>Photo Gallery</CardTitle>
-              <CardDescription>Recent photos · select to enlarge</CardDescription>
+              <CardDescription>Select a photo to take a closer look</CardDescription>
             </div>
-            <Badge variant="outline" className="text-muted-foreground">{photos.length} photos</Badge>
+            <div className="flex items-center gap-4">
+              <span className="text-xs text-muted-foreground">{photos.length} photos</span>
+              <div className="flex gap-2">
+                <button type="button" className="gallery-arrow" aria-label="Show older photos" disabled={!photos.length} onClick={() => scrollContainer.current?.scrollBy({ left: -480, behavior: "smooth" })}><ArrowLeft size={16} /></button>
+                <button type="button" className="gallery-arrow" aria-label="Show newer photos" disabled={!photos.length} onClick={() => scrollContainer.current?.scrollBy({ left: 480, behavior: "smooth" })}><ArrowRight size={16} /></button>
+              </div>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -84,7 +89,7 @@ export function PhotoGallery({ detections, isLoading, newIds, originalImage }: P
                   <div key={detection.id}
                     className={"flex-shrink-0 group " + (newIds.has(detection.id) ? "motion-safe:animate-[slideInFromBottom_200ms_ease-out]" : "")}>
                     <div className="archive-photo"
-                      style={{ width: "200px", transform: `rotate(${index % 3 === 0 ? -2 : index % 3 === 1 ? 2 : 0}deg)` }}>
+                      style={{ transform: `rotate(${index % 3 === 0 ? -2 : index % 3 === 1 ? 2 : 0}deg)` }}>
                       <button type="button" onClick={() => { void openPhoto(detection); }}
                         aria-label={"Open " + (detection.costume_classification || "detection") + " photo"}
                         className="block w-full relative aspect-[3/4] overflow-hidden bg-gray-100 cursor-zoom-in focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current">
@@ -95,7 +100,7 @@ export function PhotoGallery({ detections, isLoading, newIds, originalImage }: P
                           placeholder={blur ? "blur" : "empty"} blurDataURL={blur}
                           referrerPolicy="no-referrer"
                           alt={detection.costume_classification || "Detection"}
-                          fill className="object-cover transition-transform duration-500 group-hover:scale-105" sizes="176px" />
+                          fill className="object-cover transition-transform duration-500 group-hover:scale-105" sizes="(max-width: 600px) 196px, 236px" />
                       </button>
                       <div className="pt-2 flex items-center justify-between gap-2 min-h-[32px]">
                         <div className="text-xs font-medium text-zinc-700 truncate flex-1">

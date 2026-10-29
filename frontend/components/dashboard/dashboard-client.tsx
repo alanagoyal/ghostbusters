@@ -86,7 +86,11 @@ export function DashboardClient({ initialDetections }: DashboardClientProps) {
     <main className="observatory">
       <GalleryHeader connected={connected} />
       <div className="space-y-8">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div id="costume-archive" className="scroll-mt-6">
+          <PhotoGallery detections={photos} isLoading={loading} newIds={newIds} originalImage={originalImage} />
+        </div>
+
+        <div className="summary-strip grid grid-cols-2 lg:grid-cols-4">
           <StatsCard
             title="Recent Detections"
             value={detections.length}
@@ -117,26 +121,12 @@ export function DashboardClient({ initialDetections }: DashboardClientProps) {
           <ConfidenceMeter detections={detections} />
         </div>
 
-        <div id="costume-archive" className="scroll-mt-6">
-          <PhotoGallery detections={photos} isLoading={loading} newIds={newIds} originalImage={originalImage} />
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-2">
-            <CostumeDistribution costumes={costumeStats.costumes} />
-          </div>
-          <div className="lg:col-span-1">
-            <LiveFeed detections={detections} limit={8} />
-          </div>
-        </div>
-
-        <div className="mt-6">
+        <div className="analytics-layout">
+          <CostumeDistribution costumes={costumeStats.costumes} />
           <ActivityTimeline detections={detections} />
         </div>
-
-        <div className="mt-6">
-          <About />
-        </div>
+        <LiveFeed detections={detections} limit={8} />
+        <About />
       </div>
     </main>
   );

@@ -152,7 +152,7 @@ export function ActivityTimeline({ detections }: ActivityTimelineProps) {
   const yAxisTicks = Array.from({ length: 6 }, (_, i) => Math.round((yAxisMax / 5) * i))
 
   return (
-    <Card className="min-w-0">
+    <Card className="analytics-panel min-w-0">
         <CardHeader>
         <div className="space-y-1">
           <CardTitle>Activity Timeline</CardTitle>
