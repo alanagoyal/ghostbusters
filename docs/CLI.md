@@ -13,19 +13,19 @@ not a standalone PyPI installation.
 
 | Command | Behavior |
 | --- | --- |
-| `uv run ghostbusters setup --provider baseten` | Interactive camera, inference, Supabase and dashboard configuration; preserves existing provider, explicitly selects Baseten |
-| `uv run ghostbusters doctor` | Connection checks; one small billed vision request, no database writes |
-| `uv run ghostbusters doctor --skip-camera` | Checks cloud/config without opening a camera already in use |
-| `uv run ghostbusters start` | Starts detector service and enables startup at login (Mac) or boot (Linux) |
-| `uv run ghostbusters status` | Native service state/PID and log location; does not claim cloud health |
-| `uv run ghostbusters stop` | Stops service and disables automatic startup |
-| `uv run ghostbusters start --foreground` | Runs in this terminal; Ctrl+C stops; don't combine with a background service |
+| `uv run --no-sync ghostbusters setup --provider baseten` | Interactive camera, inference, Supabase and dashboard configuration; preserves existing provider, explicitly selects Baseten |
+| `uv run --no-sync ghostbusters doctor` | Connection checks; one small billed vision request, no database writes |
+| `uv run --no-sync ghostbusters doctor --skip-camera` | Checks cloud/config without opening a camera already in use |
+| `uv run --no-sync ghostbusters start` | Starts detector service and enables startup at login (Mac) or boot (Linux) |
+| `uv run --no-sync ghostbusters status` | Native service state/PID and log location; does not claim cloud health |
+| `uv run --no-sync ghostbusters stop` | Stops service and disables automatic startup |
+| `uv run --no-sync ghostbusters start --foreground` | Runs in this terminal; Ctrl+C stops; don't combine with a background service |
 
 ## Manual first run
 
 1. Create accounts at [Baseten](https://app.baseten.co) and
    [Supabase](https://supabase.com/dashboard). Create a Supabase project.
-2. Run `uv run ghostbusters setup --provider baseten` in a terminal. Secret inputs do not echo. Enter keeps existing
+2. Run `uv run --no-sync ghostbusters setup --provider baseten` in a terminal. Secret inputs do not echo. Enter keeps existing
    settings/defaults. Ctrl+C cancels before saving. Re-running preserves unrelated
    environment settings and comments. Back up config before changing projects.
 3. Run the [Supabase bootstrap](SUPABASE_SETUP.md) and its table grants in SQL Editor. A normal Supabase API key cannot run SQL.

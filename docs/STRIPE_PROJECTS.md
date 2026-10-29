@@ -31,8 +31,8 @@ need to do these steps; the agent should ask only when a specific step needs you
 | Choose paid usage if needed | Free provisioning does not guarantee free or available inference. Approve a specific model/plan and budget before a paid upgrade. |
 
 Cloud photos and detection metadata require an explicitly approved viewer account.
-The agent creates the account; the viewer clicks an email sign-in link. Face blurring
-is best-effort; inference receives unblurred crops. See [cloud privacy](CLOUD_PRIVACY.md).
+The agent creates the account; the viewer clicks an email sign-in link. Saved scenes blur detected person regions on a best-effort basis; inference
+receives unblurred crops. See [cloud privacy](CLOUD_PRIVACY.md).
 Stop capture after use; stopping does not delete photos or cancel cloud resources.
 
 ## For the agent
@@ -66,46 +66,15 @@ If Stripe is missing, install its official CLI (`brew install
 stripe/stripe-cli/stripe` on macOS, or `npm install -g @stripe/cli`). If the plugin
 already exists, check its version/help instead of reinstalling blindly.
 
-For a new project run `stripe projects init`; for an existing association resume
-it. Use the normal user-owned CLI session. Don't build a custom auth server,
-override HOME, fabricate accounts, or introduce containers to handle sign-in.
-Return the current CLI browser handoff to the user and preserve its continuation.
-Verify completion with the CLI before proceeding; a screenshot isn't proof.
-If access is test-only/ineligible, use the supported account-selection flow
-(`stripe projects switch-account`, if listed in installed help). Don't repeat
-permission repair indefinitely or activate a payments business to fix Projects.
+For a new project run `stripe projects init`; otherwise resume the existing
+association. Complete its browser handoff using the owner's normal CLI session
+and verify completion with the CLI. If the account is ineligible, use the supported
+account-selection flow shown by current help.
 
-### Reduce owner handoffs
-
-Before asking for another login, privately inspect the **names** of credentials
-returned by provisioning and the supported provider auth methods. Our Vercel
-provisioning returned a working token; a separate browser approval was unnecessary.
-Supabase provider association and Supabase CLI management login are separate.
-The CLI login is optional if the backend key can be obtained another authorized
-way. Don't force users through both paths by default.
-
-With explicit owner authorization and an accessible signed-in browser, computer
-use may navigate to the exact new project's API Keys page and transfer an existing
-backend key directly to the secure credential destination. Keep reveal/copy/paste
-out of screenshots, chat, shell history, command arguments and tool output.
-Do not claim success until the secure write receipt or file validation confirms it.
-If secure transfer isn't supported, use one secure input form, show where it is,
-and replace it only after expiry/cancellation. Never ask for secrets in chat.
-
-Computer use can navigate login pages and fill ordinary non-secret fields. It
-cannot be promised to bypass owner actions: account selection, MFA/email codes,
-CAPTCHA and new access grants remain subject to the browser tool's approval rules.
-Pause at new security-sensitive consent and get the owner's confirmation when
-required; do not silently self-approve broader access. Creating/rotating keys is
-separate from retrieving an existing authorized key. Prefer normal browser login
-to a fragile headless CLI-code relay, and never log incremental PTY secret echoes.
-
-Our October 28 test required Stripe login, Supabase provider approval, an attempted
-Supabase CLI login (failed HTTP 404), and a secure backend-key fallback. It also
-needed an owner decision to pause an older test database at the free-project cap.
-The strict fresh-credential test needed isolated CLI storage because the Stripe
-plugin hardcoded a global vault path; Docker was a test isolation workaround, not
-a normal product prerequisite. Do not impose those test-harness steps on new users.
+Use provisioned credentials before requesting another login. Supabase provider
+association and CLI management login are separate; CLI login is unnecessary if
+the backend key is available through another authorized route. Keep secrets out
+of chat, screenshots and command output; use secure input when needed.
 
 ### 2. Provision with provider CLIs
 
@@ -171,11 +140,9 @@ input restrictions before sending camera images. Synthetic model success is not
 permission to upload faces. The tested `nvidia/nemotron-3.5-super-vl:free` endpoint
 has zero token pricing but its [provider notice](https://openrouter.ai/nvidia/nemotron-3.5-super-vl:free)
 prohibits personal data such as faces; do not select it for real camera capture.
-It was used in the October 28 verification, and this limitation was identified
-afterward. Future real-camera setup must select a suitable endpoint or local mode. The client requires no-data-collection and ZDR
-routing and blocks that free endpoint; [current replacement test results](CLOUD_PRIVACY.md)
-are explicit about credit/routing failures. Don't hardcode a free model
-from an old test: availability, quota and credit requirements can change.
+The client requires no-data-collection and ZDR routing and blocks NVIDIA free
+endpoints and automatic/free routers. Select a suitable endpoint or local mode;
+verify current access, terms and pricing before use. See [cloud privacy](CLOUD_PRIVACY.md).
 From the repository root:
 
 ```sh
@@ -280,22 +247,15 @@ provider CLI or supported Stripe Projects removal command for those exact IDs.
 Remove plaintext credential files only after the resources/config are no longer
 needed; never delete existing installations as cleanup for a new attempt.
 
-## Evidence and references
+## Verification status and references
 
-The October 2026 earlier onboarding test eventually verified OpenRouter inference,
-Supabase uploads/inserts/public reads and browser Realtime using synthetic data.
-The October 28 fresh test also verified a real DoorBird no-costume person
-through the deployed gallery without reload. It took 100.5 minutes including
-owner waits; this is not a measured unattended setup time. That test predated the
-private-gallery changes; it does not verify the new hosted Auth/signed-link flow. Its two bootstrap
-fixes (SUPABASE_DB_PASS and libpq environment components) are included.
+Provisioning and a real DoorBird walkthrough have been verified through the hosted
+gallery with live updates. That test preceded private-gallery Auth/signed links
+and used a model now blocked for face-data restrictions. Hosted private-gallery
+verification and a successful replacement-model check remain outstanding.
+Offline regression tests do not establish live access for a new account/camera.
 
-The earlier blockers motivated this adapter: alias mismatches, missing backend key,
-IPv6-only direct database connectivity, inference credit/quota failures and
-repeated browser authorization. This new implementation has offline regression
-coverage; it still requires live verification on each new account/camera.
-
-Current provider references (checked October 27, 2026):
+Provider documentation:
 [Stripe Projects](https://docs.stripe.com/projects),
 [Supabase integration](https://supabase.com/docs/guides/integrations/stripe-projects),
 [Supabase CLI key retrieval](https://supabase.com/docs/reference/cli/supabase-projects-api-keys),

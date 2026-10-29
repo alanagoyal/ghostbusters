@@ -47,7 +47,7 @@ uv run --no-sync ghostbusters local build
 
 On Linux CI or a cloud-only installation, omit `--extra local`; unit tests do not need Metal, cameras or downloaded models. On a local installation, retain `--extra local` when syncing and use `--no-sync` when running commands so uv does not remove optional runtime packages.
 
-The [licensed fixture test](backend/tests/fixtures/README.md) exercises real local inference separately. Keep CI offline: no camera credentials, paid inference or database writes. The optional Supabase integration script writes records; use a disposable project.
+The [licensed fixture test](backend/tests/fixtures/README.md) exercises real local inference separately. Keep CI offline: no camera credentials, paid inference or database writes. For live cloud verification, use a disposable project and remove test records and uploaded objects afterward.
 
 ## Pull requests
 
