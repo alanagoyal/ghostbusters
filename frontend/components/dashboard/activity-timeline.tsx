@@ -225,7 +225,7 @@ export function ActivityTimeline({ detections }: ActivityTimelineProps) {
                     <div key={index} className="flex-1 flex justify-center relative min-w-0">
                       <div
                         className={`w-full rounded-t-sm transition-all duration-300 absolute bottom-0 ${
-                          slot.count > 0 ? 'hover:bg-primary/80 bg-primary' : 'bg-muted'
+                          slot.count > 0 ? 'hover:bg-signal/80 bg-signal' : 'bg-muted'
                         }`}
                         style={{
                           height: `${Math.max(heightPercent, 0)}%`,

@@ -39,7 +39,7 @@ export function ConfidenceMeter({ detections }: ConfidenceMeterProps) {
           <div className="w-full mt-3">
             <div className="h-2 rounded-full bg-secondary overflow-hidden">
               <div
-                className="h-full bg-primary transition-all duration-500 animate-grow-width"
+                className="h-full bg-signal transition-all duration-500 animate-grow-width"
                 style={{ width: `${avgConfidence}%` }}
               />
             </div>
