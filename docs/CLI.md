@@ -1,5 +1,21 @@
 # Optional cloud setup and seasonal operation
 
+## Rehearsal without publishing
+
+Set `PUBLISH_DETECTIONS=false` in the capture checkout's `.env` to keep new
+photos out of the cloud gallery. Detection and costume classification continue
+(including configured cloud inference), but image uploads and detection inserts
+are skipped. Inspect `detection_*.jpg` in that checkout on the capture computer;
+classification results appear in the detector logs. Photos remain on disk until
+you remove them, so monitor disk space during extended rehearsals.
+
+Set `PUBLISH_DETECTIONS=true` to publish subsequent captures. The detector reads
+this setting at the start of each capture; no restart is required after installing
+this version. Rehearsal photos are never backfilled. This does not hide existing
+public photos or change the frontend. When unset, legacy publishing is preserved;
+values other than `true` disable publishing. The `.env` value takes precedence
+over the process environment for this switch so scheduled edits take effect.
+
 For agent-provisioned OpenRouter/Supabase and optional Vercel hosting, use
 [Stripe Projects setup](STRIPE_PROJECTS.md). Existing Baseten setups remain supported.
 
