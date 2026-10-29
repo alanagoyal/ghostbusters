@@ -9,7 +9,7 @@ export function GalleryHeader({ online, local = false }: { online: boolean; loca
     <div className="gallery-status">
       {local && <span>Local gallery</span>}
       <span role="status"><i className={online ? 'is-connected' : ''} />{online ? "Live" : "Offline"}</span>
-      {!online && <span className="offline-note">Ghostbusters is currently offline.<br />Check back October 31 at 3pm PT.</span>}
+      <span className="offline-note" style={{ visibility: online ? "hidden" : "visible" }} aria-hidden={online}>Ghostbusters is currently offline.<br />Check back October 31 at 3pm PT.</span>
     </div>
   </header>;
 }

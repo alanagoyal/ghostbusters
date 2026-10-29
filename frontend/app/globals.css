@@ -260,3 +260,5 @@ html { scroll-behavior: smooth; }
   .gallery-status { align-items: flex-start; }
   .gallery-status .offline-note { text-align: left; max-width: none; }
 }
+
+.gallery-status > span[role="status"] { width: calc(7ch + 14px); }
