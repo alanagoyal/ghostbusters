@@ -27,6 +27,8 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-tag: var(--tag);
+  --color-tag-foreground: var(--tag-foreground);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
@@ -54,6 +56,8 @@
   --border: #e6bfc566;
   --input: #e6bfc580;
   --ring: #f4efec;
+  --tag: var(--primary);
+  --tag-foreground: var(--primary-foreground);
   --chart-1: #f4efec;
   --chart-2: #ffb3c1;
   --chart-3: #ff8fa3;
@@ -283,10 +287,11 @@ html { scroll-behavior: smooth; }
 /* Palette exploration: preview at /theme/<name> */
 html[data-theme="pumpkin"] {
   --background: #14110f; --foreground: #f3e9dc; --card-foreground: #f3e9dc; --popover: #1e1915; --popover-foreground: #f3e9dc;
-  --primary: #ff7a1a; --primary-foreground: #14110f; --secondary: #241d18; --secondary-foreground: #f3e9dc;
+  --primary: #c8642a; --primary-foreground: #14110f; --secondary: #241d18; --secondary-foreground: #f3e9dc;
   --muted: #241d18; --muted-foreground: #a39585; --accent: #241d18; --accent-foreground: #f3e9dc;
-  --border: #f3e9dc26; --input: #f3e9dc40; --ring: #ff7a1a;
-  --chart-1: #ff7a1a; --chart-2: #ffa25c; --chart-3: #ffc799; --chart-4: #c75a0e; --chart-5: #8a3d08;
+  --border: #f3e9dc26; --input: #f3e9dc40; --ring: #c8642a;
+  --tag: #f3e9dc; --tag-foreground: #14110f;
+  --chart-1: #c8642a; --chart-2: #dd8a55; --chart-3: #e9b48c; --chart-4: #9c4a1c; --chart-5: #6e3413;
 }
 html[data-theme="witching"] {
   --background: #1d1528; --foreground: #efe6f5; --card-foreground: #efe6f5; --popover: #271d35; --popover-foreground: #efe6f5;
