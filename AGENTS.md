@@ -19,12 +19,15 @@ Never commit credentials, runtime files, models or private camera images.
 
 - Install commit hooks once per clone with
   `uv tool run --from pre-commit==4.3.0 pre-commit install`.
+  This installs commit and pre-push hooks; rerun after hook configuration updates.
   Review and re-stage automatic fixes; never bypass hooks. Use a pull request for
   `main` and wait for all required CI checks before merging or reporting success.
 - `uv sync --frozen --python 3.11 --extra local` on supported local Macs;
   omit `--extra local` for existing cloud-only platforms.
 - `uv run --no-sync python -m unittest discover -s backend/tests/unit -v`
-- Frontend: `npm --prefix frontend ci`, `npm --prefix frontend run typecheck`.
+- Frontend: after committing, run `bash scripts/check_frontend.sh` (Node 22).
+  This checks committed types, tests, and the static production build exactly as CI
+  does, in isolation. Typecheck or a dev preview alone is not sufficient.
 - Production local build: `uv run --no-sync ghostbusters local build`.
 - Unit tests are offline. Model fixture verification is explicitly separate and uses
   tracked licensed images in `backend/tests/fixtures/local`. Cloud inference is billed;

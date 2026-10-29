@@ -4,7 +4,8 @@ Focused fixes and reproducible camera setup reports are welcome. Read [AGENTS.md
 
 ## Checks
 
-Install the Git hooks once per clone (linked worktrees share the hooks):
+Install both Git hooks once per clone (linked worktrees share the hooks).
+Rerun this after pulling changes to hook installation settings:
 
 ```sh
 uv tool run --from pre-commit==4.3.0 pre-commit install
@@ -16,6 +17,17 @@ Remaining lint errors must be fixed before committing. Existing hooks are retain
 by pre-commit's default migration mode. Keep the Ruff hook version aligned with
 `uv.lock`. Hooks must be installed again for each new clone; they are not installed
 automatically by Git. Do not bypass them with `--no-verify` or `SKIP`.
+
+Each push runs frontend types, tests, and the local static production build using
+`bash scripts/check_frontend.sh`, the same command CI runs. It checks the pushed
+commit in a temporary directory without changing dev-server output, dependencies,
+or local environment files. Run it manually after committing; it checks `HEAD`,
+not uncommitted edits. Use Node 22 and npm. The build needs no camera or cloud access.
+Dynamic routes must enumerate their exportable pages with `generateStaticParams`;
+a working dev preview or passing TypeScript check does not establish exportability.
+
+Bring `main` into existing feature branches to pick up hook/config changes. Hooks
+are local safeguards, not a guarantee that every push from every clone is checked.
 
 Pull requests into `main` must pass all three Offline checks jobs: `checks`,
 `private-gallery-policies`, and `secret-history`. Local hooks catch Python style

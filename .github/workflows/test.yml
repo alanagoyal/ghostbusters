@@ -16,16 +16,10 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: uv sync --frozen
-      - run: npm --prefix frontend ci
       - run: uv run --no-sync python -m unittest discover -s backend/tests/unit -v
       - run: uv run --no-sync ruff check backend/src/local backend/src/camera.py backend/src/gallery_media.py backend/scripts/check_camera.py backend/scripts/cli.py backend/scripts/gallery.py backend/scripts/service_runner.py backend/scripts/projects.py backend/src/clients/vision.py backend/src/clients/supabase_client.py backend/tests/integration/private_gallery_sql.py scripts/setup_macos_service.py backend/tests/unit backend/tests/local_e2e.py
-      - run: npm --prefix frontend run typecheck
-      - run: npm --prefix frontend test
-      - run: npm --prefix frontend run build
-        env:
-          NEXT_PUBLIC_STORAGE_PROVIDER: local
-          NEXT_PUBLIC_BASE_PATH: ''
-          NEXT_TELEMETRY_DISABLED: '1'
+      - name: Frontend types, tests, and static production build
+        run: bash scripts/check_frontend.sh
 
   private-gallery-policies:
     runs-on: ubuntu-latest
