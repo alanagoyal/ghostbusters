@@ -307,6 +307,8 @@ html {
   white-space: nowrap;
   line-height: 1;
 }
+.gallery-status .status-sep { opacity: .5; }
+.gallery-status .status-return { color: var(--foreground); white-space: normal; }
 .about-section {
   border-top: 1px solid var(--border);
   padding-top: 28px;
