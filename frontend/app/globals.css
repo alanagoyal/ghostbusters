@@ -35,30 +35,30 @@
 }
 
 :root {
-  --background: #9d152b;
-  --foreground: #f4efec;
+  --background: #b5440f;
+  --foreground: #f0ead6;
   --card: transparent;
-  --card-foreground: #f4efec;
-  --popover: #851124;
-  --popover-foreground: #f4efec;
-  --primary: #f4efec;
-  --primary-foreground: #9d152b;
-  --secondary: #7a1021;
-  --secondary-foreground: #f4efec;
-  --muted: #ac1d35;
-  --muted-foreground: #e6bfc5;
-  --accent: #7a1021;
-  --accent-foreground: #f4efec;
-  --destructive: #ffb3c1;
-  --destructive-foreground: #7a1021;
-  --border: #e6bfc566;
-  --input: #e6bfc580;
-  --ring: #f4efec;
-  --chart-1: #f4efec;
-  --chart-2: #ffb3c1;
-  --chart-3: #ff8fa3;
-  --chart-4: #ff758f;
-  --chart-5: #ff4d6d;
+  --card-foreground: #f0ead6;
+  --popover: #9e3b0c;
+  --popover-foreground: #f0ead6;
+  --primary: #f0ead6;
+  --primary-foreground: #b5440f;
+  --secondary: #93360b;
+  --secondary-foreground: #f0ead6;
+  --muted: #c4521a;
+  --muted-foreground: #f5d9c4;
+  --accent: #93360b;
+  --accent-foreground: #f0ead6;
+  --destructive: #ffd0b0;
+  --destructive-foreground: #93360b;
+  --border: #f5d9c466;
+  --input: #f5d9c480;
+  --ring: #f0ead6;
+  --chart-1: #f0ead6;
+  --chart-2: #ffd0b0;
+  --chart-3: #ffb889;
+  --chart-4: #ff9d63;
+  --chart-5: #ff7f3a;
   --font-sans: Geist Mono, monospace;
   --radius: 0rem;
 }
@@ -192,7 +192,7 @@ html { scroll-behavior: smooth; }
 .instrument-title { font-size: 12px; font-weight: 500; }
 .stat-value { font-size: 38px; line-height: 1.2; font-weight: 400; letter-spacing: -.06em; color: var(--foreground); }
 .archive-card { background: transparent; }
-.archive-photo { background: var(--foreground); padding: 12px 12px 16px; box-shadow: 0 4px 10px #38071330; color: #3f3f46; }
+.archive-photo { background: var(--foreground); padding: 12px 12px 16px; box-shadow: 0 4px 10px #4a1a0433; color: #3f3f46; }
 .local-health > div, .local-photo { border-radius: 0; background: var(--card); }
 .local-totals { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid var(--border); }
 .local-totals > div { padding: 24px; }
