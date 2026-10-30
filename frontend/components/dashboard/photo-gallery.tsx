@@ -97,7 +97,7 @@ export function PhotoGallery({ detections, isLoading, newIds, originalImage }: P
                           placeholder={blur ? "blur" : "empty"} blurDataURL={blur}
                           referrerPolicy="no-referrer"
                           alt={detection.costume_classification || "Detection"}
-                          fill className="object-cover" sizes="(max-width: 600px) 196px, 236px" />
+                          fill className="object-cover" sizes="(max-width: 600px) 176px, 206px" />
                       </button>
                       <div className="pt-2 flex items-center justify-between gap-2 min-h-[32px]">
                         <div className="text-xs font-medium text-zinc-700 truncate flex-1">

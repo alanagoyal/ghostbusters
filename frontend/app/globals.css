@@ -236,7 +236,7 @@ html {
   padding: 12px 12px 16px;
   box-shadow: 0 4px 10px #4a1a0433;
   color: #3f3f46;
-  width: 260px;
+  width: 230px;
 }
 .local-health > div, .local-photo {
   border-radius: 0;
@@ -472,7 +472,7 @@ html { scroll-behavior: auto; }
     font-size: 25px;
   }
   .archive-photo {
-    width: 220px;
+    width: 200px;
   }
   .archive-card > div:first-child > div {
     align-items: flex-start;
