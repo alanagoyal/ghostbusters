@@ -75,8 +75,8 @@ export function PhotoGallery({ detections, isLoading, newIds, originalImage }: P
           {/* RTL scroll origin puts the newest photos on screen before hydration. */}
           <div ref={scrollContainer} dir="rtl"
             onScroll={event => { followNewest.current = Math.abs(event.currentTarget.scrollLeft) < 80; }}
-            className={"polaroid-strip overflow-x-auto overflow-y-hidden py-4 " + (photos.length ? "min-h-[280px]" : "")}>
-            <div dir="ltr" className="flex w-max min-w-full justify-end gap-6 px-2">
+            className={"polaroid-strip overflow-x-auto overflow-y-hidden py-4 " + (photos.length ? "min-h-[250px] min-[601px]:min-h-[280px]" : "")}>
+            <div dir="ltr" className="flex w-max min-w-full justify-end gap-4 min-[601px]:gap-6 px-2">
               {[...photos].reverse().map((detection, index) => {
 
                 const recent = index >= photos.length - 8;
@@ -97,7 +97,7 @@ export function PhotoGallery({ detections, isLoading, newIds, originalImage }: P
                           placeholder={blur ? "blur" : "empty"} blurDataURL={blur}
                           referrerPolicy="no-referrer"
                           alt={detection.costume_classification || "Detection"}
-                          fill className="object-cover" sizes="(max-width: 600px) 176px, 206px" />
+                          fill className="object-cover" sizes="(max-width: 600px) 146px, 206px" />
                       </button>
                       <div className="pt-2 flex items-center justify-between gap-2 min-h-[32px]">
                         <div className="text-xs font-medium text-zinc-700 truncate flex-1">
