@@ -1,4 +1,6 @@
-export function GalleryHeader({ online, local = false, connection = "Offline" }: { online: boolean; local?: boolean; connection?: string }) {
+import type { ReactNode } from "react";
+
+export function GalleryHeader({ online, local = false, connection = "Offline", children }: { online: boolean; local?: boolean; connection?: string; children?: ReactNode }) {
   return <header className="gallery-header">
     <div>
       <h1>Ghostbusters</h1>
@@ -12,6 +14,7 @@ export function GalleryHeader({ online, local = false, connection = "Offline" }:
         <i className={online ? 'is-connected' : ''} />
         {online ? "Live" : local ? (connection === "Connected" ? "Camera offline" : connection) : <>Offline<span className="status-sep" aria-hidden>·</span><span className="status-return">Back Oct 31, 3pm PT</span></>}
       </span>
+      {children}
     </div>
   </header>;
 }

@@ -199,6 +199,7 @@ html {
 .gallery-status {
   flex-direction: column;
   align-items: flex-end;
+  gap: 12px;
 }
 .gallery-status i {
   width: 6px;
@@ -465,6 +466,13 @@ html { scroll-behavior: auto; }
     font-size: 9px;
     order: -1;
   }
+  /* Status stays above the title; the year filter follows the description. */
+  .gallery-status:has(.year-filter) {
+    display: contents;
+  }
+  .gallery-status:has(.year-filter) .status-pill {
+    order: -1;
+  }
   .local-totals > div {
     padding: 14px;
   }
@@ -493,22 +501,21 @@ html { scroll-behavior: auto; }
 
 .year-filter {
   display: flex;
-  flex-wrap: wrap;
-  width: fit-content;
-  border: 1px solid var(--border);
-  margin-bottom: 24px;
-  padding: 3px;
-  gap: 3px;
+  align-items: baseline;
+  gap: 14px;
+  padding-right: 2px;
+  font-size: 11px;
 }
 .year-filter button {
-  padding: 7px 13px;
-  font-size: 11px;
+  padding: 2px 0;
   color: var(--muted-foreground);
+  border-bottom: 1px solid transparent;
   cursor: pointer;
+  transition: color 120ms ease, border-color 120ms ease;
 }
-.year-filter button[aria-pressed="false"]:hover:not([aria-disabled="true"]) { background: var(--secondary); }
+.year-filter button[aria-pressed="false"]:hover:not([aria-disabled="true"]) { color: var(--foreground); }
 .year-filter button[aria-disabled="true"] { opacity: 0.45; cursor: not-allowed; }
 .year-filter button[aria-pressed="true"] {
-  background: var(--foreground);
-  color: var(--background);
+  color: var(--foreground);
+  border-bottom-color: currentColor;
 }
