@@ -4,4 +4,4 @@ The default local gallery is a static Next.js build served by the Python local s
 
 Run `npm ci` and `npm run typecheck` here for frontend development. Use the local build command from the repository root to verify the static output.
 
-The existing cloud branch uses Supabase and the `/ghostbusters` base path. Its development and hosting instructions are in [SETUP.md](SETUP.md).
+The cloud gallery uses Supabase and the `/ghostbusters` base path. Its development and hosting instructions are in [SETUP.md](SETUP.md).

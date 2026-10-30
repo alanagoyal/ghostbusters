@@ -1,9 +1,9 @@
 const steps = [
-  ["Capture", "A DoorBird doorbell streams video over RTSP. Every 30th frame is checked."],
-  ["Detect", "YOLOv8n, a 6 MB model, finds people. It also keeps cars, dogs, cats and birds, since that is how it often labels inflatable costumes."],
-  ["Filter", "A detection needs over 70% confidence, a center on the doorstep and two frames in a row. After a capture, the camera waits 30 seconds."],
-  ["Classify", "The crop is sent to Nemotron 3.5 Super VL on Baseten. It returns a costume, a confidence and a one-line description. Inflatables it can’t confirm are dropped."],
-  ["Publish", "Each person is blurred, the record is saved to Supabase, and Realtime adds it to this page."],
+  ["Capture", "A compatible camera streams video to a computer on the same network."],
+  ["Detect", "YOLO finds people and candidate costumes in sampled frames."],
+  ["Filter", "The capture settings control confidence, the detection region and the delay between photos."],
+  ["Classify", "The configured vision model receives a crop and returns a costume guess, confidence and description."],
+  ["Publish", "Detected person regions are blurred before cloud photos are saved to Supabase. Live updates add new records to this page."],
 ]
 
 export function About() {
@@ -16,6 +16,6 @@ export function About() {
         <p>{body}</p>
       </li>)}
     </ol>
-    <p className="about-notes">Counts are detections, not unique visitors. Confidence scores are the model’s own estimates.</p>
+    <p className="about-notes">Counts are detections, not unique visitors. Confidence scores are the model’s own estimates. Cloud classification receives unblurred crops; saved-photo blurring is best effort, not anonymization.</p>
   </section>
 }
