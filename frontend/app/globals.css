@@ -506,7 +506,8 @@ html { scroll-behavior: auto; }
   color: var(--muted-foreground);
   cursor: pointer;
 }
-.year-filter button:hover { background: var(--secondary); }
+.year-filter button:hover:not(:disabled) { background: var(--secondary); }
+.year-filter button:disabled { opacity: 0.45; cursor: not-allowed; }
 .year-filter button[aria-pressed="true"] {
   background: var(--foreground);
   color: var(--background);

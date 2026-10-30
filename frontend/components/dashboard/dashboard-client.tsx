@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { PersonDetection } from "@/lib/detections";
 import { useDetections } from "@/lib/use-detections";
 import { useDemoYears } from "@/lib/demo-years";
@@ -16,6 +16,20 @@ import { About } from "@/components/dashboard/about";
 
 import { GalleryHeader } from "./gallery-header";
 
+// Year filtering opens with the Halloween 2026 broadcast.
+const YEAR_FILTER_OPENS = Date.parse("2026-10-31T15:00:00-07:00");
+
+function useYearFilterOpen() {
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    const wait = YEAR_FILTER_OPENS - Date.now();
+    if (wait <= 0) { setOpen(true); return; }
+    const timer = setTimeout(() => setOpen(true), wait);
+    return () => clearTimeout(timer);
+  }, []);
+  return open;
+}
+
 interface DashboardClientProps {
   initialDetections: PersonDetection[];
 }
@@ -25,7 +39,9 @@ export function DashboardClient({ initialDetections }: DashboardClientProps) {
   const { connected: detectorOnline, loading, newIds, originalImage } = live;
   const allDetections = useDemoYears(live.detections);
   const allPhotos = useDemoYears(live.photos);
-  const [selectedYear, setSelectedYear] = useState<number | null>(null);
+  const filterOpen = useYearFilterOpen();
+  const [chosenYear, setSelectedYear] = useState<number | null>(null);
+  const selectedYear = filterOpen ? chosenYear : null;
   const years = [...new Set([...allDetections, ...allPhotos].map(row => new Date(row.timestamp).getFullYear()))]
     .filter(Number.isFinite).sort((a, b) => b - a);
   const detections = allDetections.filter(row => selectedYear === null || new Date(row.timestamp).getFullYear() === selectedYear);
@@ -96,9 +112,10 @@ export function DashboardClient({ initialDetections }: DashboardClientProps) {
       <GalleryHeader online={detectorOnline} />
       <div className="space-y-8">
         <div id="costume-archive" className="scroll-mt-6">
-          <div className="year-filter" role="group" aria-label="Filter dashboard by year">
+          <div className="year-filter" role="group" aria-label="Filter dashboard by year"
+            title={filterOpen ? undefined : "Year filtering opens Oct 31 at 3pm PT"}>
             {[null, ...years].map(year => <button key={year ?? "all"} type="button"
-              aria-pressed={selectedYear === year} onClick={() => setSelectedYear(year)}>
+              aria-pressed={selectedYear === year} disabled={!filterOpen && year !== null} onClick={() => setSelectedYear(year)}>
               {year ?? "All years"}
             </button>)}
           </div>
