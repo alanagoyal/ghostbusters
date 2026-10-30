@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import type { PersonDetection } from "@/lib/detections";
 import { useDetections } from "@/lib/use-detections";
+import { useDemoYears } from "@/lib/demo-years";
 import { Users, Shirt, Activity } from "lucide-react";
 import { truncateString, toTitleCase } from "@/lib/string-utils";
 import { StatsCard } from "@/components/dashboard/stats-card";
@@ -20,7 +21,10 @@ interface DashboardClientProps {
 }
 
 export function DashboardClient({ initialDetections }: DashboardClientProps) {
-  const { detections, photos, connected: detectorOnline, loading, newIds, originalImage } = useDetections(initialDetections);
+  const live = useDetections(initialDetections);
+  const { connected: detectorOnline, loading, newIds, originalImage } = live;
+  const detections = useDemoYears(live.detections);
+  const photos = useDemoYears(live.photos);
 
   // Calculate costume statistics
   const costumeStats = useMemo(() => {
