@@ -1,4 +1,5 @@
 "use client";
+import { GalleryHeader } from "@/components/dashboard/gallery-header";
 import { ActivityTimeline } from "@/components/dashboard/activity-timeline";
 import { CostumeDistribution } from "@/components/dashboard/costume-distribution";
 import { useEffect, useRef, useState } from "react";
@@ -135,18 +136,8 @@ export function LocalGallery() {
     .sort((a, b) => b.count - a.count)
     .slice(0, 5);
   return (
-    <main className="min-h-screen bg-background text-foreground p-6 sm:p-12 max-w-7xl mx-auto">
-      <header className="flex flex-wrap justify-between items-center gap-4 mb-10">
-        <div>
-          <p className="text-sm uppercase tracking-widest text-orange-500">
-            Halloween · Local gallery
-          </p>
-          <h1 className="text-4xl sm:text-6xl font-bold mt-2">Ghostbusters</h1>
-        </div>
-        <span role="status" className="rounded-full border px-4 py-2">
-          {connection}
-        </span>
-      </header>
+    <main className="observatory">
+      <GalleryHeader online={connection === "Connected" && data?.health.capture?.state === "streaming" && now - (data.health.capture.last_frame ?? 0) * 1000 < 60_000} local connection={connection} />
       <p className="text-muted-foreground mb-6">
         Photos and costume guesses stay on this computer. Cloud upload is off.
         Counts are detections, not unique people; a visitor may appear again.
@@ -161,7 +152,7 @@ export function LocalGallery() {
       )}
       <section
         aria-label="System health"
-        className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"
+        className="local-health grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"
       >
         {["service", "capture", "model", "storage"].map((name) => {
           const health = data?.health[name];
@@ -185,7 +176,7 @@ export function LocalGallery() {
           );
         })}
       </section>
-      <section className="flex flex-wrap gap-10 mb-8">
+      <section className="local-totals mb-8">
         <div>
           <strong className="text-3xl">{data?.total ?? "—"}</strong>
           <p>Total retained detections</p>
@@ -209,7 +200,7 @@ export function LocalGallery() {
           </p>
         </section>
       )}
-      <label className="block mb-6">
+      <label className="block mb-6 text-xs">
         Filter recent photos
         <input
           className="block mt-2 border rounded-lg p-3 bg-background w-full max-w-md"
@@ -229,7 +220,7 @@ export function LocalGallery() {
               .includes(filter.toLowerCase()),
           )
           .map((d) => (
-            <article key={d.id} className="border rounded-2xl overflow-hidden">
+            <article key={d.id} className="local-photo border overflow-hidden">
               <button
                 className="w-full"
                 onClick={() => setSelected(d)}
@@ -271,7 +262,7 @@ export function LocalGallery() {
             </article>
           ))}
       </section>
-      <section className="mt-8 grid md:grid-cols-2 gap-6">
+      <section className="mt-8 grid lg:grid-cols-2 gap-6">
         <CostumeDistribution costumes={costumes} />
         <ActivityTimeline
           detections={(data?.detections ?? []).map((d) => ({

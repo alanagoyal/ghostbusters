@@ -1,6 +1,6 @@
 'use client'
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { AnimatedNumber } from '@/components/ui/animated-number'
 import { useMemo } from 'react'
 
@@ -25,19 +25,18 @@ export function ConfidenceMeter({ detections }: ConfidenceMeterProps) {
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="pb-2">
         <CardTitle>Detection Quality</CardTitle>
-        <CardDescription>Average confidence score</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="flex flex-col items-center justify-center py-4">
-          <div className="text-5xl font-bold">
+        <div className="flex flex-col items-start justify-center">
+          <div className="stat-value">
             <AnimatedNumber value={avgConfidence.toFixed(1)} className="inline-block" />%
           </div>
-          <div className="text-sm text-muted-foreground mt-2">
-            {getConfidenceLabel(avgConfidence)}
+          <div className="text-xs text-muted-foreground mt-1">
+            Average confidence · {getConfidenceLabel(avgConfidence)}
           </div>
-          <div className="w-full mt-4">
+          <div className="w-full mt-3">
             <div className="h-2 rounded-full bg-secondary overflow-hidden">
               <div
                 className="h-full bg-primary transition-all duration-500 animate-grow-width"

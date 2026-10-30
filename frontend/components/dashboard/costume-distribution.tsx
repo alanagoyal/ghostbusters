@@ -27,12 +27,12 @@ export function CostumeDistribution({ costumes }: CostumeDistributionProps) {
   }
 
   return (
-    <Card className="col-span-2 flex flex-col h-[500px]">
+    <Card className="analytics-panel flex flex-col">
       <CardHeader className="flex-shrink-0">
         <CardTitle>Popular Costumes</CardTitle>
         <CardDescription>Most spotted trick-or-treater costumes</CardDescription>
       </CardHeader>
-      <CardContent className="flex-1 overflow-y-auto">
+      <CardContent className="flex-1">
         <div className="space-y-4">
           {costumes.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">
@@ -44,8 +44,10 @@ export function CostumeDistribution({ costumes }: CostumeDistributionProps) {
                 key={costume.fullName}
                 className="space-y-2"
               >
-                <div
-                  className="flex items-center justify-between cursor-pointer hover:bg-accent/50 p-2 rounded-lg transition-colors"
+                <button
+                  type="button"
+                  aria-expanded={expandedCostume === costume.fullName}
+                  className="w-full text-left flex items-center justify-between cursor-pointer hover:bg-accent/50 p-2 rounded-lg transition-colors"
                   onClick={() => toggleExpanded(costume.fullName)}
                 >
                   <div className="flex items-center gap-2">
@@ -66,7 +68,7 @@ export function CostumeDistribution({ costumes }: CostumeDistributionProps) {
                   <span className="text-sm text-muted-foreground">
                     {costume.percentage.toFixed(1)}%
                   </span>
-                </div>
+                </button>
                 <div className="h-2 rounded-full bg-secondary overflow-hidden">
                   <div
                     className="h-full bg-primary transition-all duration-500 animate-grow-width"

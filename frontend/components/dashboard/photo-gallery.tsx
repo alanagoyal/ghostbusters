@@ -2,9 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Camera, X } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Camera, ArrowLeft, ArrowRight, X } from "lucide-react";
 import type { PersonDetection } from "@/lib/detections";
 import type { GalleryImage } from "@/lib/gallery-images";
 import { toTitleCase } from "@/lib/string-utils";
@@ -59,35 +58,38 @@ export function PhotoGallery({ detections, isLoading, newIds, originalImage }: P
 
   return (
     <>
-      <Card>
+      <Card className="archive-card">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Photo Gallery</CardTitle>
-              <CardDescription>Detected visitors gallery</CardDescription>
+            <CardTitle>Photo Gallery</CardTitle>
+            <div className="flex items-center gap-4">
+              <span className="text-xs text-muted-foreground">{photos.length} photos</span>
+              <div className="flex gap-2">
+                <button type="button" className="gallery-arrow" aria-label="Show older photos" disabled={!photos.length} onClick={() => scrollContainer.current?.scrollBy({ left: -480, behavior: "smooth" })}><ArrowLeft size={16} /></button>
+                <button type="button" className="gallery-arrow" aria-label="Show newer photos" disabled={!photos.length} onClick={() => scrollContainer.current?.scrollBy({ left: 480, behavior: "smooth" })}><ArrowRight size={16} /></button>
+              </div>
             </div>
-            <Badge variant="outline">{photos.length} photos</Badge>
           </div>
         </CardHeader>
         <CardContent>
           {/* RTL scroll origin puts the newest photos on screen before hydration. */}
           <div ref={scrollContainer} dir="rtl"
             onScroll={event => { followNewest.current = Math.abs(event.currentTarget.scrollLeft) < 80; }}
-            className="overflow-x-auto overflow-y-hidden py-4 h-[310px]">
+            className={"polaroid-strip overflow-x-auto overflow-y-hidden py-4 " + (photos.length ? "min-h-[280px]" : "")}>
             <div dir="ltr" className="flex w-max min-w-full justify-end gap-6 px-2">
               {[...photos].reverse().map((detection, index) => {
-                const rotation = index % 3 === 0 ? -2 : index % 3 === 1 ? 2 : 0;
+
                 const recent = index >= photos.length - 8;
                 const placeholder = detection.image_placeholder;
                 const blur = placeholder && placeholder.length <= 2048 && /^data:image\/webp;base64,[A-Za-z0-9+/=]+$/.test(placeholder) ? placeholder : undefined;
                 return (
                   <div key={detection.id}
-                    className={"flex-shrink-0 group " + (newIds.has(detection.id) ? "motion-safe:animate-[slideInFromBottom_200ms_ease-out]" : "")}>
-                    <div className="bg-white p-3 pb-3 shadow-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
-                      style={{ width: "180px", transform: "rotate(" + rotation + "deg)" }}>
+                    className={"flex-shrink-0 " + (newIds.has(detection.id) ? "motion-safe:animate-[slideInFromBottom_200ms_ease-out]" : "")}>
+                    <div className="archive-photo"
+                      style={{ transform: `rotate(${index % 3 === 0 ? -2 : index % 3 === 1 ? 2 : 0}deg)` }}>
                       <button type="button" onClick={() => { void openPhoto(detection); }}
                         aria-label={"Open " + (detection.costume_classification || "detection") + " photo"}
-                        className="block w-full relative aspect-[3/4] overflow-hidden bg-gray-100 cursor-zoom-in focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current">
+                        className="block w-full relative aspect-[3/4] overflow-hidden bg-gray-100 cursor-zoom-in">
                         <Image src={detection.image_url!}
                           unoptimized={detection.image_unoptimized}
                           loading={recent ? "eager" : "lazy"}
@@ -95,13 +97,13 @@ export function PhotoGallery({ detections, isLoading, newIds, originalImage }: P
                           placeholder={blur ? "blur" : "empty"} blurDataURL={blur}
                           referrerPolicy="no-referrer"
                           alt={detection.costume_classification || "Detection"}
-                          fill className="object-cover transition-transform duration-500 group-hover:scale-110" sizes="156px" />
+                          fill className="object-cover" sizes="(max-width: 600px) 176px, 206px" />
                       </button>
                       <div className="pt-2 flex items-center justify-between gap-2 min-h-[32px]">
-                        <div className="text-xs font-bold text-gray-600 font-mono truncate flex-1">
+                        <div className="text-xs font-medium text-zinc-700 truncate flex-1">
                           {detection.costume_classification ? toTitleCase(detection.costume_classification) : ""}
                         </div>
-                        <time dateTime={detection.timestamp} suppressHydrationWarning className="text-[10px] text-gray-500 font-mono whitespace-nowrap">
+                        <time dateTime={detection.timestamp} suppressHydrationWarning className="text-[10px] text-zinc-500 whitespace-nowrap">
                           {new Date(detection.timestamp).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })}
                         </time>
                       </div>

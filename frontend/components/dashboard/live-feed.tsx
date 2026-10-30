@@ -24,13 +24,13 @@ export function LiveFeed({ detections, limit = 5 }: LiveFeedProps) {
   const recentDetections = detections.slice(0, limit)
 
   return (
-    <Card className="col-span-1 flex flex-col h-[500px]">
+    <Card className="feed-section flex flex-col">
       <CardHeader className="flex-shrink-0">
         <CardTitle>Live Feed</CardTitle>
         <CardDescription>Most recent trick-or-treaters</CardDescription>
       </CardHeader>
-      <CardContent className="flex-1 overflow-y-auto">
-        <div className="space-y-3">
+      <CardContent className="flex-1">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {recentDetections.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">
               Waiting for visitors...
@@ -39,13 +39,13 @@ export function LiveFeed({ detections, limit = 5 }: LiveFeedProps) {
             recentDetections.map((detection, index) => (
               <div
                 key={detection.id}
-                className="flex items-start gap-3 p-3 rounded-lg border border-border hover:bg-accent/50 transition-colors"
+                className="flex items-start gap-3 py-3 border-t border-border"
               >
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-col gap-1.5">
                     <div className="flex items-center justify-between gap-2">
                       {detection.costume_classification && (
-                        <Badge variant="default" className="text-xs max-w-[180px] sm:max-w-[220px] truncate" title={toTitleCase(detection.costume_classification) || ''}>
+                        <Badge variant="default" className="bg-foreground text-background hover:bg-foreground/80 text-xs max-w-[180px] sm:max-w-[220px] truncate" title={toTitleCase(detection.costume_classification) || ''}>
                           {truncateString(toTitleCase(detection.costume_classification), 25)}
                         </Badge>
                       )}
