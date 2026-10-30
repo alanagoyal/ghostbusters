@@ -80,7 +80,7 @@ export function DashboardClient({ initialDetections }: DashboardClientProps) {
     const now = Date.now();
     const oneHour = 60 * 60 * 1000;
     const lastHour = detections.filter(
-      (d) => now - new Date(d.timestamp).getTime() < oneHour
+      (d) => now >= new Date(d.timestamp).getTime() && now - new Date(d.timestamp).getTime() < oneHour
     ).length;
     const prevHour = detections.filter((d) => {
       const time = now - new Date(d.timestamp).getTime();
@@ -127,7 +127,7 @@ export function DashboardClient({ initialDetections }: DashboardClientProps) {
             value={
               detections.filter(
                 (d) =>
-                  Date.now() - new Date(d.timestamp).getTime() < 5 * 60 * 1000
+                  Date.now() >= new Date(d.timestamp).getTime() && Date.now() - new Date(d.timestamp).getTime() < 5 * 60 * 1000
               ).length
             }
             description="Last 5 minutes"
