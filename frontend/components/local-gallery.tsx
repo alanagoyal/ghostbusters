@@ -137,7 +137,7 @@ export function LocalGallery() {
     .slice(0, 5);
   return (
     <main className="observatory">
-      <GalleryHeader online={connection === "Connected" && data?.health.capture?.state === "streaming" && now - (data.health.capture.last_frame ?? 0) * 1000 < 60_000} local />
+      <GalleryHeader online={connection === "Connected" && data?.health.capture?.state === "streaming" && now - (data.health.capture.last_frame ?? 0) * 1000 < 60_000} local connection={connection} />
       <p className="text-muted-foreground mb-6">
         Photos and costume guesses stay on this computer. Cloud upload is off.
         Counts are detections, not unique people; a visitor may appear again.

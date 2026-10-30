@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useDetectorStatus } from "@/lib/use-detector-status";
 import { supabase } from "@/lib/supabase";
 import { applyDetectionChange, type DetectionChange, type PersonDetection } from "@/lib/detections";
@@ -95,5 +95,13 @@ export function useDetections(initialDetections: PersonDetection[]) {
     };
   }, []);
 
-  return { detections, photos, connected, loading, newIds };
+  const originalImage = useCallback(async (id: string) => {
+    const row = raw.current.find(row => row.id === id);
+    if (!row) return null;
+    // Full-size originals are authorized and downloaded only when opened.
+    const [image] = await galleryImages([row], new Map(), { original: true });
+    return image.image_url;
+  }, []);
+
+  return { detections, photos, connected, loading, newIds, originalImage };
 }
