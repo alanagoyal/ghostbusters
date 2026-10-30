@@ -1,5 +1,5 @@
 -- Halloween Person Detection Database Migration
--- Run this in Supabase SQL Editor: https://supabase.com/dashboard/project/halloween-pi/sql
+-- Run this in your Supabase project’s SQL Editor.
 
 -- ============================================================================
 -- 1. Create person_detections table
