@@ -43,6 +43,7 @@ export function DashboardClient({ initialDetections }: DashboardClientProps) {
   const selectedYear = filterOpen ? chosenYear : null;
   const years = [...new Set([...allDetections, ...allPhotos].map(row => new Date(row.timestamp).getFullYear()))]
     .filter(Number.isFinite).sort((a, b) => b - a);
+  const filterYears = [...new Set([...years, new Date(YEAR_FILTER_OPENS).getFullYear()])].sort((a, b) => a - b);
   const detections = allDetections.filter(row => selectedYear === null || new Date(row.timestamp).getFullYear() === selectedYear);
   const photos = allPhotos.filter(row => selectedYear === null || new Date(row.timestamp).getFullYear() === selectedYear);
 
@@ -111,12 +112,14 @@ export function DashboardClient({ initialDetections }: DashboardClientProps) {
       <GalleryHeader online={detectorOnline} />
       <div className="space-y-8">
         <div id="costume-archive" className="scroll-mt-6">
-          <div className="year-filter" role="group" aria-label="Filter dashboard by year"
-            title={filterOpen ? undefined : "Year filtering opens Oct 31 at 3pm PT"}>
-            {[null, ...years].map(year => <button key={year ?? "all"} type="button"
-              aria-pressed={selectedYear === year} disabled={!filterOpen && year !== null} onClick={() => setSelectedYear(year)}>
-              {year ?? "All years"}
-            </button>)}
+          <div className="year-filter-row">
+            <div className="year-filter" role="group" aria-label="Filter dashboard by year">
+              {[null, ...filterYears].map(year => <button key={year ?? "all"} type="button"
+                aria-pressed={selectedYear === year} disabled={!filterOpen && year !== null} onClick={() => setSelectedYear(year)}>
+                {year ?? "All years"}
+              </button>)}
+            </div>
+            {!filterOpen && <span className="year-filter-note">Check back Oct 31, 3pm PT</span>}
           </div>
           <PhotoGallery key={selectedYear ?? "all"} detections={photos} isLoading={loading} newIds={newIds} originalImage={originalImage} />
         </div>
