@@ -115,10 +115,15 @@ export function DashboardClient({ initialDetections }: DashboardClientProps) {
         <div id="costume-archive" className="scroll-mt-6">
           <div className="year-filter-row">
             <div className="year-filter" role="group" aria-label="Filter dashboard by year">
-              {[null, ...filterYears].map(year => <button key={year ?? "all"} type="button"
-                aria-pressed={selectedYear === year} disabled={!filterOpen && year === UPCOMING_YEAR} onClick={() => setSelectedYear(year)}>
-                {year ?? "All years"}
-              </button>)}
+              {[null, ...filterYears].map(year => {
+                // aria-disabled keeps the button hoverable and focusable so its tooltip shows.
+                const locked = !filterOpen && year === UPCOMING_YEAR;
+                return <button key={year ?? "all"} type="button" aria-pressed={selectedYear === year}
+                  aria-disabled={locked || undefined} title={locked ? "Check back Oct 31, 3pm PT" : undefined}
+                  onClick={() => { if (!locked) setSelectedYear(year); }}>
+                  {year ?? "All years"}
+                </button>;
+              })}
             </div>
             {!filterOpen && <span className="year-filter-note">Check back Oct 31, 3pm PT</span>}
           </div>
