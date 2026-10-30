@@ -490,3 +490,24 @@ html { scroll-behavior: auto; }
     font-size: 11px;
   }
 }
+
+.year-filter {
+  display: flex;
+  flex-wrap: wrap;
+  width: fit-content;
+  border: 1px solid var(--border);
+  margin-bottom: 24px;
+  padding: 3px;
+  gap: 3px;
+}
+.year-filter button {
+  padding: 7px 13px;
+  font-size: 11px;
+  color: var(--muted-foreground);
+  cursor: pointer;
+}
+.year-filter button:hover { background: var(--secondary); }
+.year-filter button[aria-pressed="true"] {
+  background: var(--foreground);
+  color: var(--background);
+}

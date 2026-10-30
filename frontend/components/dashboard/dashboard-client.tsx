@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { PersonDetection } from "@/lib/detections";
 import { useDetections } from "@/lib/use-detections";
 import { useDemoYears } from "@/lib/demo-years";
@@ -23,8 +23,13 @@ interface DashboardClientProps {
 export function DashboardClient({ initialDetections }: DashboardClientProps) {
   const live = useDetections(initialDetections);
   const { connected: detectorOnline, loading, newIds, originalImage } = live;
-  const detections = useDemoYears(live.detections);
-  const photos = useDemoYears(live.photos);
+  const allDetections = useDemoYears(live.detections);
+  const allPhotos = useDemoYears(live.photos);
+  const [selectedYear, setSelectedYear] = useState<number | null>(null);
+  const years = [...new Set([...allDetections, ...allPhotos].map(row => new Date(row.timestamp).getFullYear()))]
+    .filter(Number.isFinite).sort((a, b) => b - a);
+  const detections = allDetections.filter(row => selectedYear === null || new Date(row.timestamp).getFullYear() === selectedYear);
+  const photos = allPhotos.filter(row => selectedYear === null || new Date(row.timestamp).getFullYear() === selectedYear);
 
   // Calculate costume statistics
   const costumeStats = useMemo(() => {
@@ -91,14 +96,20 @@ export function DashboardClient({ initialDetections }: DashboardClientProps) {
       <GalleryHeader online={detectorOnline} />
       <div className="space-y-8">
         <div id="costume-archive" className="scroll-mt-6">
-          <PhotoGallery detections={photos} isLoading={loading} newIds={newIds} originalImage={originalImage} />
+          <div className="year-filter" role="group" aria-label="Filter dashboard by year">
+            {[null, ...years].map(year => <button key={year ?? "all"} type="button"
+              aria-pressed={selectedYear === year} onClick={() => setSelectedYear(year)}>
+              {year ?? "All years"}
+            </button>)}
+          </div>
+          <PhotoGallery key={selectedYear ?? "all"} detections={photos} isLoading={loading} newIds={newIds} originalImage={originalImage} />
         </div>
 
         <div className="summary-strip grid grid-cols-2 lg:grid-cols-4">
           <StatsCard
             title="Recent Detections"
             value={detections.length}
-            description="Latest 200 records"
+            description={selectedYear === null ? "Across all years · loaded records" : `${selectedYear} · loaded records`}
             icon={Users}
             trend={{
               value: activityTrend,
@@ -127,7 +138,7 @@ export function DashboardClient({ initialDetections }: DashboardClientProps) {
 
         <div className="analytics-layout">
           <CostumeDistribution costumes={costumeStats.costumes} />
-          <ActivityTimeline detections={detections} />
+          <ActivityTimeline detections={detections} years={years} />
         </div>
         <LiveFeed detections={detections} limit={8} />
         <About />
