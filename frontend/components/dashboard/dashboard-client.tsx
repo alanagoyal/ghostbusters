@@ -15,8 +15,9 @@ import { About } from "@/components/dashboard/about";
 
 import { GalleryHeader } from "./gallery-header";
 
-// Year filtering opens with the Halloween 2026 broadcast.
+// This year's filter opens with the Halloween 2026 broadcast.
 const YEAR_FILTER_OPENS = Date.parse("2026-10-31T15:00:00-07:00");
+const UPCOMING_YEAR = 2026;
 
 function useYearFilterOpen() {
   const [open, setOpen] = useState(false);
@@ -40,10 +41,10 @@ export function DashboardClient({ initialDetections }: DashboardClientProps) {
   const allPhotos = live.photos;
   const filterOpen = useYearFilterOpen();
   const [chosenYear, setSelectedYear] = useState<number | null>(null);
-  const selectedYear = filterOpen ? chosenYear : null;
+  const selectedYear = filterOpen || chosenYear !== UPCOMING_YEAR ? chosenYear : null;
   const years = [...new Set([...allDetections, ...allPhotos].map(row => new Date(row.timestamp).getFullYear()))]
     .filter(Number.isFinite).sort((a, b) => b - a);
-  const filterYears = [...new Set([...years, new Date(YEAR_FILTER_OPENS).getFullYear()])].sort((a, b) => a - b);
+  const filterYears = [...new Set([...years, UPCOMING_YEAR])].sort((a, b) => a - b);
   const detections = allDetections.filter(row => selectedYear === null || new Date(row.timestamp).getFullYear() === selectedYear);
   const photos = allPhotos.filter(row => selectedYear === null || new Date(row.timestamp).getFullYear() === selectedYear);
 
@@ -115,7 +116,7 @@ export function DashboardClient({ initialDetections }: DashboardClientProps) {
           <div className="year-filter-row">
             <div className="year-filter" role="group" aria-label="Filter dashboard by year">
               {[null, ...filterYears].map(year => <button key={year ?? "all"} type="button"
-                aria-pressed={selectedYear === year} disabled={!filterOpen && year !== null} onClick={() => setSelectedYear(year)}>
+                aria-pressed={selectedYear === year} disabled={!filterOpen && year === UPCOMING_YEAR} onClick={() => setSelectedYear(year)}>
                 {year ?? "All years"}
               </button>)}
             </div>
