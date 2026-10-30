@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import type { PersonDetection } from "@/lib/detections";
 import { useDetections } from "@/lib/use-detections";
 import { Users, Shirt, Activity } from "lucide-react";
@@ -15,21 +15,6 @@ import { About } from "@/components/dashboard/about";
 
 import { GalleryHeader } from "./gallery-header";
 
-// This year's filter opens with the Halloween 2026 broadcast.
-const YEAR_FILTER_OPENS = Date.parse("2026-10-31T15:00:00-07:00");
-const UPCOMING_YEAR = 2026;
-
-function useYearFilterOpen() {
-  const [open, setOpen] = useState(false);
-  useEffect(() => {
-    const wait = YEAR_FILTER_OPENS - Date.now();
-    if (wait <= 0) { setOpen(true); return; }
-    const timer = setTimeout(() => setOpen(true), wait);
-    return () => clearTimeout(timer);
-  }, []);
-  return open;
-}
-
 interface DashboardClientProps {
   initialDetections: PersonDetection[];
 }
@@ -39,12 +24,13 @@ export function DashboardClient({ initialDetections }: DashboardClientProps) {
   const { connected: detectorOnline, loading, newIds, originalImage } = live;
   const allDetections = live.detections;
   const allPhotos = live.photos;
-  const filterOpen = useYearFilterOpen();
   const [chosenYear, setSelectedYear] = useState<number | null>(null);
-  const selectedYear = filterOpen || chosenYear !== UPCOMING_YEAR ? chosenYear : null;
   const years = [...new Set([...allDetections, ...allPhotos].map(row => new Date(row.timestamp).getFullYear()))]
     .filter(Number.isFinite).sort((a, b) => b - a);
-  const filterYears = [...new Set([...years, UPCOMING_YEAR])].sort((a, b) => a - b);
+  // The current year is listed before it has data and becomes selectable with its first photo.
+  const photoYears = new Set(allPhotos.map(row => new Date(row.timestamp).getFullYear()));
+  const filterYears = [...new Set([...years, new Date().getFullYear()])].sort((a, b) => a - b);
+  const selectedYear = chosenYear !== null && photoYears.has(chosenYear) ? chosenYear : null;
   const detections = allDetections.filter(row => selectedYear === null || new Date(row.timestamp).getFullYear() === selectedYear);
   const photos = allPhotos.filter(row => selectedYear === null || new Date(row.timestamp).getFullYear() === selectedYear);
 
@@ -112,15 +98,12 @@ export function DashboardClient({ initialDetections }: DashboardClientProps) {
     <main className="observatory">
       <GalleryHeader online={detectorOnline}>
         <div className="year-filter" role="group" aria-label="Filter dashboard by year">
-          {[null, ...filterYears].map(year => {
-            // aria-disabled keeps the button hoverable and focusable so its tooltip shows.
-            const locked = !filterOpen && year === UPCOMING_YEAR;
-            return <button key={year ?? "all"} type="button" aria-pressed={selectedYear === year}
-              aria-disabled={locked || undefined} title={locked ? "Check back Oct 31, 3pm PT" : undefined}
-              onClick={() => { if (!locked) setSelectedYear(year); }}>
+          {[null, ...filterYears].map(year =>
+            <button key={year ?? "all"} type="button" aria-pressed={selectedYear === year}
+              disabled={year !== null && !photoYears.has(year)} onClick={() => setSelectedYear(year)}>
               {year ?? "All years"}
-            </button>;
-          })}
+            </button>
+          )}
         </div>
       </GalleryHeader>
       <div className="space-y-8">

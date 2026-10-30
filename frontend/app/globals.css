@@ -513,8 +513,8 @@ html { scroll-behavior: auto; }
   cursor: pointer;
   transition: color 120ms ease, border-color 120ms ease;
 }
-.year-filter button[aria-pressed="false"]:hover:not([aria-disabled="true"]) { color: var(--foreground); }
-.year-filter button[aria-disabled="true"] { opacity: 0.45; cursor: not-allowed; }
+.year-filter button[aria-pressed="false"]:hover:not(:disabled) { color: var(--foreground); }
+.year-filter button:disabled { opacity: 0.45; cursor: not-allowed; }
 .year-filter button[aria-pressed="true"] {
   color: var(--foreground);
   border-bottom-color: currentColor;
