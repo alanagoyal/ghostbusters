@@ -113,19 +113,16 @@ export function DashboardClient({ initialDetections }: DashboardClientProps) {
       <GalleryHeader online={detectorOnline} />
       <div className="space-y-8">
         <div id="costume-archive" className="scroll-mt-6">
-          <div className="year-filter-row">
-            <div className="year-filter" role="group" aria-label="Filter dashboard by year">
-              {[null, ...filterYears].map(year => {
-                // aria-disabled keeps the button hoverable and focusable so its tooltip shows.
-                const locked = !filterOpen && year === UPCOMING_YEAR;
-                return <button key={year ?? "all"} type="button" aria-pressed={selectedYear === year}
-                  aria-disabled={locked || undefined} title={locked ? "Check back Oct 31, 3pm PT" : undefined}
-                  onClick={() => { if (!locked) setSelectedYear(year); }}>
-                  {year ?? "All years"}
-                </button>;
-              })}
-            </div>
-            {!filterOpen && <span className="year-filter-note">Check back Oct 31, 3pm PT</span>}
+          <div className="year-filter" role="group" aria-label="Filter dashboard by year">
+            {[null, ...filterYears].map(year => {
+              // aria-disabled keeps the button hoverable and focusable so its tooltip shows.
+              const locked = !filterOpen && year === UPCOMING_YEAR;
+              return <button key={year ?? "all"} type="button" aria-pressed={selectedYear === year}
+                aria-disabled={locked || undefined} title={locked ? "Check back Oct 31, 3pm PT" : undefined}
+                onClick={() => { if (!locked) setSelectedYear(year); }}>
+                {year ?? "All years"}
+              </button>;
+            })}
           </div>
           <PhotoGallery key={selectedYear ?? "all"} detections={photos} isLoading={loading} newIds={newIds} originalImage={originalImage} />
         </div>
