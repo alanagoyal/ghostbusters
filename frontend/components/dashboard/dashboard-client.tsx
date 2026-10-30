@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { PersonDetection } from "@/lib/detections";
 import { useDetections } from "@/lib/use-detections";
-import { useDemoYears } from "@/lib/demo-years";
 import { Users, Shirt, Activity } from "lucide-react";
 import { truncateString, toTitleCase } from "@/lib/string-utils";
 import { StatsCard } from "@/components/dashboard/stats-card";
@@ -37,8 +36,8 @@ interface DashboardClientProps {
 export function DashboardClient({ initialDetections }: DashboardClientProps) {
   const live = useDetections(initialDetections);
   const { connected: detectorOnline, loading, newIds, originalImage } = live;
-  const allDetections = useDemoYears(live.detections);
-  const allPhotos = useDemoYears(live.photos);
+  const allDetections = live.detections;
+  const allPhotos = live.photos;
   const filterOpen = useYearFilterOpen();
   const [chosenYear, setSelectedYear] = useState<number | null>(null);
   const selectedYear = filterOpen ? chosenYear : null;
