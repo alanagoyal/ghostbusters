@@ -60,7 +60,7 @@ export function LiveFeed({ detections, limit = 5 }: LiveFeedProps) {
                     )}
                     <div className="flex items-center gap-1 text-xs text-muted-foreground">
                       <Clock className="h-3 w-3" />
-                      {new Date(detection.timestamp).toLocaleTimeString([], {
+                      {new Date(detection.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })} · {new Date(detection.timestamp).toLocaleTimeString('en-US', {
                         hour: '2-digit',
                         minute: '2-digit'
                       })}

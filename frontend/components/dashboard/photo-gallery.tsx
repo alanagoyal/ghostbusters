@@ -99,12 +99,12 @@ export function PhotoGallery({ detections, isLoading, newIds, originalImage }: P
                           alt={detection.costume_classification || "Detection"}
                           fill className="object-cover" sizes="(max-width: 600px) 146px, 206px" />
                       </button>
-                      <div className="pt-2 flex items-center justify-between gap-2 min-h-[32px]">
-                        <div className="text-xs font-medium text-zinc-700 truncate flex-1">
+                      <div className="pt-2 flex flex-col gap-1 min-h-[44px]">
+                        <div className="text-xs font-medium text-zinc-700 truncate w-full">
                           {detection.costume_classification ? toTitleCase(detection.costume_classification) : ""}
                         </div>
                         <time dateTime={detection.timestamp} suppressHydrationWarning className="text-[10px] text-zinc-500 whitespace-nowrap">
-                          {new Date(detection.timestamp).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })}
+                          {new Date(detection.timestamp).toLocaleDateString("en-US", { month: "short", day: "numeric" })} ’{String(new Date(detection.timestamp).getFullYear()).slice(-2)} · {new Date(detection.timestamp).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })}
                         </time>
                       </div>
                     </div>

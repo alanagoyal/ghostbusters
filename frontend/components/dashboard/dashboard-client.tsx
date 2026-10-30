@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { PersonDetection } from "@/lib/detections";
 import { useDetections } from "@/lib/use-detections";
 import { Users, Shirt, Activity } from "lucide-react";
@@ -20,7 +20,19 @@ interface DashboardClientProps {
 }
 
 export function DashboardClient({ initialDetections }: DashboardClientProps) {
-  const { detections, photos, connected: detectorOnline, loading, newIds, originalImage } = useDetections(initialDetections);
+  const live = useDetections(initialDetections);
+  const { connected: detectorOnline, loading, newIds, originalImage } = live;
+  const allDetections = live.detections;
+  const allPhotos = live.photos;
+  const [chosenYear, setSelectedYear] = useState<number | null>(null);
+  const years = [...new Set([...allDetections, ...allPhotos].map(row => new Date(row.timestamp).getFullYear()))]
+    .filter(Number.isFinite).sort((a, b) => b - a);
+  // The current year is listed before it has data and becomes selectable with its first photo.
+  const photoYears = new Set(allPhotos.map(row => new Date(row.timestamp).getFullYear()));
+  const filterYears = [...new Set([...years, new Date().getFullYear()])].sort((a, b) => a - b);
+  const selectedYear = chosenYear !== null && photoYears.has(chosenYear) ? chosenYear : null;
+  const detections = allDetections.filter(row => selectedYear === null || new Date(row.timestamp).getFullYear() === selectedYear);
+  const photos = allPhotos.filter(row => selectedYear === null || new Date(row.timestamp).getFullYear() === selectedYear);
 
   // Calculate costume statistics
   const costumeStats = useMemo(() => {
@@ -71,7 +83,7 @@ export function DashboardClient({ initialDetections }: DashboardClientProps) {
     const now = Date.now();
     const oneHour = 60 * 60 * 1000;
     const lastHour = detections.filter(
-      (d) => now - new Date(d.timestamp).getTime() < oneHour
+      (d) => now >= new Date(d.timestamp).getTime() && now - new Date(d.timestamp).getTime() < oneHour
     ).length;
     const prevHour = detections.filter((d) => {
       const time = now - new Date(d.timestamp).getTime();
@@ -84,17 +96,26 @@ export function DashboardClient({ initialDetections }: DashboardClientProps) {
 
   return (
     <main className="observatory">
-      <GalleryHeader online={detectorOnline} />
+      <GalleryHeader online={detectorOnline}>
+        <div className="year-filter" role="group" aria-label="Filter dashboard by year">
+          {[null, ...filterYears].map(year =>
+            <button key={year ?? "all"} type="button" aria-pressed={selectedYear === year}
+              disabled={year !== null && !photoYears.has(year)} onClick={() => setSelectedYear(year)}>
+              {year ?? "All years"}
+            </button>
+          )}
+        </div>
+      </GalleryHeader>
       <div className="space-y-8">
         <div id="costume-archive" className="scroll-mt-6">
-          <PhotoGallery detections={photos} isLoading={loading} newIds={newIds} originalImage={originalImage} />
+          <PhotoGallery key={selectedYear ?? "all"} detections={photos} isLoading={loading} newIds={newIds} originalImage={originalImage} />
         </div>
 
         <div className="summary-strip grid grid-cols-2 lg:grid-cols-4">
           <StatsCard
             title="Recent Detections"
             value={detections.length}
-            description="Latest 200 records"
+            description={selectedYear === null ? "Across all years · loaded records" : `${selectedYear} · loaded records`}
             icon={Users}
             trend={{
               value: activityTrend,
@@ -112,7 +133,7 @@ export function DashboardClient({ initialDetections }: DashboardClientProps) {
             value={
               detections.filter(
                 (d) =>
-                  Date.now() - new Date(d.timestamp).getTime() < 5 * 60 * 1000
+                  Date.now() >= new Date(d.timestamp).getTime() && Date.now() - new Date(d.timestamp).getTime() < 5 * 60 * 1000
               ).length
             }
             description="Last 5 minutes"
@@ -123,7 +144,7 @@ export function DashboardClient({ initialDetections }: DashboardClientProps) {
 
         <div className="analytics-layout">
           <CostumeDistribution costumes={costumeStats.costumes} />
-          <ActivityTimeline detections={detections} />
+          <ActivityTimeline detections={detections} years={years} />
         </div>
         <LiveFeed detections={detections} limit={8} />
         <About />
