@@ -2,8 +2,7 @@ import { PrivateGallery } from "@/components/private-gallery";
 import { LocalGallery } from "@/components/local-gallery";
 import { DashboardClient } from "@/components/dashboard/dashboard-client";
 import type { PersonDetection } from "@/lib/detections";
-
-export const revalidate = 60; // Revalidate every 60 seconds
+import { connection } from "next/server";
 
 async function getInitialDetections(): Promise<PersonDetection[]> {
   // Skip data fetching during build time
@@ -35,6 +34,9 @@ async function getInitialDetections(): Promise<PersonDetection[]> {
 export default async function Dashboard() {
   if (process.env.NEXT_PUBLIC_STORAGE_PROVIDER === "local" || !process.env.NEXT_PUBLIC_SUPABASE_URL) return <LocalGallery />;
   if (process.env.NEXT_PUBLIC_GALLERY_ACCESS === "private") return <PrivateGallery />;
+  // A refresh must include the latest captures, not a previously rendered snapshot.
+  // Keep this after the local branch so account-free static exports still work.
+  await connection();
   const initialDetections = await getInitialDetections();
 
   return <DashboardClient initialDetections={initialDetections} />;

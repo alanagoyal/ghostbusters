@@ -77,7 +77,8 @@ export function useDetections(initialDetections: PersonDetection[]) {
         // Close the server-render-to-subscription gap, and reconcile after reconnects.
         if (status === "SUBSCRIBED") void reconcile();
       });
-    if (privateGallery) void reconcile();
+    // Refresh immediately, even when Realtime is slow or cannot connect.
+    void reconcile();
     const timer = setInterval(() => { void reconcile(); }, 60_000);
     const onVisible = () => { if (document.visibilityState === "visible") void reconcile(); };
     const onOnline = () => { void reconcile(); };
